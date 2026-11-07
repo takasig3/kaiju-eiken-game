@@ -411,11 +411,21 @@
 
         /* --- 2. KAIJU STAGES & DETAILED DESIGNS --- */
         const KAIJU_STAGES = [
-            { name: "菌類系本獣 (タイプ01)", maxHp: 120, fortitude: 3.2, title: "TARGET 01: 幼獣", color: "#22c55e", shape: "fungus" },
-            { name: "飛翔型識別怪獣 (タイプ06)", maxHp: 260, fortitude: 5.8, title: "TARGET 02: 余獣", color: "#00f0ff", shape: "flier" },
-            { name: "装甲特化型本獣 (タイプ04)", maxHp: 420, fortitude: 7.3, title: "TARGET 03: 本獣", color: "#a855f7", shape: "armored" },
-            { name: "人型識別怪獣 (怪獣9号型)", maxHp: 650, fortitude: 8.9, title: "TARGET 04: 識別怪獣", color: "#ec4899", shape: "humanoid" },
-            { name: "識別怪獣8号 (変身大怪獣)", maxHp: 1000, fortitude: 9.8, title: "FINAL TARGET: 大怪獣", color: "#ff2a5f", shape: "kaiju8" }
+            { name: "菌類系幼獣 (タイプ01)", maxHp: 120, fortitude: 3.2, title: "TARGET 01: 幼獣", color: "#22c55e", shape: "fungus" },
+            { name: "飛翔型余獣 (タイプ06)", maxHp: 200, fortitude: 4.1, title: "TARGET 02: 余獣", color: "#00f0ff", shape: "flier" },
+            { name: "装甲特化型本獣 (タイプ04)", maxHp: 280, fortitude: 5.3, title: "TARGET 03: 本獣", color: "#a855f7", shape: "armored" },
+            { name: "増殖型菌類獣 (変種)", maxHp: 380, fortitude: 5.9, title: "TARGET 04: 変種", color: "#eab308", shape: "fungus" },
+            { name: "猛禽型飛翔獣 (変種)", maxHp: 480, fortitude: 6.5, title: "TARGET 05: 変種", color: "#f97316", shape: "flier" },
+            { name: "超重装甲本獣 (タイプ04-B)", maxHp: 600, fortitude: 7.1, title: "TARGET 06: 強襲獣", color: "#64748b", shape: "armored" },
+            { name: "人型識別怪獣 (初期形態)", maxHp: 720, fortitude: 7.8, title: "TARGET 07: 識別怪獣", color: "#ec4899", shape: "humanoid" },
+            { name: "猛毒菌類獣 (タイプ01-毒)", maxHp: 860, fortitude: 8.2, title: "TARGET 08: 特殊獣", color: "#84cc16", shape: "fungus" },
+            { name: "音速飛翔獣 (タイプ06-S)", maxHp: 1000, fortitude: 8.5, title: "TARGET 09: 特殊獣", color: "#38bdf8", shape: "flier" },
+            { name: "結晶装甲本獣 (タイプ04-C)", maxHp: 1150, fortitude: 8.8, title: "TARGET 10: 強化獣", color: "#d946ef", shape: "armored" },
+            { name: "人型識別怪獣 (第2形態)", maxHp: 1300, fortitude: 9.1, title: "TARGET 11: 識別怪獣", color: "#e11d48", shape: "humanoid" },
+            { name: "巨大菌類群体 (エリアボス)", maxHp: 1500, fortitude: 9.3, title: "TARGET 12: 群体獣", color: "#10b981", shape: "fungus" },
+            { name: "竜型飛翔大怪獣 (エリアボス)", maxHp: 1700, fortitude: 9.5, title: "TARGET 13: 飛翔大獣", color: "#fbbf24", shape: "flier" },
+            { name: "機動要塞本獣 (最終防衛線)", maxHp: 2000, fortitude: 9.7, title: "TARGET 14: 要塞獣", color: "#94a3b8", shape: "armored" },
+            { name: "識別怪獣8号 (変身大怪獣)", maxHp: 2500, fortitude: 9.8, title: "FINAL TARGET: 大怪獣", color: "#ff2a5f", shape: "kaiju8" }
         ];
 
         /* --- 3. HIGH IMPACT AUDIO SYNTHESIZER (TONE.JS) --- */
@@ -523,7 +533,7 @@
 
                 setTimeout(() => {
                     if (this.kaijuState === 'hit') this.kaijuState = 'idle';
-                }, 350);
+                }, 800);
 
                 const cx = this.canvas.width / 2;
                 const cy = this.canvas.height / 2;
@@ -566,7 +576,7 @@
                         size: Math.random() * (isCritical ? 6 : 4) + 2,
                         color: isCritical ? '#ffe600' : (Math.random() > 0.4 ? '#00f0ff' : '#ffffff'),
                         life: 1.0,
-                        decay: Math.random() * 0.04 + 0.03
+                        decay: Math.random() * 0.02 + 0.015
                     });
                 }
 
@@ -575,8 +585,8 @@
                     text: isCritical ? `⚡ CRITICAL! -${damage}` : `-${damage}`,
                     x: cx + (Math.random() * 40 - 20),
                     y: cy - 40,
-                    vy: -2.6,
-                    life: 1.0,
+                    vy: -1.0,
+                    life: 1.5,
                     color: isCritical ? '#ffe600' : '#ff2a5f',
                     scale: isCritical ? 1.6 : 1.1
                 });
@@ -749,7 +759,7 @@
                 // Render Attack Animations
                 for (let i = this.slashes.length - 1; i >= 0; i--) {
                     const s = this.slashes[i];
-                    s.progress += 0.14;
+                    s.progress += 0.07;
 
                     if (s.progress >= 1.0) {
                         this.slashes.splice(i, 1);
@@ -806,7 +816,7 @@
                 for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
                     const ft = this.floatingTexts[i];
                     ft.y += ft.vy;
-                    ft.life -= 0.035;
+                    ft.life -= 0.015;
 
                     if (ft.life <= 0) {
                         this.floatingTexts.splice(i, 1);
@@ -872,7 +882,7 @@
             }
 
             startDrag(e) {
-                if(this.game.isQuizActive || !this.game.isPlaying) return;
+                if(this.game.isQuizActive || !this.game.isPlaying || this.game.isAnimating) return;
                 const tile = e.target.closest('.puzzle-tile');
                 if(!tile) return;
                 
@@ -1020,6 +1030,7 @@
                 this.wrongWords = [];
                 this.isPlaying = false;
                 this.isQuizActive = false;
+                this.isAnimating = false;
                 this.currentPuzzleMultiplier = 1.0;
 
                 this.actionCanvas = new ActionCanvas('action-canvas');
@@ -1064,6 +1075,7 @@
                 this.wrongWords = [];
                 this.isPlaying = true;
                 this.isQuizActive = false;
+                this.isAnimating = false;
 
                 document.getElementById('start-screen').classList.add('hidden');
                 document.getElementById('quiz-panel').classList.add('hidden');
@@ -1108,7 +1120,7 @@
 
                 // Stage Timer
                 this.timerInterval = setInterval(() => {
-                    if (!this.isPlaying) return;
+                    if (!this.isPlaying || this.isAnimating) return;
                     this.timeLeft -= 0.1;
                     if (this.timeLeft <= 0) {
                         this.timeLeft = 0;
@@ -1216,11 +1228,12 @@
             }
 
             handleAnswer(selectedText) {
-                if (!this.isPlaying || !this.currentQuestion || !this.isQuizActive) return;
+                if (!this.isPlaying || !this.currentQuestion || !this.isQuizActive || this.isAnimating) return;
 
                 const responseTimeSec = (Date.now() - this.questionStartTime) / 1000;
                 this.totalAnswered++;
                 clearInterval(this.speedInterval);
+                this.isAnimating = true;
 
                 const isCorrect = selectedText === this.currentQuestion.answer;
 
@@ -1283,13 +1296,16 @@
                         document.getElementById('quiz-panel').classList.add('hidden');
 
                         // Elimination Overlay Animation
-                        const elimOverlay = document.getElementById('eliminated-overlay');
-                        elimOverlay.style.opacity = '1';
-
                         setTimeout(() => {
-                            elimOverlay.style.opacity = '0';
-                            this.loadStage(this.currentStage + 1);
-                        }, 1100);
+                            const elimOverlay = document.getElementById('eliminated-overlay');
+                            elimOverlay.style.opacity = '1';
+
+                            setTimeout(() => {
+                                elimOverlay.style.opacity = '0';
+                                this.isAnimating = false;
+                                this.loadStage(this.currentStage + 1);
+                            }, 1500);
+                        }, 800);
                         return;
                     }
 
@@ -1323,13 +1339,18 @@
                 const nextComboMultiplier = (1 + (this.combo * 0.15)).toFixed(1);
                 document.getElementById('damage-power').textContent = `x${nextComboMultiplier}`;
 
-                // Return to Puzzle Mode
-                this.isQuizActive = false;
-                document.getElementById('quiz-panel').classList.add('hidden');
-                
-                // Reset Speed Meter visually
-                document.getElementById('speed-ms-text').textContent = `0.0s`;
-                document.getElementById('speed-bar').style.width = `100%`;
+                // Rest Time before returning to puzzle (Success: 1.8s, Fail: 1.2s)
+                const restTime = isCorrect ? 1800 : 1200;
+
+                setTimeout(() => {
+                    this.isAnimating = false;
+                    this.isQuizActive = false;
+                    document.getElementById('quiz-panel').classList.add('hidden');
+                    
+                    // Reset Speed Meter visually
+                    document.getElementById('speed-ms-text').textContent = `0.0s`;
+                    document.getElementById('speed-bar').style.width = `100%`;
+                }, restTime);
             }
 
             endGame(isClear) {
@@ -1370,16 +1391,17 @@
 
                 if (this.wrongWords.length === 0) {
                     wrongListContainer.innerHTML = '<div class="text-slate-400 text-center py-4">全問正解！見事な討伐成績です！</div>';
-                } else {
-                    this.wrongWords.forEach(item => {
-                        const row = document.createElement('div');
-                        row.className = 'flex justify-between items-center bg-slate-950/90 p-2.5 rounded-lg border border-slate-800';
-                        row.innerHTML = `
-                            <div>
-                                <span class="text-[10px] text-cyan-400 font-bold block">${item.cat}</span>
-                                <span class="font-bold font-orbitron text-white text-xs">${item.q}</span>
-                                <span class="text-slate-300 ml-2 text-xs">正解: ${item.answer}</span>
-                            </div>
+            <div class="space-y-3 mb-2">
+                <button id="start-btn" class="w-full tech-button bg-gradient-to-r from-cyan-400 via-cyan-500 to-blue-600 text-slate-950 font-black text-lg py-4 rounded-xl shadow-xl shadow-cyan-500/30 active:scale-95 transition-all">
+                    討伐ミッション開始
+                </button>
+                <div class="text-[11px] text-slate-400 flex justify-center gap-3">
+                    <span>⚡ 全15形態怪獣</span>
+                    <span>💥 1.5sクリティカル</span>
+                    <span>📚 多角問題50+</span>
+                </div>
+            </div>
+        </div>
                             <button class="speech-mini-btn text-xs bg-slate-800 px-2.5 py-1 rounded-md text-cyan-400 hover:bg-slate-700 active:scale-95 transition">🔊</button>
                         `;
                         row.querySelector('.speech-mini-btn').addEventListener('click', () => {
