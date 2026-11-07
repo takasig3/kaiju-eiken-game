@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>怪獣8号×英検4級 討伐アクション ULTRA</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for Web Audio Synth SFX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        noto: ['Noto Sans JP', 'sans-serif'],
+                    },
+                    colors: {
+                        kaijuBlue: '#00f0ff',
+                        kaijuDark: '#030712',
+                        kaijuNavy: '#0b1329',
+                        defenseRed: '#ff2a5f',
+                        defenseYellow: '#ffb703',
+                        defenseGold: '#ffe600'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #02040a;
+            color: #ffffff;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+
+        /* Sci-Fi Glow Effects */
+        .glow-blue { text-shadow: 0 0 10px rgba(0, 240, 255, 0.9), 0 0 20px rgba(0, 240, 255, 0.5); }
+        .glow-red { text-shadow: 0 0 10px rgba(255, 42, 95, 0.9), 0 0 20px rgba(255, 42, 95, 0.5); }
+        .glow-yellow { text-shadow: 0 0 10px rgba(255, 230, 0, 0.9), 0 0 25px rgba(255, 230, 0, 0.7); }
+        
+        .box-glow-blue {
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3), inset 0 0 15px rgba(0, 240, 255, 0.15);
+            border: 1px solid rgba(0, 240, 255, 0.6);
+        }
+        .box-glow-red {
+            box-shadow: 0 0 25px rgba(255, 42, 95, 0.4), inset 0 0 15px rgba(255, 42, 95, 0.2);
+            border: 1px solid rgba(255, 42, 95, 0.8);
+        }
+        .box-glow-gold {
+            box-shadow: 0 0 25px rgba(255, 230, 0, 0.4), inset 0 0 15px rgba(255, 230, 0, 0.2);
+            border: 1px solid rgba(255, 230, 0, 0.8);
+        }
+
+        /* Screen Shake Animations */
+        @keyframes shake-light {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-5px, 5px); }
+            40% { transform: translate(5px, -5px); }
+            60% { transform: translate(-3px, -3px); }
+            80% { transform: translate(3px, 3px); }
+            100% { transform: translate(0, 0); }
+        }
+        @keyframes shake-critical {
+            0% { transform: translate(0, 0) scale(1.02) rotate(0deg); }
+            10% { transform: translate(-18px, 14px) rotate(-3deg); }
+            25% { transform: translate(18px, -14px) rotate(3deg); }
+            40% { transform: translate(-12px, -10px) rotate(-2deg); }
+            55% { transform: translate(12px, 10px) rotate(2deg); }
+            70% { transform: translate(-6px, 6px); }
+            100% { transform: translate(0, 0) scale(1.0); }
+        }
+
+        .shake-sm { animation: shake-light 0.22s cubic-bezier(.36,.07,.19,.97) both; }
+        .shake-crit { animation: shake-critical 0.45s cubic-bezier(.36,.07,.19,.97) both; }
+
+        /* Tech Button Styling */
+        .tech-button {
+            clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+            transition: transform 0.08s ease, filter 0.08s ease, background-color 0.1s ease;
+        }
+        .tech-button:active {
+            transform: scale(0.95);
+            filter: brightness(1.35);
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="h-[100dvh] w-full flex flex-col justify-between overflow-hidden relative">
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="game-container" class="relative w-full h-full max-w-md mx-auto flex flex-col justify-between bg-kaijuDark overflow-hidden shadow-2xl border-x border-slate-800">
+        
+        <!-- IMPACT FLASH OVERLAYS -->
+        <div id="counter-flash" class="absolute inset-0 bg-red-600/50 z-30 pointer-events-none opacity-0 transition-opacity duration-150"></div>
+        <div id="strike-flash" class="absolute inset-0 bg-cyan-400/35 z-30 pointer-events-none opacity-0 transition-opacity duration-150"></div>
+        <div id="critical-flash" class="absolute inset-0 bg-yellow-300/50 z-30 pointer-events-none opacity-0 transition-opacity duration-200"></div>
+
+        <!-- HEADER / STATUS BAR -->
+        <header class="p-3 bg-slate-950/90 border-b border-cyan-900/60 z-20 flex justify-between items-center backdrop-blur-md">
+            <div>
+                <div class="text-[10px] text-cyan-400 font-orbitron tracking-widest flex items-center gap-1.5 font-bold">
+                    <span class="w-2 h-2 rounded-full bg-cyan-400 inline-block animate-ping"></span>
+                    JAKDF DEFENSE FORCE
+                </div>
+                <div class="text-xs font-bold text-slate-200 mt-0.5">隊員: <span class="text-cyan-300 font-orbitron font-extrabold">日比野カフカ (怪獣8号)</span></div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div class="text-right">
+                    <div class="text-[9px] text-slate-400 font-orbitron tracking-wider">FORTITUDE</div>
+                    <div class="text-base font-black text-cyan-400 font-orbitron leading-none glow-blue" id="fortitude-val">3.2</div>
+                </div>
+                <button id="sound-toggle" class="p-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-cyan-400 active:scale-95 shadow">
+                    🔊
+                </button>
+            </div>
+        </header>
+
+        <!-- TOP MAIN: STAGE & KAIJU ACTION CANVAS AREA -->
+        <div class="relative flex-1 flex flex-col justify-between items-center p-3 z-10 overflow-hidden">
+            
+            <!-- STAGE & SCORE INFO -->
+            <div class="w-full flex justify-between items-end z-10">
+                <div>
+                    <span id="stage-badge" class="px-2.5 py-0.5 bg-red-950/90 border border-red-500/60 text-red-400 text-xs font-black rounded tracking-widest font-orbitron shadow">
+                        TARGET 01: 幼獣
+                    </span>
+                    <h2 id="kaiju-name" class="text-lg font-black text-white mt-0.5 drop-shadow-md flex items-center gap-2">
+                        菌類系本獣 (タイプ01)
+                    </h2>
+                </div>
+                <div class="text-right">
+                    <div class="text-[9px] text-slate-400 font-orbitron">TOTAL SCORE</div>
+                    <div id="score-display" class="text-xl font-black text-cyan-400 font-orbitron glow-blue">00000</div>
+                </div>
+            </div>
+
+            <!-- KAIJU HP GAUGE -->
+            <div class="w-full mt-1.5 z-10">
+                <div class="flex justify-between text-xs font-bold text-slate-300 mb-1">
+                    <span class="flex items-center gap-1 text-red-400">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        怪獣残存バイタル (HP)
+                    </span>
+                    <span id="kaiju-hp-text" class="font-orbitron text-red-400 font-extrabold">120/120</span>
+                </div>
+                <div class="w-full bg-slate-950 border border-slate-800 h-3.5 rounded-full overflow-hidden p-0.5 shadow-inner">
+                    <div id="kaiju-hp-bar" class="h-full bg-gradient-to-r from-red-600 via-rose-500 to-orange-400 rounded-full transition-all duration-200 w-full shadow-lg"></div>
+                </div>
+            </div>
+
+            <!-- ANIMATED KAIJU & ACTION CANVAS -->
+            <div id="canvas-wrapper" class="relative w-full h-[clamp(120px,24dvh,240px)] my-auto flex justify-center items-center">
+                <canvas id="action-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
+                
+                <!-- Combo Overlay -->
+                <div id="combo-container" class="absolute top-2 left-2 pointer-events-none opacity-0 transition-all duration-200 flex flex-col z-10">
+                    <span id="combo-count" class="text-4xl font-black italic font-orbitron text-yellow-400 glow-yellow leading-none">0</span>
+                    <span class="text-[10px] font-black font-orbitron text-yellow-200 tracking-widest mt-0.5">COMBOS!</span>
+                </div>
+
+                <!-- Attack Type Banner -->
+                <div id="attack-banner" class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-cyan-950/90 border border-cyan-400 text-cyan-300 text-xs font-black font-orbitron px-3 py-1 rounded-full opacity-0 transition-all duration-200 pointer-events-none shadow-lg tracking-wider z-20">
+                    SONIC IMPACT!
+                </div>
+
+                <!-- Elimination / Clear Text Overlay -->
+                <div id="eliminated-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-red-950/40 pointer-events-none opacity-0 transition-opacity duration-200 z-20">
+                    <div class="text-4xl font-black font-orbitron text-red-500 glow-red tracking-widest animate-bounce">ELIMINATED!</div>
+                    <div class="text-sm font-bold text-white bg-slate-950/80 px-3 py-1 rounded border border-red-500 mt-2">討伐完了 — フォルティチュード上昇！</div>
+                </div>
+            </div>
+
+            <!-- PLAYER VITAL TIMER & SPEED METER -->
+            <div class="w-full z-10 space-y-1">
+                <!-- SPEED METER (CRITICAL ZONE) -->
+                <div class="flex justify-between items-center text-[10px] text-slate-400">
+                    <span class="font-orbitron font-bold text-yellow-400 flex items-center gap-1">
+                        ⚡ CRITICAL SPEED: <span id="speed-zone-text" class="text-white">1.5s (3.0x DAMAGE)</span>
+                    </span>
+                    <span id="speed-ms-text" class="font-orbitron text-slate-300">0.0s</span>
+                </div>
+                <div class="w-full bg-slate-950 border border-slate-800 h-2 rounded-full overflow-hidden relative">
+                    <div id="speed-bar" class="h-full bg-gradient-to-r from-yellow-400 via-cyan-400 to-blue-600 transition-all duration-75 w-full"></div>
+                    <!-- 1.5s indicator marker -->
+                    <div class="absolute top-0 bottom-0 left-[70%] w-0.5 bg-yellow-300 z-10"></div>
+                </div>
+
+                <!-- STAGE TIMER -->
+                <div class="flex justify-between items-center text-xs text-slate-400 pt-0.5">
+                    <span class="font-bold flex items-center gap-1 text-cyan-400">
+                        ⏱️ 作戦限界時間
+                    </span>
+                    <span id="timer-text" class="font-orbitron font-extrabold text-yellow-400">30.0s</span>
+                </div>
+                <div class="w-full bg-slate-950 border border-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div id="timer-bar" class="h-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-all duration-100 w-full"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM MAIN: QUIZ & INPUT AREA -->
+        <div id="action-panel" class="relative z-20 bg-slate-950/95 border-t border-cyan-800/60 p-2 sm:p-3 rounded-t-2xl backdrop-blur-lg flex flex-col gap-2 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] h-[clamp(230px,38dvh,280px)]">
+            
+            <!-- PUZZLE GRID -->
+            <div class="flex justify-between items-center text-[10px] sm:text-xs px-2 text-slate-300">
+                <span>同じアイコンを3つ以上なぞって消せ！ (斜めOK)</span>
+                <span id="puzzle-chain-text" class="text-cyan-400 font-orbitron font-bold">CHAIN: 0</span>
+            </div>
+            <div id="puzzle-grid" class="w-full h-full max-w-sm mx-auto grid grid-cols-6 gap-1 touch-none">
+                <!-- JS will populate tiles -->
+            </div>
+
+            <!-- QUIZ OVERLAY -->
+            <div id="quiz-panel" class="absolute inset-0 z-30 bg-slate-950/98 p-4 flex flex-col gap-2.5 hidden rounded-t-2xl shadow-2xl border-t-2 border-cyan-500">
+                
+                <!-- QUESTION HEADER BOX -->
+                <div class="bg-slate-900/90 border border-cyan-500/40 p-3 rounded-xl box-glow-blue relative overflow-hidden">
+                    <div class="flex items-center justify-between mb-1">
+                        <span id="question-category" class="px-2 py-0.5 bg-cyan-950 border border-cyan-500/60 text-cyan-300 text-[10px] font-bold rounded">
+                            【英単語：和訳】
+                        </span>
+                        <div class="text-right">
+                            <span class="text-[9px] font-orbitron text-slate-400">CHAIN BONUS: </span>
+                            <span id="damage-power" class="text-xs font-black font-orbitron text-yellow-400 glow-yellow">x1.0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-between gap-2">
+                        <h1 id="word-question" class="text-xl sm:text-2xl font-black font-orbitron text-white tracking-wider leading-tight">REMEMBER</h1>
+                        <button id="speech-btn" class="p-2 bg-slate-800 hover:bg-slate-700 active:scale-90 rounded-full text-cyan-400 text-xs transition shadow flex-shrink-0" title="音声再生">
+                            🔊
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4 CHOICES BUTTONS GRID -->
+                <div id="choices-grid" class="grid grid-cols-2 gap-2 mt-2">
+                    <button class="choice-btn tech-button bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-100 font-bold p-3 text-xs sm:text-sm text-center flex items-center justify-center min-h-[50px] rounded-lg shadow-md transition-all duration-100">
+                        覚えている
+                    </button>
+                    <button class="choice-btn tech-button bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-100 font-bold p-3 text-xs sm:text-sm text-center flex items-center justify-center min-h-[50px] rounded-lg shadow-md transition-all duration-100">
+                        忘れる
+                    </button>
+                    <button class="choice-btn tech-button bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-100 font-bold p-3 text-xs sm:text-sm text-center flex items-center justify-center min-h-[50px] rounded-lg shadow-md transition-all duration-100">
+                        練習する
+                    </button>
+                    <button class="choice-btn tech-button bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-100 font-bold p-3 text-xs sm:text-sm text-center flex items-center justify-center min-h-[50px] rounded-lg shadow-md transition-all duration-100">
+                        呼ぶ
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- OVERLAY: START SCREEN -->
+        <div id="start-screen" class="absolute inset-0 bg-slate-950/98 z-50 flex flex-col justify-between p-6 text-center backdrop-blur-md">
+            <div class="mt-4">
+                <div class="inline-block px-3 py-1 bg-cyan-950 border border-cyan-500/60 text-cyan-400 text-xs font-orbitron font-bold rounded-full mb-2 tracking-widest box-glow-blue">
+                    JAKDF 英検4級 討伐訓練プログラム
+                </div>
+                <h1 class="text-3xl font-black font-orbitron text-white leading-tight glow-blue">
+                    怪獣8号<span class="text-cyan-400 block text-2xl mt-1">英検4級 討伐アクション ULTRA</span>
+                </h1>
+                <p class="text-xs text-slate-300 mt-2 max-w-xs mx-auto leading-relaxed">
+                    1.5秒以内の「超速クリティカル回答」で3倍ダメージを叩き込め！
+                    単語・過去形・熟語・穴埋め問題を解き、全15形態の怪獣を駆逐せよ！
+                </p>
+            </div>
+
+            <!-- Kaiju Preview Graphic Canvas -->
+            <div class="my-2 flex justify-center">
+                <div class="w-36 h-36 rounded-full border-2 border-cyan-500/50 bg-gradient-to-b from-cyan-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center box-glow-blue relative overflow-hidden">
+                    <span class="text-5xl animate-pulse">👾</span>
+                    <span class="text-[10px] font-orbitron text-cyan-400 font-bold mt-1">FORTITUDE 9.8</span>
+                    <div class="absolute inset-0 border border-cyan-400/30 rounded-full animate-ping"></div>
+                </div>
+            </div>
+
+            <div class="space-y-3 mb-2">
+                <button id="start-btn" class="w-full tech-button bg-gradient-to-r from-cyan-400 via-cyan-500 to-blue-600 text-slate-950 font-black text-lg py-4 rounded-xl shadow-xl shadow-cyan-500/30 active:scale-95 transition-all">
+                    討伐ミッション開始
+                </button>
+                <div class="text-[11px] text-slate-400 flex justify-center gap-3">
+                    <span>⚡ 全15形態怪獣</span>
+                    <span>💥 1.5sクリティカル</span>
+                    <span>📚 多角問題42問</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- OVERLAY: TRANSFORM / STAGE START ANIMATION -->
+        <div id="transform-screen" class="absolute inset-0 bg-slate-950/95 z-40 flex flex-col items-center justify-center p-6 text-center backdrop-blur-md hidden pointer-events-none">
+            <div class="text-cyan-400 text-xs font-orbitron tracking-widest mb-2 animate-bounce font-bold">FORCIBLE UNLEASHING</div>
+            <h2 id="transform-title" class="text-4xl font-black font-orbitron text-white glow-blue">TARGET SPOTTED</h2>
+            <div class="text-6xl font-black font-orbitron text-yellow-400 my-4 glow-yellow" id="unleash-num">9.8</div>
+            <div class="text-sm font-bold text-cyan-200">怪獣8号 変身完了 — 撃破を開始せよ！</div>
+        </div>
+
+        <!-- OVERLAY: RESULT SCREEN -->
+        <div id="result-screen" class="absolute inset-0 bg-slate-950/98 z-50 flex flex-col justify-between p-6 text-center backdrop-blur-md hidden">
+            <div class="mt-4">
+                <div id="result-badge" class="inline-block px-3 py-1 bg-emerald-950 border border-emerald-500 text-emerald-400 text-xs font-orbitron font-bold rounded-full mb-2">
+                    MISSION COMPLETE
+                </div>
+                <h2 id="result-title" class="text-3xl font-black text-white glow-blue">全怪獣 討伐完了！</h2>
+                <p id="result-subtitle" class="text-xs text-slate-400 mt-1">防衛隊員として優れた戦果を記録しました</p>
+            </div>
+
+            <!-- RESULT STATS -->
+            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 space-y-2 text-left my-2 shadow-inner">
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-slate-400">最終スコア:</span>
+                    <span id="res-score" class="text-2xl font-black text-cyan-400 font-orbitron glow-blue">0</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-slate-400">単語正解率:</span>
+                    <span id="res-accuracy" class="text-lg font-bold text-white font-orbitron">0%</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-slate-400">クリティカルヒット数:</span>
+                    <span id="res-criticals" class="text-lg font-bold text-yellow-400 font-orbitron">0回 (⚡)</span>
+                </div>
+                <div class="flex justify-between items-center text-sm">
+                    <span class="text-slate-400">最大コンボ:</span>
+                    <span id="res-maxcombo" class="text-lg font-bold text-yellow-400 font-orbitron">0 MAX</span>
+                </div>
+            </div>
+
+            <!-- WRONG WORDS REVIEW SECTION -->
+            <div class="flex-1 overflow-hidden flex flex-col mb-3">
+                <div class="text-xs font-bold text-slate-400 text-left mb-1.5 flex justify-between items-center">
+                    <span>要復習問題リスト (間違えた問題)</span>
+                    <span id="wrong-count-badge" class="text-[10px] bg-red-950 text-red-400 px-2 py-0.5 rounded border border-red-800">0件</span>
+                </div>
+                <div id="wrong-words-list" class="flex-1 bg-slate-900/80 border border-slate-800 rounded-lg p-2 overflow-y-auto space-y-1.5 text-left text-xs no-scrollbar">
+                    <!-- Dynamic Incorrect Words -->
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <button id="retry-btn" class="w-full tech-button bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-base py-3.5 rounded-xl shadow-lg active:scale-95 transition">
+                    再出撃する
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        /* --- 1. EXTENSIVE EIKEN GRADE 4 MULTI-CATEGORY QUESTION DATABASE --- */
+        const QUESTION_DATABASE = [
+            // Category 1: 英単語（英→日）
+            { cat: "【英単語：和訳】", q: "remember", answer: "覚えている", dummy: ["忘れる", "練習する", "説明する"] },
+            { cat: "【英単語：和訳】", q: "practice", answer: "練習する", dummy: ["遊ぶ", "覚えている", "話す"] },
+            { cat: "【英単語：和訳】", q: "dangerous", answer: "危険な", dummy: ["安全な", "静かな", "親切な"] },
+            { cat: "【英単語：和訳】", q: "expensive", answer: "高価な、高い", dummy: ["安い", "珍しい", "重い"] },
+            { cat: "【英単語：和訳】", q: "understand", answer: "理解する、分かる", dummy: ["心配する", "忘れる", "驚く"] },
+            { cat: "【英単語：和訳】", q: "important", answer: "重要な、大切な", dummy: ["つまらない", "簡単な", "新しい"] },
+            { cat: "【英単語：和訳】", q: "vacation", answer: "休暇、休み", dummy: ["仕事", "祝日", "週末"] },
+            { cat: "【英単語：和訳】", q: "popular", answer: "人気のある", dummy: ["有名人", "危険な", "退屈な"] },
+            { cat: "【英単語：和訳】", q: "dictionary", answer: "辞書", dummy: ["教科書", "雑誌", "新聞"] },
+            { cat: "【英単語：和訳】", q: "future", answer: "未来、将来", dummy: ["過去", "現在", "歴史"] },
+
+            // Category 2: 日英逆引き（日→英）
+            { cat: "【英単語：英訳】", q: "「図書館」", answer: "library", dummy: ["hospital", "station", "museum"] },
+            { cat: "【英単語：英訳】", q: "「到着する」", answer: "arrive", dummy: ["leave", "travel", "become"] },
+            { cat: "【英単語：英訳】", q: "「招待する」", answer: "invite", dummy: ["introduce", "collect", "receive"] },
+            { cat: "【英単語：英訳】", q: "「注意深い」", answer: "careful", dummy: ["different", "exciting", "foreign"] },
+            { cat: "【英単語：英訳】", q: "「朝食」", answer: "breakfast", dummy: ["lunch", "dinner", "dessert"] },
+            { cat: "【英単語：英訳】", q: "「〜の前に」", answer: "before", dummy: ["after", "behind", "during"] },
+            { cat: "【英単語：英訳】", q: "「〜の間に（期間）」", answer: "during", dummy: ["between", "before", "until"] },
+            { cat: "【英単語：英訳】", q: "「天気」", answer: "weather", dummy: ["season", "future", "nature"] },
+
+            // Category 3: 穴埋め・文法問題
+            { cat: "【穴埋め問題】", q: "I go to school ___ bus.", answer: "by", dummy: ["on", "in", "with"] },
+            { cat: "【穴埋め問題】", q: "She is taller ___ me.", answer: "than", dummy: ["as", "more", "from"] },
+            { cat: "【穴埋め問題】", q: "What time ___ you get up?", answer: "do", dummy: ["are", "is", "does"] },
+            { cat: "【穴埋め問題】", q: "He ___ speak English very well.", answer: "can", dummy: ["is", "are", "do"] },
+            { cat: "【穴埋め問題】", q: "We are ___ tennis now.", answer: "playing", dummy: ["play", "played", "plays"] },
+            { cat: "【穴埋め問題】", q: "There ___ many books on the table.", answer: "are", dummy: ["is", "be", "was"] },
+            { cat: "【穴埋め問題】", q: "May I ___ your pen?", answer: "use", dummy: ["using", "used", "uses"] },
+            { cat: "【穴埋め問題】", q: "They didn't ___ to the party.", answer: "come", dummy: ["came", "coming", "comes"] },
+
+            // Category 4: 動詞の過去形
+            { cat: "【動詞の過去形】", q: "「speak」の過去形は？", answer: "spoke", dummy: ["speaked", "spoken", "speaking"] },
+            { cat: "【動詞の過去形】", q: "「make」の過去形は？", answer: "made", dummy: ["makes", "maked", "making"] },
+            { cat: "【動詞の過去形】", q: "「write」の過去形は？", answer: "wrote", dummy: ["written", "writed", "write"] },
+            { cat: "【動詞の過去形】", q: "「buy」の過去形は？", answer: "bought", dummy: ["buyed", "boughted", "buys"] },
+            { cat: "【動詞の過去形】", q: "「take」の過去形は？", answer: "took", dummy: ["taken", "taked", "takes"] },
+            { cat: "【動詞の過去形】", q: "「see」の過去形は？", answer: "saw", dummy: ["seen", "seed", "sees"] },
+            { cat: "【動詞の過去形】", q: "「run」の過去形は？", answer: "ran", dummy: ["runned", "running", "runs"] },
+            { cat: "【動詞の過去形】", q: "「give」の過去形は？", answer: "gave", dummy: ["given", "gived", "gives"] },
+
+            // Category 5: 熟語・慣用表現
+            { cat: "【熟語表現】", q: "「look for」の意味は？", answer: "〜を探す", dummy: ["〜を見る", "〜のお世話をする", "〜に似ている"] },
+            { cat: "【熟語表現】", q: "「take a photo」の意味は？", answer: "写真を撮る", dummy: ["絵を描く", "散歩する", "買い物する"] },
+            { cat: "【熟語表現】", q: "「get up」の意味は？", answer: "起きる", dummy: ["寝る", "立ち上がる", "帰る"] },
+            { cat: "【熟語表現】", q: "「look at」の意味は？", answer: "〜を見る", dummy: ["〜を探す", "〜を聞く", "〜に追いつく"] },
+            { cat: "【熟語表現】", q: "「listen to」の意味は？", answer: "〜を聴く", dummy: ["〜を話す", "〜を読む", "〜を書く"] },
+            { cat: "【熟語表現】", q: "「enjoy -ing」の意味は？", answer: "〜して楽しむ", dummy: ["〜し始める", "〜し終わる", "〜したい"] },
+            { cat: "【熟語表現】", q: "「be good at」の意味は？", answer: "〜が得意である", dummy: ["〜が好きである", "〜に慣れている", "〜を探している"] },
+            { cat: "【熟語表現】", q: "「of course」の意味は？", answer: "もちろん", dummy: ["たぶん", "絶対にない", "時々"] }
+        ];
+
+        /* --- 2. KAIJU STAGES & DETAILED DESIGNS --- */
+        const KAIJU_STAGES = [
+            { name: "菌類系幼獣 (タイプ01)", maxHp: 120, fortitude: 3.2, title: "TARGET 01: 幼獣", color: "#22c55e", shape: "fungus" },
+            { name: "飛翔型余獣 (タイプ06)", maxHp: 200, fortitude: 4.1, title: "TARGET 02: 余獣", color: "#00f0ff", shape: "flier" },
+            { name: "装甲特化型本獣 (タイプ04)", maxHp: 280, fortitude: 5.3, title: "TARGET 03: 本獣", color: "#a855f7", shape: "armored" },
+            { name: "増殖型菌類獣 (変種)", maxHp: 380, fortitude: 5.9, title: "TARGET 04: 変種", color: "#eab308", shape: "fungus" },
+            { name: "猛禽型飛翔獣 (変種)", maxHp: 480, fortitude: 6.5, title: "TARGET 05: 変種", color: "#f97316", shape: "flier" },
+            { name: "超重装甲本獣 (タイプ04-B)", maxHp: 600, fortitude: 7.1, title: "TARGET 06: 強襲獣", color: "#64748b", shape: "armored" },
+            { name: "人型識別怪獣 (初期形態)", maxHp: 720, fortitude: 7.8, title: "TARGET 07: 識別怪獣", color: "#ec4899", shape: "humanoid" },
+            { name: "猛毒菌類獣 (タイプ01-毒)", maxHp: 860, fortitude: 8.2, title: "TARGET 08: 特殊獣", color: "#84cc16", shape: "fungus" },
+            { name: "音速飛翔獣 (タイプ06-S)", maxHp: 1000, fortitude: 8.5, title: "TARGET 09: 特殊獣", color: "#38bdf8", shape: "flier" },
+            { name: "結晶装甲本獣 (タイプ04-C)", maxHp: 1150, fortitude: 8.8, title: "TARGET 10: 強化獣", color: "#d946ef", shape: "armored" },
+            { name: "人型識別怪獣 (第2形態)", maxHp: 1300, fortitude: 9.1, title: "TARGET 11: 識別怪獣", color: "#e11d48", shape: "humanoid" },
+            { name: "巨大菌類群体 (エリアボス)", maxHp: 1500, fortitude: 9.3, title: "TARGET 12: 群体獣", color: "#10b981", shape: "fungus" },
+            { name: "竜型飛翔大怪獣 (エリアボス)", maxHp: 1700, fortitude: 9.5, title: "TARGET 13: 飛翔大獣", color: "#fbbf24", shape: "flier" },
+            { name: "機動要塞本獣 (最終防衛線)", maxHp: 2000, fortitude: 9.7, title: "TARGET 14: 要塞獣", color: "#94a3b8", shape: "armored" },
+            { name: "識別怪獣8号 (変身大怪獣)", maxHp: 2500, fortitude: 9.8, title: "FINAL TARGET: 大怪獣", color: "#ff2a5f", shape: "kaiju8" }
+        ];
+
+        function speakEnglish(q) {
+            if (!('speechSynthesis' in window) || !soundMgr.enabled) return;
+            const clean = q.replace(/_+/g, ' blank ').replace(/[^a-zA-Z ]/g, '').replace(/\s+/g, ' ').trim();
+            if (!clean) return;
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(clean);
+            u.lang = 'en-US';
+            u.rate = 0.9;
+            window.speechSynthesis.speak(u);
+        }
+
+        /* --- 3. HIGH IMPACT AUDIO SYNTHESIZER (TONE.JS) --- */
+        class SoundManager {
+            constructor() {
+                this.enabled = true;
+                this.initialized = false;
+            }
+
+            async init() {
+                if (this.initialized) return;
+                try {
+                    await Tone.start();
+                    
+                    // Heavy Hit Membrane Synth
+                    this.hitSynth = new Tone.MembraneSynth({
+                        pitchDecay: 0.08,
+                        octaves: 10,
+                        oscillator: { type: "sine" },
+                        envelope: { attack: 0.001, decay: 0.3, sustain: 0.01, release: 0.1 }
+                    }).toDestination();
+
+                    // Metal Slash / Lightning Synth
+                    this.slashSynth = new Tone.MetalSynth({
+                        frequency: 380,
+                        envelope: { attack: 0.001, decay: 0.15, release: 0.05 },
+                        harmonicity: 7.1,
+                        modulationIndex: 45,
+                        resonance: 6000,
+                        volume: -18
+                    }).toDestination();
+
+                    // Critical Thunder Synth
+                    this.thunderSynth = new Tone.NoiseSynth({
+                        noise: { type: 'pink' },
+                        envelope: { attack: 0.005, decay: 0.45, sustain: 0 }
+                    }).toDestination();
+
+                    // Correct Chime Synth
+                    this.chimeSynth = new Tone.PolySynth(Tone.Synth).toDestination();
+
+                    this.initialized = true;
+                } catch(e) {
+                    console.log("Audio init error", e);
+                }
+            }
+
+            playImpact(type = 'punch', isCritical = false) {
+                if (!this.enabled || !this.initialized) return;
+                const now = Tone.now();
+
+                if (isCritical) {
+                    this.thunderSynth.triggerAttackRelease("4n", now);
+                    this.hitSynth.triggerAttackRelease("A0", "4n", now + 0.02);
+                    this.slashSynth.triggerAttackRelease(380, "8n", now + 0.05);
+                } else if (type === 'slash') {
+                    this.slashSynth.triggerAttackRelease(380, "8n", now);
+                    this.hitSynth.triggerAttackRelease("E1", "16n", now + 0.02);
+                } else {
+                    this.hitSynth.triggerAttackRelease("C1", "8n", now);
+                    this.slashSynth.triggerAttackRelease(380, "16n", now + 0.03);
+                }
+            }
+
+            playCounter() {
+                if (!this.enabled || !this.initialized) return;
+                this.thunderSynth.triggerAttackRelease("4n");
+            }
+
+            playCorrect() {
+                if (!this.enabled || !this.initialized) return;
+                const now = Tone.now();
+                this.chimeSynth.triggerAttackRelease(["E5", "G#5", "B5"], "16n", now);
+            }
+        }
+        const soundMgr = new SoundManager();
+
+        /* --- 4. ADVANCED CANVAS & KAIJU ILLUSTRATION ENGINE --- */
+        class ActionCanvas {
+            constructor(canvasId) {
+                this.canvas = document.getElementById(canvasId);
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.slashes = [];
+                this.floatingTexts = [];
+                
+                this.kaijuFrame = 0;
+                this.kaijuState = 'idle'; // idle, hit, attack, defeat
+                this.kaijuScale = 1.0;
+                this.hitFlashTimer = 0;
+                
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                this.loop();
+            }
+
+            resize() {
+                const rect = this.canvas.parentElement.getBoundingClientRect();
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                this.w = rect.width;
+                this.h = rect.height;
+                this.canvas.width = Math.round(rect.width * dpr);
+                this.canvas.height = Math.round(rect.height * dpr);
+                this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+
+            triggerPlayerAttack(attackType, damage, isCritical = false) {
+                this.kaijuState = 'hit';
+                this.hitFlashTimer = 1.0;
+
+                setTimeout(() => {
+                    if (this.kaijuState === 'hit') this.kaijuState = 'idle';
+                }, 800);
+
+                const cx = this.w / 2;
+                const cy = this.h / 2;
+
+                // 1. Slashes & Lightning Emitters
+                if (isCritical) {
+                    // Critical Double Lightning Bolt + Massive Ripple
+                    this.slashes.push({
+                        type: 'lightning',
+                        x1: cx - 140, y1: cy - 100, x2: cx + 140, y2: cy + 100,
+                        progress: 0, color: '#ffe600'
+                    });
+                    this.slashes.push({
+                        type: 'lightning',
+                        x1: cx + 140, y1: cy - 100, x2: cx - 140, y2: cy + 100,
+                        progress: 0, color: '#00f0ff'
+                    });
+                } else if (attackType === 'slash') {
+                    this.slashes.push({
+                        type: 'slash',
+                        x1: cx - 110, y1: cy - 70, x2: cx + 120, y2: cy + 70,
+                        progress: 0, color: '#00f0ff'
+                    });
+                } else {
+                    this.slashes.push({
+                        type: 'punch',
+                        x: cx, y: cy, radius: 10, maxRadius: 100, color: '#00f0ff'
+                    });
+                }
+
+                // 2. Bursting Particles
+                const particleCount = isCritical ? 50 : 25;
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = Math.random() * (isCritical ? 16 : 9) + 4;
+                    this.particles.push({
+                        x: cx, y: cy,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        size: Math.random() * (isCritical ? 6 : 4) + 2,
+                        color: isCritical ? '#ffe600' : (Math.random() > 0.4 ? '#00f0ff' : '#ffffff'),
+                        life: 1.0,
+                        decay: Math.random() * 0.02 + 0.015
+                    });
+                }
+
+                // 3. Floating Damage Number
+                this.floatingTexts.push({
+                    text: isCritical ? `⚡ CRITICAL! -${damage}` : `-${damage}`,
+                    x: cx + (Math.random() * 40 - 20),
+                    y: cy - 40,
+                    vy: -1.0,
+                    life: 1.5,
+                    color: isCritical ? '#ffe600' : '#ff2a5f',
+                    scale: isCritical ? 1.6 : 1.1
+                });
+            }
+
+            triggerKaijuCounter() {
+                this.kaijuState = 'attack';
+                this.kaijuScale = 1.4;
+
+                setTimeout(() => {
+                    this.kaijuState = 'idle';
+                    this.kaijuScale = 1.0;
+                }, 400);
+
+                const cx = this.w / 2;
+                const cy = this.h / 2;
+                this.slashes.push({
+                    type: 'slash',
+                    x1: cx + 130, y1: cy - 90, x2: cx - 130, y2: cy + 90,
+                    progress: 0, color: '#ff2a5f'
+                });
+            }
+
+            // HIGH-QUALITY PROCEDURAL KAIJU ILLUSTRATIONS
+            drawKaiju(stageIndex) {
+                const stage = KAIJU_STAGES[stageIndex] || KAIJU_STAGES[0];
+                const cx = this.w / 2;
+                const cy = this.h / 2 + 10;
+                this.kaijuFrame += 0.04;
+
+                const breathe = Math.sin(this.kaijuFrame * 1.6) * 5;
+                const hitShakeX = this.kaijuState === 'hit' ? (Math.random() * 20 - 10) : 0;
+                const hitShakeY = this.kaijuState === 'hit' ? (Math.random() * 20 - 10) : 0;
+
+                this.ctx.save();
+                this.ctx.translate(cx + hitShakeX, cy + hitShakeY + breathe);
+                this.ctx.scale(this.kaijuScale, this.kaijuScale);
+
+                // Aura Glow
+                this.ctx.shadowColor = stage.color;
+                this.ctx.shadowBlur = 30;
+                this.ctx.fillStyle = stage.color;
+
+                switch (stage.shape) {
+                    case 'fungus': // STAGE 1: 菌類本獣
+                        // Main Core Body
+                        this.ctx.beginPath();
+                        this.ctx.ellipse(0, 0, 55, 45, 0, 0, Math.PI * 2);
+                        this.ctx.fill();
+
+                        // Spores & Eyes
+                        this.ctx.fillStyle = '#ffffff';
+                        [-25, 0, 25].forEach((x, i) => {
+                            this.ctx.beginPath();
+                            this.ctx.arc(x, -10 + (i%2)*8, 8, 0, Math.PI*2);
+                            this.ctx.fill();
+                        });
+                        this.ctx.fillStyle = '#ff2a5f';
+                        [-25, 0, 25].forEach((x, i) => {
+                            this.ctx.beginPath();
+                            this.ctx.arc(x, -10 + (i%2)*8, 4, 0, Math.PI*2);
+                            this.ctx.fill();
+                        });
+                        break;
+
+                    case 'flier': // STAGE 2: 飛翔型識別怪獣
+                        const wingAngle = Math.sin(this.kaijuFrame * 4) * 0.25;
+                        // Sharp Wings
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(0, -15);
+                        this.ctx.quadraticCurveTo(70, -70 + wingAngle*50, 110, -30);
+                        this.ctx.lineTo(40, 20);
+                        this.ctx.lineTo(0, 5);
+                        this.ctx.lineTo(-40, 20);
+                        this.ctx.lineTo(-110, -30);
+                        this.ctx.quadraticCurveTo(-70, -70 + wingAngle*50, 0, -15);
+                        this.ctx.fill();
+
+                        // Glowing Beak & Eye
+                        this.ctx.fillStyle = '#ffffff';
+                        this.ctx.beginPath();
+                        this.ctx.arc(0, -30, 10, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        this.ctx.fillStyle = '#00f0ff';
+                        this.ctx.beginPath();
+                        this.ctx.arc(0, -30, 5, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        break;
+
+                    case 'armored': // STAGE 3: 重装甲本獣
+                        // Outer Hexagonal Armor Body
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(-65, -45); this.ctx.lineTo(65, -45);
+                        this.ctx.lineTo(85, 15); this.ctx.lineTo(50, 60);
+                        this.ctx.lineTo(-50, 60); this.ctx.lineTo(-85, 15);
+                        this.ctx.closePath();
+                        this.ctx.fill();
+
+                        // Horns
+                        this.ctx.fillStyle = '#ffffff';
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(-45, -45); this.ctx.lineTo(-75, -85); this.ctx.lineTo(-25, -50);
+                        this.ctx.moveTo(45, -45); this.ctx.lineTo(75, -85); this.ctx.lineTo(25, -50);
+                        this.ctx.fill();
+                        break;
+
+                    case 'humanoid': // STAGE 4: 怪獣9号風
+                        // Slender Visage & Geometry
+                        this.ctx.beginPath();
+                        this.ctx.ellipse(0, 0, 35, 65, 0, 0, Math.PI * 2);
+                        this.ctx.fill();
+
+                        // Core Orbs
+                        this.ctx.fillStyle = '#ffffff';
+                        this.ctx.beginPath();
+                        this.ctx.arc(0, -70, 14, 0, Math.PI * 2);
+                        this.ctx.fill();
+
+                        this.ctx.fillStyle = '#ec4899';
+                        this.ctx.beginPath();
+                        this.ctx.arc(0, 0, 12, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        break;
+
+                    case 'kaiju8': // STAGE 5: 怪獣8号型大怪獣
+                    default:
+                        // Skull Mask & Apex Horns
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(0, -80);
+                        this.ctx.lineTo(70, -20);
+                        this.ctx.lineTo(45, 50);
+                        this.ctx.lineTo(0, 70);
+                        this.ctx.lineTo(-45, 50);
+                        this.ctx.lineTo(-70, -20);
+                        this.ctx.closePath();
+                        this.ctx.fill();
+
+                        // Glowing Skull Facet & Eyes
+                        this.ctx.fillStyle = '#ffffff';
+                        this.ctx.beginPath();
+                        this.ctx.arc(-20, -25, 10, 0, Math.PI * 2);
+                        this.ctx.arc(20, -25, 10, 0, Math.PI * 2);
+                        this.ctx.fill();
+
+                        this.ctx.fillStyle = '#00f0ff';
+                        this.ctx.beginPath();
+                        this.ctx.arc(-20, -25, 5, 0, Math.PI * 2);
+                        this.ctx.arc(20, -25, 5, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        break;
+                }
+
+                // White Hit Flash Overlay
+                if (this.hitFlashTimer > 0) {
+                    this.ctx.shadowBlur = 0;
+                    const g = this.ctx.createRadialGradient(0, 0, 0, 0, 0, 95);
+                    g.addColorStop(0, `rgba(255, 255, 255, ${this.hitFlashTimer})`);
+                    g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    this.ctx.fillStyle = g;
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, 95, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.hitFlashTimer -= 0.1;
+                }
+
+                this.ctx.restore();
+            }
+
+            loop() {
+                this.ctx.clearRect(0, 0, this.w, this.h);
+
+                if (game) {
+                    this.drawKaiju(game.currentStage);
+                }
+
+                // Render Attack Animations
+                for (let i = this.slashes.length - 1; i >= 0; i--) {
+                    const s = this.slashes[i];
+                    s.progress += 0.07;
+
+                    if (s.progress >= 1.0) {
+                        this.slashes.splice(i, 1);
+                        continue;
+                    }
+
+                    this.ctx.save();
+                    this.ctx.strokeStyle = s.color;
+                    this.ctx.shadowColor = s.color;
+                    this.ctx.shadowBlur = 20;
+
+                    if (s.type === 'slash' || s.type === 'lightning') {
+                        this.ctx.lineWidth = (s.type === 'lightning' ? 10 : 6) * (1 - s.progress);
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(s.x1, s.y1);
+                        this.ctx.lineTo(
+                            s.x1 + (s.x2 - s.x1) * s.progress,
+                            s.y1 + (s.y2 - s.y1) * s.progress
+                        );
+                        this.ctx.stroke();
+                    } else if (s.type === 'punch') {
+                        const curR = s.radius + (s.maxRadius - s.radius) * s.progress;
+                        this.ctx.lineWidth = 6 * (1 - s.progress);
+                        this.ctx.beginPath();
+                        this.ctx.arc(s.x, s.y, curR, 0, Math.PI * 2);
+                        this.ctx.stroke();
+                    }
+
+                    this.ctx.restore();
+                }
+
+                // Render Particles
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.life -= p.decay;
+
+                    if (p.life <= 0) {
+                        this.particles.splice(i, 1);
+                        continue;
+                    }
+
+                    this.ctx.save();
+                    this.ctx.globalAlpha = p.life;
+                    this.ctx.fillStyle = p.color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.restore();
+                }
+
+                // Render Floating Damage Text
+                for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+                    const ft = this.floatingTexts[i];
+                    ft.y += ft.vy;
+                    ft.life -= 0.015;
+
+                    if (ft.life <= 0) {
+                        this.floatingTexts.splice(i, 1);
+                        continue;
+                    }
+
+                    this.ctx.save();
+                    this.ctx.globalAlpha = ft.life;
+                    this.ctx.font = `900 ${Math.floor(26 * ft.scale)}px Orbitron, sans-serif`;
+                    this.ctx.fillStyle = ft.color;
+                    this.ctx.textAlign = 'center';
+                    this.ctx.shadowColor = '#000000';
+                    this.ctx.shadowBlur = 10;
+                    this.ctx.fillText(ft.text, ft.x, ft.y);
+                    this.ctx.restore();
+                }
+
+                requestAnimationFrame(() => this.loop());
+            }
+        }
+
+        /* --- 5. PUZZLE ENGINE (MATCH & LINK) --- */
+        class PuzzleEngine {
+            constructor(gameEngine) {
+                this.game = gameEngine;
+                this.gridEl = document.getElementById('puzzle-grid');
+                this.chainText = document.getElementById('puzzle-chain-text');
+                this.cols = 6;
+                this.rows = 5;
+                this.tiles = [];
+                this.types = ['🗡️', '🔫', '⚡', '🔥', '❤️'];
+                this.isDragging = false;
+                this.chain = [];
+                
+                this.bindEvents();
+            }
+
+            initGrid() {
+                this.gridEl.innerHTML = '';
+                this.tiles = [];
+                for (let i = 0; i < this.cols * this.rows; i++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'puzzle-tile flex items-center justify-center text-3xl sm:text-4xl bg-slate-900 rounded-lg border border-slate-700 shadow-sm transition-all duration-100 cursor-pointer select-none';
+                    tile.dataset.index = i;
+                    this.setRandomType(tile);
+                    this.gridEl.appendChild(tile);
+                    this.tiles.push(tile);
+                }
+                this.updateChainText();
+            }
+
+            setRandomType(tile) {
+                const type = this.types[Math.floor(Math.random() * this.types.length)];
+                tile.dataset.type = type;
+                tile.textContent = type;
+                tile.classList.remove('ring-4', 'ring-cyan-400', 'scale-90', 'opacity-50', 'bg-slate-700');
+            }
+
+            bindEvents() {
+                this.gridEl.addEventListener('pointerdown', (e) => this.startDrag(e));
+                this.gridEl.addEventListener('pointermove', (e) => this.onDrag(e));
+                window.addEventListener('pointerup', () => this.endDrag());
+                window.addEventListener('pointercancel', () => this.endDrag());
+            }
+
+            startDrag(e) {
+                if(this.game.isQuizActive || !this.game.isPlaying || this.game.isAnimating) return;
+                const tile = e.target.closest('.puzzle-tile');
+                if(!tile) return;
+                
+                this.isDragging = true;
+                this.chain = [parseInt(tile.dataset.index)];
+                this.highlightTile(tile);
+                this.updateChainText();
+            }
+
+            onDrag(e) {
+                if(!this.isDragging) return;
+                e.preventDefault();
+                const touch = e;
+                const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                if(!el) return;
+                const tile = el.closest('.puzzle-tile');
+                if(!tile) return;
+
+                const index = parseInt(tile.dataset.index);
+                const lastIndex = this.chain[this.chain.length - 1];
+                
+                if (index === lastIndex) return;
+
+                if (this.isAdjacent(index, lastIndex) && this.tiles[index].dataset.type === this.tiles[lastIndex].dataset.type) {
+                    if (this.chain.length > 1 && index === this.chain[this.chain.length - 2]) {
+                        this.unhighlightTile(this.tiles[lastIndex]);
+                        this.chain.pop();
+                    } else if (!this.chain.includes(index)) {
+                        this.chain.push(index);
+                        this.highlightTile(tile);
+                    }
+                    this.updateChainText();
+                }
+            }
+
+            endDrag() {
+                if(!this.isDragging) return;
+                this.isDragging = false;
+                
+                if (this.chain.length >= 3) {
+                    this.processChain();
+                } else {
+                    this.chain.forEach(idx => this.unhighlightTile(this.tiles[idx]));
+                }
+                this.chain = [];
+                this.updateChainText();
+            }
+
+            isAdjacent(idx1, idx2) {
+                const c1 = idx1 % this.cols;
+                const r1 = Math.floor(idx1 / this.cols);
+                const c2 = idx2 % this.cols;
+                const r2 = Math.floor(idx2 / this.cols);
+                return Math.abs(c1 - c2) <= 1 && Math.abs(r1 - r2) <= 1;
+            }
+
+            highlightTile(tile) {
+                tile.classList.add('ring-4', 'ring-cyan-400', 'scale-90', 'opacity-80', 'bg-slate-700');
+            }
+
+            unhighlightTile(tile) {
+                tile.classList.remove('ring-4', 'ring-cyan-400', 'scale-90', 'opacity-80', 'bg-slate-700');
+            }
+
+            updateChainText() {
+                if(this.chainText) {
+                    this.chainText.textContent = `CHAIN: ${this.chain.length}`;
+                    if(this.chain.length >= 3) {
+                        this.chainText.classList.add('text-yellow-400', 'glow-yellow');
+                    } else {
+                        this.chainText.classList.remove('text-yellow-400', 'glow-yellow');
+                    }
+                }
+            }
+
+            processChain() {
+                const chainLength = this.chain.length;
+                this.game.isAnimating = true; // lock input until quiz opens
+                
+                this.chain.forEach(idx => {
+                    const tile = this.tiles[idx];
+                    tile.textContent = '✨';
+                    tile.classList.add('opacity-0');
+                    this.unhighlightTile(tile);
+                });
+
+                setTimeout(() => {
+                    this.applyGravity();
+                    this.game.isAnimating = false;
+                    if (this.game.isPlaying) this.game.showQuiz(chainLength);
+                }, 300);
+            }
+
+            applyGravity() {
+                for (let c = 0; c < this.cols; c++) {
+                    let emptySlots = 0;
+                    for (let r = this.rows - 1; r >= 0; r--) {
+                        const idx = r * this.cols + c;
+                        if (this.tiles[idx].classList.contains('opacity-0')) {
+                            emptySlots++;
+                        } else if (emptySlots > 0) {
+                            const targetIdx = (r + emptySlots) * this.cols + c;
+                            this.swapTileData(idx, targetIdx);
+                        }
+                    }
+                    for (let r = 0; r < emptySlots; r++) {
+                        const idx = r * this.cols + c;
+                        this.setRandomType(this.tiles[idx]);
+                        this.tiles[idx].classList.remove('opacity-0');
+                    }
+                }
+            }
+
+            swapTileData(idx1, idx2) {
+                const t1 = this.tiles[idx1];
+                const t2 = this.tiles[idx2];
+                const type1 = t1.dataset.type;
+                const text1 = t1.textContent;
+                
+                t1.dataset.type = t2.dataset.type;
+                t1.textContent = t2.textContent;
+                t1.classList.add('opacity-0');
+                
+                t2.dataset.type = type1;
+                t2.textContent = text1;
+                t2.classList.remove('opacity-0');
+            }
+        }
+
+        /* --- 6. MAIN GAME LOGIC & CRITICAL TIMER ENGINE --- */
+        class GameEngine {
+            constructor() {
+                this.currentStage = 0;
+                this.score = 0;
+                this.combo = 0;
+                this.maxCombo = 0;
+                this.criticalCount = 0;
+                this.correctCount = 0;
+                this.totalAnswered = 0;
+                this.currentKaijuHp = 100;
+                this.maxKaijuHp = 100;
+                this.timeLeft = 30.0;
+                this.timerInterval = null;
+                this.speedInterval = null;
+                this.currentQuestion = null;
+                this.questionStartTime = 0;
+                this.wrongWords = [];
+                this.isPlaying = false;
+                this.isQuizActive = false;
+                this.isAnimating = false;
+                this.currentPuzzleMultiplier = 1.0;
+
+                this.actionCanvas = new ActionCanvas('action-canvas');
+                this.puzzleEngine = new PuzzleEngine(this);
+                this.bindEvents();
+            }
+
+            bindEvents() {
+                document.getElementById('start-btn').addEventListener('click', async () => {
+                    await soundMgr.init();
+                    this.startGame();
+                });
+
+                document.getElementById('retry-btn').addEventListener('click', () => {
+                    document.getElementById('result-screen').classList.add('hidden');
+                    this.startGame();
+                });
+
+                document.getElementById('sound-toggle').addEventListener('click', () => {
+                    soundMgr.enabled = !soundMgr.enabled;
+                    document.getElementById('sound-toggle').textContent = soundMgr.enabled ? '🔊' : '🔇';
+                });
+
+                document.getElementById('speech-btn').addEventListener('click', () => {
+                    this.speakCurrentWord();
+                });
+
+                const choiceBtns = document.querySelectorAll('.choice-btn');
+                choiceBtns.forEach(btn => {
+                    btn.addEventListener('click', (e) => this.handleAnswer(e.currentTarget.textContent.trim()));
+                });
+            }
+
+            startGame() {
+                this.currentStage = 0;
+                this.score = 0;
+                this.combo = 0;
+                this.maxCombo = 0;
+                this.criticalCount = 0;
+                this.correctCount = 0;
+                this.totalAnswered = 0;
+                this.wrongWords = [];
+                this.isPlaying = true;
+                this.isQuizActive = false;
+                this.isAnimating = false;
+
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('quiz-panel').classList.add('hidden');
+                document.getElementById('score-display').textContent = '00000';
+                document.getElementById('combo-container').style.opacity = '0';
+                document.getElementById('combo-count').textContent = '0';
+                document.getElementById('damage-power').textContent = 'x1.0';
+                document.getElementById('speed-ms-text').textContent = '0.0s';
+                document.getElementById('speed-bar').style.width = '100%';
+                this.currentPuzzleMultiplier = 1.0;
+                clearInterval(this.timerInterval);
+                clearInterval(this.speedInterval);
+                
+                this.puzzleEngine.initGrid();
+                this.loadStage(0);
+            }
+
+            loadStage(stageIdx) {
+                if (stageIdx >= KAIJU_STAGES.length) {
+                    this.endGame(true);
+                    return;
+                }
+
+                this.currentStage = stageIdx;
+                this.isAnimating = true; // locked until the intro banner ends
+                const stage = KAIJU_STAGES[stageIdx];
+                this.currentKaijuHp = stage.maxHp;
+                this.maxKaijuHp = stage.maxHp;
+                this.timeLeft = 30.0;
+
+                // UI Updates
+                document.getElementById('stage-badge').textContent = stage.title;
+                document.getElementById('kaiju-name').textContent = stage.name;
+                document.getElementById('fortitude-val').textContent = stage.fortitude.toFixed(1);
+                this.updateHpBar();
+                this.updateTimerBar();
+
+                // Show Stage Transform Banner Animation
+                const transScreen = document.getElementById('transform-screen');
+                document.getElementById('unleash-num').textContent = stage.fortitude.toFixed(1);
+                transScreen.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    transScreen.classList.add('hidden');
+                    this.isAnimating = false;
+                    this.startTimers();
+                }, 1100);
+            }
+
+            startTimers() {
+                clearInterval(this.timerInterval);
+                // Speed interval is now handled per quiz
+
+                // Stage Timer
+                this.lastTick = performance.now();
+                this.timerInterval = setInterval(() => {
+                    const now = performance.now();
+                    const dt = (now - this.lastTick) / 1000;
+                    this.lastTick = now;
+                    if (!this.isPlaying || this.isAnimating) return;
+                    this.timeLeft -= dt;
+                    if (this.timeLeft <= 0) {
+                        this.timeLeft = 0;
+                        this.updateTimerBar();
+                        this.endGame(false);
+                    } else {
+                        this.updateTimerBar();
+                    }
+                }, 100);
+            }
+
+            updateTimerBar() {
+                document.getElementById('timer-text').textContent = `${this.timeLeft.toFixed(1)}s`;
+                const pct = Math.max(0, (this.timeLeft / 30.0) * 100);
+                document.getElementById('timer-bar').style.width = `${pct}%`;
+            }
+
+            updateHpBar() {
+                document.getElementById('kaiju-hp-text').textContent = `${Math.ceil(this.currentKaijuHp)}/${this.maxKaijuHp}`;
+                const pct = Math.max(0, (this.currentKaijuHp / this.maxKaijuHp) * 100);
+                document.getElementById('kaiju-hp-bar').style.width = `${pct}%`;
+            }
+
+            showQuiz(chainLength) {
+                this.isQuizActive = true;
+                // Calculate puzzle multiplier: 1.0 base + 0.3 per extra chain item
+                this.currentPuzzleMultiplier = 1.0 + ((chainLength - 3) * 0.3);
+                document.getElementById('damage-power').textContent = `x${this.currentPuzzleMultiplier.toFixed(1)}`;
+                
+                document.getElementById('quiz-panel').classList.remove('hidden');
+                this.nextQuestion();
+            }
+
+            nextQuestion() {
+                let randomItem;
+                do {
+                    randomItem = QUESTION_DATABASE[Math.floor(Math.random() * QUESTION_DATABASE.length)];
+                } while (randomItem === this.currentQuestion && QUESTION_DATABASE.length > 1);
+                this.currentQuestion = randomItem;
+                this.questionStartTime = performance.now();
+
+                document.getElementById('question-category').textContent = randomItem.cat;
+                document.getElementById('word-question').textContent = randomItem.q;
+                
+                this.speakCurrentWord();
+
+                // Generate 4 Choices
+                const choices = [randomItem.answer, ...randomItem.dummy];
+                for (let i = choices.length - 1; i > 0; i--) {
+                    const k = Math.floor(Math.random() * (i + 1));
+                    [choices[i], choices[k]] = [choices[k], choices[i]];
+                }
+
+                const choiceBtns = document.querySelectorAll('.choice-btn');
+                choiceBtns.forEach((btn, idx) => {
+                    btn.textContent = choices[idx];
+                });
+
+                // Start Speed Meter for Quiz
+                clearInterval(this.speedInterval);
+                this.speedInterval = setInterval(() => {
+                    if (!this.isPlaying || !this.isQuizActive) return;
+                    const elapsed = (performance.now() - this.questionStartTime) / 1000;
+                    document.getElementById('speed-ms-text').textContent = `${elapsed.toFixed(1)}s`;
+                    
+                    // Bar Pct (max 5s)
+                    const pct = Math.max(0, 100 - (elapsed / 5.0) * 100);
+                    document.getElementById('speed-bar').style.width = `${pct}%`;
+
+                    if (elapsed <= 1.5) {
+                        document.getElementById('speed-zone-text').textContent = '1.5s (3.0x DAMAGE)';
+                        document.getElementById('speed-zone-text').className = 'text-yellow-300 font-black glow-yellow';
+                    } else if (elapsed <= 2.5) {
+                        document.getElementById('speed-zone-text').textContent = '2.5s (1.5x GREAT)';
+                        document.getElementById('speed-zone-text').className = 'text-cyan-300 font-bold';
+                    } else {
+                        document.getElementById('speed-zone-text').textContent = 'SLOW (1.0x NORMAL)';
+                        document.getElementById('speed-zone-text').className = 'text-slate-400';
+                    }
+                }, 50);
+            }
+
+            speakCurrentWord() {
+                if (this.currentQuestion) speakEnglish(this.currentQuestion.q);
+            }
+
+            triggerAttackFlash(type = 'normal') {
+                let el = document.getElementById('strike-flash');
+                if (type === 'critical') el = document.getElementById('critical-flash');
+                else if (type === 'counter') el = document.getElementById('counter-flash');
+
+                el.style.opacity = '1';
+                setTimeout(() => el.style.opacity = '0', 200);
+            }
+
+            triggerBannerText(text) {
+                const banner = document.getElementById('attack-banner');
+                banner.textContent = text;
+                banner.style.opacity = '1';
+                setTimeout(() => banner.style.opacity = '0', 900);
+            }
+
+            handleAnswer(selectedText) {
+                if (!this.isPlaying || !this.currentQuestion || !this.isQuizActive || this.isAnimating) return;
+
+                const responseTimeSec = (performance.now() - this.questionStartTime) / 1000;
+                this.totalAnswered++;
+                clearInterval(this.speedInterval);
+                this.isAnimating = true;
+
+                const isCorrect = selectedText === this.currentQuestion.answer;
+
+                if (isCorrect) {
+                    this.correctCount++;
+                    this.combo++;
+                    if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+
+                    // Speed Critical Tiers
+                    const isCritical = responseTimeSec <= 1.5;
+                    const isGreat = !isCritical && responseTimeSec <= 2.5;
+
+                    if (isCritical) this.criticalCount++;
+
+                    const baseDamage = 35;
+                    const speedMultiplier = isCritical ? 3.0 : (isGreat ? 1.5 : 1.0);
+                    const comboMultiplier = 1 + (this.combo * 0.15);
+                    const damage = Math.round(baseDamage * speedMultiplier * comboMultiplier * this.currentPuzzleMultiplier);
+
+                    this.currentKaijuHp -= damage;
+                    if (this.currentKaijuHp < 0) this.currentKaijuHp = 0;
+
+                    const points = Math.round(150 * speedMultiplier * comboMultiplier * this.currentPuzzleMultiplier);
+                    this.score += points;
+                    document.getElementById('score-display').textContent = String(this.score).padStart(5, '0');
+
+                    soundMgr.playCorrect();
+                    soundMgr.playImpact('slash', isCritical);
+
+                    // Screen Flash & Screen Shake
+                    this.triggerAttackFlash(isCritical ? 'critical' : 'normal');
+                    const container = document.getElementById('game-container');
+                    container.classList.remove('shake-sm', 'shake-crit');
+                    void container.offsetWidth;
+                    container.classList.add(isCritical ? 'shake-crit' : 'shake-sm');
+
+                    // Trigger Attack Canvas Animation
+                    this.actionCanvas.triggerPlayerAttack('slash', damage, isCritical);
+
+                    // Action Banner
+                    if (isCritical) {
+                        this.triggerBannerText("⚡ CRITICAL HIT!! 隊員極大一閃！");
+                    } else if (isGreat) {
+                        this.triggerBannerText("GREAT! 高速連撃！");
+                    } else {
+                        this.triggerBannerText("隊員打撃ヒット！");
+                    }
+
+                    // Combo & Multiplier Display
+                    document.getElementById('combo-count').textContent = this.combo;
+                    document.getElementById('combo-container').style.opacity = '1';
+
+                    this.updateHpBar();
+
+                    // Check Kaiju Elimination (Stage Clear)
+                    if (this.currentKaijuHp <= 0) {
+                        clearInterval(this.timerInterval);
+                        clearInterval(this.speedInterval);
+                        this.isQuizActive = false;
+                        document.getElementById('quiz-panel').classList.add('hidden');
+
+                        // Elimination Overlay Animation
+                        setTimeout(() => {
+                            const elimOverlay = document.getElementById('eliminated-overlay');
+                            elimOverlay.style.opacity = '1';
+
+                            setTimeout(() => {
+                                elimOverlay.style.opacity = '0';
+                                this.loadStage(this.currentStage + 1);
+                            }, 1500);
+                        }, 800);
+                        return;
+                    }
+
+                } else {
+                    // WRONG ANSWER: KAIJU COUNTER ATTACK
+                    this.combo = 0;
+                    soundMgr.playCounter();
+
+                    this.triggerAttackFlash('counter');
+                    const container = document.getElementById('game-container');
+                    container.classList.remove('shake-sm', 'shake-crit');
+                    void container.offsetWidth;
+                    container.classList.add('shake-crit');
+
+                    this.actionCanvas.triggerKaijuCounter();
+                    this.triggerBannerText('🚨 怪獣の反撃！');
+
+                    document.getElementById('combo-container').style.opacity = '0';
+
+                    // Track Wrong Question
+                    if (!this.wrongWords.some(w => w.q === this.currentQuestion.q)) {
+                        this.wrongWords.push(this.currentQuestion);
+                    }
+
+                    // Time Penalty
+                    this.timeLeft = Math.max(0, this.timeLeft - 3.0);
+                    this.updateTimerBar();
+                }
+
+                // Rest Time before returning to puzzle (Success: 1.8s, Fail: 1.2s)
+                const restTime = isCorrect ? 1800 : 1200;
+
+                setTimeout(() => {
+                    this.isAnimating = false;
+                    this.isQuizActive = false;
+                    document.getElementById('quiz-panel').classList.add('hidden');
+                    
+                    // Reset Speed Meter visually
+                    document.getElementById('speed-ms-text').textContent = `0.0s`;
+                    document.getElementById('speed-bar').style.width = `100%`;
+                }, restTime);
+            }
+
+            endGame(isClear) {
+                this.isPlaying = false;
+                this.isAnimating = false;
+                this.isQuizActive = false;
+                clearInterval(this.timerInterval);
+                clearInterval(this.speedInterval);
+                document.getElementById('quiz-panel').classList.add('hidden');
+
+                const resScreen = document.getElementById('result-screen');
+                resScreen.classList.remove('hidden');
+
+                const resBadge = document.getElementById('result-badge');
+                const resTitle = document.getElementById('result-title');
+                const resSubtitle = document.getElementById('result-subtitle');
+
+                if (isClear) {
+                    resBadge.className = "inline-block px-3 py-1 bg-emerald-950 border border-emerald-500 text-emerald-400 text-xs font-orbitron font-bold rounded-full mb-2 box-glow-gold";
+                    resBadge.textContent = "MISSION ACCOMPLISHED";
+                    resTitle.textContent = "全怪獣 討伐完了！";
+                    resSubtitle.textContent = "防衛隊トップクラスの英語討伐力を実証しました！";
+                } else {
+                    resBadge.className = "inline-block px-3 py-1 bg-red-950 border border-red-500 text-red-400 text-xs font-orbitron font-bold rounded-full mb-2 box-glow-red";
+                    resBadge.textContent = "MISSION FAILED";
+                    resTitle.textContent = "作戦限界到達...";
+                    resSubtitle.textContent = "制限時間が尽きました。知識を再強化して挑め！";
+                }
+
+                const accuracy = this.totalAnswered > 0 ? Math.round((this.correctCount / this.totalAnswered) * 100) : 0;
+                document.getElementById('res-score').textContent = this.score;
+                document.getElementById('res-accuracy').textContent = `${accuracy}%`;
+                document.getElementById('res-criticals').textContent = `${this.criticalCount}回 (⚡)`;
+                document.getElementById('res-maxcombo').textContent = `${this.maxCombo} MAX`;
+
+                // Fill Incorrect Review List
+                const wrongListContainer = document.getElementById('wrong-words-list');
+                const wrongBadge = document.getElementById('wrong-count-badge');
+                wrongListContainer.innerHTML = '';
+                wrongBadge.textContent = `${this.wrongWords.length}件`;
+
+                if (this.wrongWords.length === 0) {
+                    wrongListContainer.innerHTML = '<div class="text-slate-400 text-center py-4">全問正解！見事な討伐成績です！</div>';
+                } else {
+                    this.wrongWords.forEach(item => {
+                        const row = document.createElement('div');
+                        row.className = 'flex justify-between items-center bg-slate-950/90 p-2.5 rounded-lg border border-slate-800';
+                        row.innerHTML = `
+                            <div>
+                                <span class="text-[10px] text-cyan-400 font-bold block">${item.cat}</span>
+                                <span class="font-bold font-orbitron text-white text-xs">${item.q}</span>
+                                <span class="text-slate-300 ml-2 text-xs">正解: ${item.answer}</span>
+                            </div>
+                            <button class="speech-mini-btn text-xs bg-slate-800 px-2.5 py-1 rounded-md text-cyan-400 hover:bg-slate-700 active:scale-95 transition">🔊</button>
+                        `;
+                        row.querySelector('.speech-mini-btn').addEventListener('click', () => speakEnglish(item.q));
+                        wrongListContainer.appendChild(row);
+                    });
+                }
+            }
+        }
+
+        // Initialize Game Engine on Window Load
+        let game = null;
+        window.addEventListener('load', () => {
+            game = new GameEngine();
+        });
+    </script>
+</body>
+</html>
