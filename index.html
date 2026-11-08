@@ -1,1430 +1,1211 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>怪獣8号×英検4級 討伐アクション ULTRA</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tone.js for Web Audio Synth SFX -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Noto+Sans+JP:wght@500;700;900&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        orbitron: ['Orbitron', 'sans-serif'],
-                        noto: ['Noto Sans JP', 'sans-serif'],
-                    },
-                    colors: {
-                        kaijuBlue: '#00f0ff',
-                        kaijuDark: '#030712',
-                        kaijuNavy: '#0b1329',
-                        defenseRed: '#ff2a5f',
-                        defenseYellow: '#ffb703',
-                        defenseGold: '#ffe600'
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background-color: #02040a;
-            color: #ffffff;
-            touch-action: manipulation;
-            user-select: none;
-            -webkit-user-select: none;
-            overflow: hidden;
-        }
-
-        /* Sci-Fi Glow Effects */
-        .glow-blue { text-shadow: 0 0 10px rgba(0, 240, 255, 0.9), 0 0 20px rgba(0, 240, 255, 0.5); }
-        .glow-red { text-shadow: 0 0 10px rgba(255, 42, 95, 0.9), 0 0 20px rgba(255, 42, 95, 0.5); }
-        .glow-yellow { text-shadow: 0 0 10px rgba(255, 230, 0, 0.9), 0 0 25px rgba(255, 230, 0, 0.7); }
-        
-        .box-glow-blue {
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3), inset 0 0 15px rgba(0, 240, 255, 0.15);
-            border: 1px solid rgba(0, 240, 255, 0.6);
-        }
-        .box-glow-gold {
-            box-shadow: 0 0 25px rgba(255, 230, 0, 0.4), inset 0 0 15px rgba(255, 230, 0, 0.2);
-            border: 1px solid rgba(255, 230, 0, 0.8);
-        }
-
-        /* Screen Shake Animations */
-        @keyframes shake-light {
-            0% { transform: translate(0, 0); }
-            20% { transform: translate(-5px, 5px); }
-            40% { transform: translate(5px, -5px); }
-            60% { transform: translate(-3px, -3px); }
-            80% { transform: translate(3px, 3px); }
-            100% { transform: translate(0, 0); }
-        }
-        @keyframes shake-critical {
-            0% { transform: translate(0, 0) scale(1.02) rotate(0deg); }
-            10% { transform: translate(-18px, 14px) rotate(-3deg); }
-            25% { transform: translate(18px, -14px) rotate(3deg); }
-            40% { transform: translate(-12px, -10px) rotate(-2deg); }
-            55% { transform: translate(12px, 10px) rotate(2deg); }
-            70% { transform: translate(-6px, 6px); }
-            100% { transform: translate(0, 0) scale(1.0); }
-        }
-
-        .shake-sm { animation: shake-light 0.22s cubic-bezier(.36,.07,.19,.97) both; }
-        .shake-crit { animation: shake-critical 0.45s cubic-bezier(.36,.07,.19,.97) both; }
-
-        /* Tech Button Styling */
-        .tech-button {
-            clip-path: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
-            transition: transform 0.08s ease, filter 0.08s ease, background-color 0.1s ease;
-        }
-        .tech-button:active {
-            transform: scale(0.95);
-            filter: brightness(1.35);
-        }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
-</head>
-<body class="h-screen w-screen flex flex-col justify-between overflow-hidden relative">
-
-    <!-- MAIN APP CONTAINER -->
-    <div id="game-container" class="relative w-full h-full max-w-md mx-auto flex flex-col justify-between bg-kaijuDark overflow-hidden shadow-2xl border-x border-slate-800">
-        
-        <!-- IMPACT FLASH OVERLAYS -->
-        <div id="counter-flash" class="absolute inset-0 bg-red-600/50 z-30 pointer-events-none opacity-0 transition-opacity duration-150"></div>
-        <div id="strike-flash" class="absolute inset-0 bg-cyan-400/35 z-30 pointer-events-none opacity-0 transition-opacity duration-150"></div>
-        <div id="critical-flash" class="absolute inset-0 bg-yellow-300/50 z-30 pointer-events-none opacity-0 transition-opacity duration-200"></div>
-
-        <!-- HEADER / STATUS BAR -->
-        <header class="p-3 bg-slate-950/90 border-b border-cyan-900/60 z-20 flex justify-between items-center backdrop-blur-md">
-            <div>
-                <div class="text-[10px] text-cyan-400 font-orbitron tracking-widest flex items-center gap-1.5 font-bold">
-                    <span class="w-2 h-2 rounded-full bg-cyan-400 inline-block animate-ping"></span>
-                    JAKDF DEFENSE FORCE
-                </div>
-                <div class="text-xs font-bold text-slate-200 mt-0.5">隊員: <span class="text-cyan-300 font-orbitron font-extrabold">日比野カフカ (怪獣8号)</span></div>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <div class="text-right">
-                    <div class="text-[9px] text-slate-400 font-orbitron tracking-wider">FORTITUDE</div>
-                    <div class="text-base font-black text-cyan-400 font-orbitron leading-none glow-blue" id="fortitude-val">3.2</div>
-                </div>
-                <button id="sound-toggle" class="p-2 bg-slate-900 border border-slate-700 rounded-lg text-sm text-cyan-400 active:scale-95 shadow">
-                    🔊
-                </button>
-            </div>
-        </header>
-
-        <!-- TOP MAIN: STAGE & KAIJU ACTION CANVAS AREA -->
-        <div class="relative flex-1 flex flex-col justify-between items-center p-3 z-10 overflow-hidden">
-            
-            <!-- STAGE & SCORE INFO -->
-            <div class="w-full flex justify-between items-end z-10">
-                <div>
-                    <span id="stage-badge" class="px-2.5 py-0.5 bg-red-950/90 border border-red-500/60 text-red-400 text-xs font-black rounded tracking-widest font-orbitron shadow">
-                        TARGET 01: 幼獣
-                    </span>
-                    <h2 id="kaiju-name" class="text-lg font-black text-white mt-0.5 drop-shadow-md flex items-center gap-2">
-                        菌類系本獣 (タイプ01)
-                    </h2>
-                </div>
-                <div class="text-right">
-                    <div class="text-[9px] text-slate-400 font-orbitron">TOTAL SCORE</div>
-                    <div id="score-display" class="text-xl font-black text-cyan-400 font-orbitron glow-blue">00000</div>
-                </div>
-            </div>
-
-            <!-- KAIJU HP GAUGE -->
-            <div class="w-full mt-1.5 z-10">
-                <div class="flex justify-between text-xs font-bold text-slate-300 mb-1">
-                    <span class="flex items-center gap-1 text-red-400">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                        怪獣残存バイタル (HP)
-                    </span>
-                    <span id="kaiju-hp-text" class="font-orbitron text-red-400 font-extrabold">120/120</span>
-                </div>
-                <div class="w-full bg-slate-950 border border-slate-800 h-3.5 rounded-full overflow-hidden p-0.5 shadow-inner">
-                    <div id="kaiju-hp-bar" class="h-full bg-gradient-to-r from-red-600 via-rose-500 to-orange-400 rounded-full transition-all duration-200 w-full shadow-lg"></div>
-                </div>
-            </div>
-
-            <!-- ANIMATED KAIJU & ACTION CANVAS -->
-            <div id="canvas-wrapper" class="relative w-full h-56 sm:h-64 my-auto flex justify-center items-center">
-                <canvas id="action-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-0"></canvas>
-                
-                <!-- Combo Overlay -->
-                <div id="combo-container" class="absolute top-2 left-2 pointer-events-none opacity-0 transition-all duration-200 flex flex-col z-10">
-                    <span id="combo-count" class="text-4xl font-black italic font-orbitron text-yellow-400 glow-yellow leading-none">0</span>
-                    <span class="text-[10px] font-black font-orbitron text-yellow-200 tracking-widest mt-0.5">COMBOS!</span>
-                </div>
-
-                <!-- Attack Type Banner -->
-                <div id="attack-banner" class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-cyan-950/90 border border-cyan-400 text-cyan-300 text-xs font-black font-orbitron px-3 py-1 rounded-full opacity-0 transition-all duration-200 pointer-events-none shadow-lg tracking-wider z-20">
-                    SONIC IMPACT!
-                </div>
-
-                <!-- Elimination / Clear Text Overlay -->
-                <div id="eliminated-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-red-950/40 pointer-events-none opacity-0 transition-opacity duration-200 z-20">
-                    <div class="text-4xl font-black font-orbitron text-red-500 glow-red tracking-widest animate-bounce">ELIMINATED!</div>
-                    <div class="text-sm font-bold text-white bg-slate-950/80 px-3 py-1 rounded border border-red-500 mt-2">討伐完了 — フォルティチュード上昇！</div>
-                </div>
-            </div>
-
-            <!-- PLAYER VITAL TIMER & SPEED METER -->
-            <div class="w-full z-10 space-y-1">
-                <!-- SPEED METER (CRITICAL ZONE) -->
-                <div class="flex justify-between items-center text-[10px] text-slate-400">
-                    <span class="font-orbitron font-bold text-yellow-400 flex items-center gap-1">
-                        ⚡ CRITICAL SPEED: <span id="speed-zone-text" class="text-white">1.5s (3.0x DAMAGE)</span>
-                    </span>
-                    <span id="speed-ms-text" class="font-orbitron text-slate-300">0.0s</span>
-                </div>
-                <div class="w-full bg-slate-950 border border-slate-800 h-2 rounded-full overflow-hidden relative">
-                    <div id="speed-bar" class="h-full bg-gradient-to-r from-yellow-400 via-cyan-400 to-blue-600 transition-all duration-75 w-full"></div>
-                    <!-- 1.5s indicator marker -->
-                    <div class="absolute top-0 bottom-0 left-[30%] w-0.5 bg-yellow-300 z-10"></div>
-                </div>
-
-                <!-- STAGE TIMER -->
-                <div class="flex justify-between items-center text-xs text-slate-400 pt-0.5">
-                    <span class="font-bold flex items-center gap-1 text-cyan-400">
-                        ⏱️ 作戦限界時間
-                    </span>
-                    <span id="timer-text" class="font-orbitron font-extrabold text-yellow-400">30.0s</span>
-                </div>
-                <div class="w-full bg-slate-950 border border-slate-800 h-1.5 rounded-full overflow-hidden">
-                    <div id="timer-bar" class="h-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-all duration-100 w-full"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- BOTTOM MAIN: QUIZ & INPUT AREA -->
-        <div id="action-panel" class="relative z-20 bg-slate-950/95 border-t border-cyan-800/60 p-2 sm:p-3 rounded-t-2xl backdrop-blur-lg flex flex-col gap-2 shadow-[0_-10px_30px_rgba(0,0,0,0.8)] h-[280px]">
-            
-            <!-- PUZZLE GRID -->
-            <div class="flex justify-between items-center text-[10px] sm:text-xs px-2 text-slate-300">
-                <span>同じアイコンを3つ以上なぞって消せ！ (斜めOK)</span>
-                <span id="puzzle-chain-text" class="text-cyan-400 font-orbitron font-bold">CHAIN: 0</span>
-            </div>
-            <div id="puzzle-grid" class="w-full h-full max-w-sm mx-auto grid grid-cols-6 gap-1 touch-none">
-                <!-- JS will populate tiles -->
-            </div>
-
-            <!-- QUIZ OVERLAY -->
-            <div id="quiz-panel" class="absolute inset-0 z-30 bg-slate-950/98 p-4 flex flex-col gap-2.5 hidden rounded-t-2xl shadow-2xl border-t-2 border-cyan-500">
-                
-                <!-- QUESTION HEADER BOX -->
-                <div class="bg-slate-900/90 border border-cyan-500/40 p-3 rounded-xl box-glow-blue relative overflow-hidden">
-                    <div class="flex items-center justify-between mb-1">
-                        <span id="question-category" class="px-2 py-0.5 bg-cyan-950 border border-cyan-500/60 text-cyan-300 text-[10px] font-bold rounded">
-                            【英単語：和訳】
-                        </span>
-                        <div class="text-right">
-                            <span class="text-[9px] font-orbitron text-slate-400">DAMAGE MULTIPLIER: </span>
-                            <span id="damage-power" class="text-xs font-black font-orbitron text-yellow-400 glow-yellow">x1.0</span>
-                        </div>
-                    </div>
-                    
-                    <div class="flex items-center justify-between gap-2">
-                        <h1 id="word-question" class="text-xl sm:text-2xl font-black font-orbitron text-white tracking-wider leading-tight">REMEMBER</h1>
-                        <button id="speech-btn" class="p-2 bg-slate-800 hover:bg-slate-700 active:scale-90 rounded-full text-cyan-400 text-xs transition shadow flex-shrink-0" title="音声再生">
-                            🔊
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 4 CHOICES BUTTONS GRID -->
-                <div id="choices-grid" class="grid grid-cols-2 gap-2 mt-2">
-                    <button class="choice-btn tech-button bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-100 font-bold p-3 text-xs sm:text-sm text-center flex items-center justify-center min-h-[50px] rounded-lg shadow-md transition-all duration-100">
-                        覚えている
-                    </button>
-                    <button class="choice-btn tech-button bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-100 font-bold p-3 text-xs sm:text-sm text-center flex items-center justify-center min-h-[50px] rounded-lg shadow-md transition-all duration-100">
-                        忘れる
-                    </button>
-                    <button class="choice-btn tech-button bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-100 font-bold p-3 text-xs sm:text-sm text-center flex items-center justify-center min-h-[50px] rounded-lg shadow-md transition-all duration-100">
-                        練習する
-                    </button>
-                    <button class="choice-btn tech-button bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-100 font-bold p-3 text-xs sm:text-sm text-center flex items-center justify-center min-h-[50px] rounded-lg shadow-md transition-all duration-100">
-                        呼ぶ
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- OVERLAY: START SCREEN -->
-        <div id="start-screen" class="absolute inset-0 bg-slate-950/98 z-50 flex flex-col justify-between p-6 text-center backdrop-blur-md">
-            <div class="mt-4">
-                <div class="inline-block px-3 py-1 bg-cyan-950 border border-cyan-500/60 text-cyan-400 text-xs font-orbitron font-bold rounded-full mb-2 tracking-widest box-glow-blue">
-                    JAKDF 英検4級 討伐訓練プログラム
-                </div>
-                <h1 class="text-3xl font-black font-orbitron text-white leading-tight glow-blue">
-                    怪獣8号<span class="text-cyan-400 block text-2xl mt-1">英検4級 討伐アクション ULTRA</span>
-                </h1>
-                <p class="text-xs text-slate-300 mt-2 max-w-xs mx-auto leading-relaxed">
-                    1.5秒以内の「超速クリティカル回答」で3倍ダメージを叩き込め！
-                    単語・過去形・熟語・穴埋め問題を解き、全5形態の怪獣を駆逐せよ！
-                </p>
-            </div>
-
-            <!-- Kaiju Preview Graphic Canvas -->
-            <div class="my-2 flex justify-center">
-                <div class="w-36 h-36 rounded-full border-2 border-cyan-500/50 bg-gradient-to-b from-cyan-950 via-slate-900 to-slate-950 flex flex-col items-center justify-center box-glow-blue relative overflow-hidden">
-                    <span class="text-5xl animate-pulse">👾</span>
-                    <span class="text-[10px] font-orbitron text-cyan-400 font-bold mt-1">FORTITUDE 9.8</span>
-                    <div class="absolute inset-0 border border-cyan-400/30 rounded-full animate-ping"></div>
-                </div>
-            </div>
-
-            <div class="space-y-3 mb-2">
-                <button id="start-btn" class="w-full tech-button bg-gradient-to-r from-cyan-400 via-cyan-500 to-blue-600 text-slate-950 font-black text-lg py-4 rounded-xl shadow-xl shadow-cyan-500/30 active:scale-95 transition-all">
-                    討伐ミッション開始
-                </button>
-                <div class="text-[11px] text-slate-400 flex justify-center gap-3">
-                    <span>⚡ 全5形態怪獣</span>
-                    <span>💥 1.5sクリティカル</span>
-                    <span>📚 多角問題50+</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- OVERLAY: TRANSFORM / STAGE START ANIMATION -->
-        <div id="transform-screen" class="absolute inset-0 bg-slate-950/95 z-40 flex flex-col items-center justify-center p-6 text-center backdrop-blur-md hidden pointer-events-none">
-            <div class="text-cyan-400 text-xs font-orbitron tracking-widest mb-2 animate-bounce font-bold">FORCIBLE UNLEASHING</div>
-            <h2 id="transform-title" class="text-4xl font-black font-orbitron text-white glow-blue">TARGET SPOTTED</h2>
-            <div class="text-6xl font-black font-orbitron text-yellow-400 my-4 glow-yellow" id="unleash-num">9.8</div>
-            <div class="text-sm font-bold text-cyan-200">怪獣8号 変身完了 — 撃破を開始せよ！</div>
-        </div>
-
-        <!-- OVERLAY: RESULT SCREEN -->
-        <div id="result-screen" class="absolute inset-0 bg-slate-950/98 z-50 flex flex-col justify-between p-6 text-center backdrop-blur-md hidden">
-            <div class="mt-4">
-                <div id="result-badge" class="inline-block px-3 py-1 bg-emerald-950 border border-emerald-500 text-emerald-400 text-xs font-orbitron font-bold rounded-full mb-2">
-                    MISSION COMPLETE
-                </div>
-                <h2 id="result-title" class="text-3xl font-black text-white glow-blue">全怪獣 討伐完了！</h2>
-                <p id="result-subtitle" class="text-xs text-slate-400 mt-1">防衛隊員として優れた戦果を記録しました</p>
-            </div>
-
-            <!-- RESULT STATS -->
-            <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 space-y-2 text-left my-2 shadow-inner">
-                <div class="flex justify-between items-center text-sm">
-                    <span class="text-slate-400">最終スコア:</span>
-                    <span id="res-score" class="text-2xl font-black text-cyan-400 font-orbitron glow-blue">0</span>
-                </div>
-                <div class="flex justify-between items-center text-sm">
-                    <span class="text-slate-400">単語正解率:</span>
-                    <span id="res-accuracy" class="text-lg font-bold text-white font-orbitron">0%</span>
-                </div>
-                <div class="flex justify-between items-center text-sm">
-                    <span class="text-slate-400">クリティカルヒット数:</span>
-                    <span id="res-criticals" class="text-lg font-bold text-yellow-400 font-orbitron">0回 (⚡)</span>
-                </div>
-                <div class="flex justify-between items-center text-sm">
-                    <span class="text-slate-400">最大コンボ:</span>
-                    <span id="res-maxcombo" class="text-lg font-bold text-yellow-400 font-orbitron">0 MAX</span>
-                </div>
-            </div>
-
-            <!-- WRONG WORDS REVIEW SECTION -->
-            <div class="flex-1 overflow-hidden flex flex-col mb-3">
-                <div class="text-xs font-bold text-slate-400 text-left mb-1.5 flex justify-between items-center">
-                    <span>要復習問題リスト (間違えた問題)</span>
-                    <span id="wrong-count-badge" class="text-[10px] bg-red-950 text-red-400 px-2 py-0.5 rounded border border-red-800">0件</span>
-                </div>
-                <div id="wrong-words-list" class="flex-1 bg-slate-900/80 border border-slate-800 rounded-lg p-2 overflow-y-auto space-y-1.5 text-left text-xs no-scrollbar">
-                    <!-- Dynamic Incorrect Words -->
-                </div>
-            </div>
-
-            <div class="space-y-2">
-                <button id="retry-btn" class="w-full tech-button bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-base py-3.5 rounded-xl shadow-lg active:scale-95 transition">
-                    再出撃する
-                </button>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- JAVASCRIPT LOGIC -->
-    <script>
-        /* --- 1. EXTENSIVE EIKEN GRADE 4 MULTI-CATEGORY QUESTION DATABASE --- */
-        const QUESTION_DATABASE = [
-            // Category 1: 英単語（英→日）
-            { cat: "【英単語：和訳】", q: "remember", answer: "覚えている", dummy: ["忘れる", "練習する", "説明する"] },
-            { cat: "【英単語：和訳】", q: "practice", answer: "練習する", dummy: ["遊ぶ", "覚えている", "話す"] },
-            { cat: "【英単語：和訳】", q: "dangerous", answer: "危険な", dummy: ["安全な", "静かな", "親切な"] },
-            { cat: "【英単語：和訳】", q: "expensive", answer: "高価な、高い", dummy: ["安い", "珍しい", "重い"] },
-            { cat: "【英単語：和訳】", q: "understand", answer: "理解する、分かる", dummy: ["心配する", "忘れる", "驚く"] },
-            { cat: "【英単語：和訳】", q: "important", answer: "重要な、大切な", dummy: ["つまらない", "簡単な", "新しい"] },
-            { cat: "【英単語：和訳】", q: "vacation", answer: "休暇、休み", dummy: ["仕事", "祝日", "週末"] },
-            { cat: "【英単語：和訳】", q: "popular", answer: "人気のある", dummy: ["有名人", "危険な", "退屈な"] },
-            { cat: "【英単語：和訳】", q: "dictionary", answer: "辞書", dummy: ["教科書", "雑誌", "新聞"] },
-            { cat: "【英単語：和訳】", q: "future", answer: "未来、将来", dummy: ["過去", "現在", "歴史"] },
-
-            // Category 2: 日英逆引き（日→英）
-            { cat: "【英単語：英訳】", q: "「図書館」", answer: "library", dummy: ["hospital", "station", "museum"] },
-            { cat: "【英単語：英訳】", q: "「到着する」", answer: "arrive", dummy: ["leave", "travel", "become"] },
-            { cat: "【英単語：英訳】", q: "「招待する」", answer: "invite", dummy: ["introduce", "collect", "receive"] },
-            { cat: "【英単語：英訳】", q: "「注意深い」", answer: "careful", dummy: ["different", "exciting", "foreign"] },
-            { cat: "【英単語：英訳】", q: "「朝食」", answer: "breakfast", dummy: ["lunch", "dinner", "dessert"] },
-            { cat: "【英単語：英訳】", q: "「〜の前に」", answer: "before", dummy: ["after", "behind", "during"] },
-            { cat: "【英単語：英訳】", q: "「〜の間に（期間）」", answer: "during", dummy: ["between", "before", "until"] },
-            { cat: "【英単語：英訳】", q: "「天気」", answer: "weather", dummy: ["season", "future", "nature"] },
-
-            // Category 3: 穴埋め・文法問題
-            { cat: "【穴埋め問題】", q: "I go to school ___ bus.", answer: "by", dummy: ["on", "in", "with"] },
-            { cat: "【穴埋め問題】", q: "She is taller ___ me.", answer: "than", dummy: ["as", "more", "from"] },
-            { cat: "【穴埋め問題】", q: "What time ___ you get up?", answer: "do", dummy: ["are", "is", "does"] },
-            { cat: "【穴埋め問題】", q: "He ___ speak English very well.", answer: "can", dummy: ["is", "are", "do"] },
-            { cat: "【穴埋め問題】", q: "We are ___ tennis now.", answer: "playing", dummy: ["play", "played", "plays"] },
-            { cat: "【穴埋め問題】", q: "There ___ many books on the table.", answer: "are", dummy: ["is", "be", "was"] },
-            { cat: "【穴埋め問題】", q: "May I ___ your pen?", answer: "use", dummy: ["using", "used", "uses"] },
-            { cat: "【穴埋め問題】", q: "They didn't ___ to the party.", answer: "come", dummy: ["came", "coming", "comes"] },
-
-            // Category 4: 動詞の過去形
-            { cat: "【動詞の過去形】", q: "「speak」の過去形は？", answer: "spoke", dummy: ["speaked", "spoken", "speaking"] },
-            { cat: "【動詞の過去形】", q: "「make」の過去形は？", answer: "made", dummy: ["makes", "maked", "making"] },
-            { cat: "【動詞の過去形】", q: "「write」の過去形は？", answer: "wrote", dummy: ["written", "writed", "write"] },
-            { cat: "【動詞の過去形】", q: "「buy」の過去形は？", answer: "bought", dummy: ["buyed", "boughted", "buys"] },
-            { cat: "【動詞の過去形】", q: "「take」の過去形は？", answer: "took", dummy: ["taken", "taked", "takes"] },
-            { cat: "【動詞の過去形】", q: "「see」の過去形は？", answer: "saw", dummy: ["seen", "seed", "sees"] },
-            { cat: "【動詞の過去形】", q: "「run」の過去形は？", answer: "ran", dummy: ["runned", "running", "runs"] },
-            { cat: "【動詞の過去形】", q: "「give」の過去形は？", answer: "gave", dummy: ["given", "gived", "gives"] },
-
-            // Category 5: 熟語・慣用表現
-            { cat: "【熟語表現】", q: "「look for」の意味は？", answer: "〜を探す", dummy: ["〜を見る", "〜のお世話をする", "〜に似ている"] },
-            { cat: "【熟語表現】", q: "「take a photo」の意味は？", answer: "写真を撮る", dummy: ["絵を描く", "散歩する", "買い物する"] },
-            { cat: "【熟語表現】", q: "「get up」の意味は？", answer: "起きる", dummy: ["寝る", "立ち上がる", "帰る"] },
-            { cat: "【熟語表現】", q: "「look at」の意味は？", answer: "〜を見る", dummy: ["〜を探す", "〜を聞く", "〜に追いつく"] },
-            { cat: "【熟語表現】", q: "「listen to」の意味は？", answer: "〜を聴く", dummy: ["〜を話す", "〜を読む", "〜を書く"] },
-            { cat: "【熟語表現】", q: "「enjoy -ing」の意味は？", answer: "〜して楽しむ", dummy: ["〜し始める", "〜し終わる", "〜したい"] },
-            { cat: "【熟語表現】", q: "「be good at」の意味は？", answer: "〜が得意である", dummy: ["〜が好きである", "〜に慣れている", "〜を探している"] },
-            { cat: "【熟語表現】", q: "「of course」の意味は？", answer: "もちろん", dummy: ["たぶん", "絶対にない", "時々"] }
-        ];
-
-        /* --- 2. KAIJU STAGES & DETAILED DESIGNS --- */
-        const KAIJU_STAGES = [
-            { name: "菌類系幼獣 (タイプ01)", maxHp: 120, fortitude: 3.2, title: "TARGET 01: 幼獣", color: "#22c55e", shape: "fungus" },
-            { name: "飛翔型余獣 (タイプ06)", maxHp: 200, fortitude: 4.1, title: "TARGET 02: 余獣", color: "#00f0ff", shape: "flier" },
-            { name: "装甲特化型本獣 (タイプ04)", maxHp: 280, fortitude: 5.3, title: "TARGET 03: 本獣", color: "#a855f7", shape: "armored" },
-            { name: "増殖型菌類獣 (変種)", maxHp: 380, fortitude: 5.9, title: "TARGET 04: 変種", color: "#eab308", shape: "fungus" },
-            { name: "猛禽型飛翔獣 (変種)", maxHp: 480, fortitude: 6.5, title: "TARGET 05: 変種", color: "#f97316", shape: "flier" },
-            { name: "超重装甲本獣 (タイプ04-B)", maxHp: 600, fortitude: 7.1, title: "TARGET 06: 強襲獣", color: "#64748b", shape: "armored" },
-            { name: "人型識別怪獣 (初期形態)", maxHp: 720, fortitude: 7.8, title: "TARGET 07: 識別怪獣", color: "#ec4899", shape: "humanoid" },
-            { name: "猛毒菌類獣 (タイプ01-毒)", maxHp: 860, fortitude: 8.2, title: "TARGET 08: 特殊獣", color: "#84cc16", shape: "fungus" },
-            { name: "音速飛翔獣 (タイプ06-S)", maxHp: 1000, fortitude: 8.5, title: "TARGET 09: 特殊獣", color: "#38bdf8", shape: "flier" },
-            { name: "結晶装甲本獣 (タイプ04-C)", maxHp: 1150, fortitude: 8.8, title: "TARGET 10: 強化獣", color: "#d946ef", shape: "armored" },
-            { name: "人型識別怪獣 (第2形態)", maxHp: 1300, fortitude: 9.1, title: "TARGET 11: 識別怪獣", color: "#e11d48", shape: "humanoid" },
-            { name: "巨大菌類群体 (エリアボス)", maxHp: 1500, fortitude: 9.3, title: "TARGET 12: 群体獣", color: "#10b981", shape: "fungus" },
-            { name: "竜型飛翔大怪獣 (エリアボス)", maxHp: 1700, fortitude: 9.5, title: "TARGET 13: 飛翔大獣", color: "#fbbf24", shape: "flier" },
-            { name: "機動要塞本獣 (最終防衛線)", maxHp: 2000, fortitude: 9.7, title: "TARGET 14: 要塞獣", color: "#94a3b8", shape: "armored" },
-            { name: "識別怪獣8号 (変身大怪獣)", maxHp: 2500, fortitude: 9.8, title: "FINAL TARGET: 大怪獣", color: "#ff2a5f", shape: "kaiju8" }
-        ];
-
-        /* --- 3. HIGH IMPACT AUDIO SYNTHESIZER (TONE.JS) --- */
-        class SoundManager {
-            constructor() {
-                this.enabled = true;
-                this.initialized = false;
-            }
-
-            async init() {
-                if (this.initialized) return;
-                try {
-                    await Tone.start();
-                    
-                    // Heavy Hit Membrane Synth
-                    this.hitSynth = new Tone.MembraneSynth({
-                        pitchDecay: 0.08,
-                        octaves: 10,
-                        oscillator: { type: "sine" },
-                        envelope: { attack: 0.001, decay: 0.3, sustain: 0.01, release: 0.1 }
-                    }).toDestination();
-
-                    // Metal Slash / Lightning Synth
-                    this.slashSynth = new Tone.MetalSynth({
-                        frequency: 380,
-                        envelope: { attack: 0.001, decay: 0.15, release: 0.05 },
-                        harmonicity: 7.1,
-                        modulationIndex: 45,
-                        resonance: 6000
-                    }).toDestination();
-
-                    // Critical Thunder Synth
-                    this.thunderSynth = new Tone.NoiseSynth({
-                        noise: { type: 'pink' },
-                        envelope: { attack: 0.005, decay: 0.45, sustain: 0 }
-                    }).toDestination();
-
-                    // Correct Chime Synth
-                    this.chimeSynth = new Tone.PolySynth(Tone.Synth).toDestination();
-
-                    this.initialized = true;
-                } catch(e) {
-                    console.log("Audio init error", e);
-                }
-            }
-
-            playImpact(type = 'punch', isCritical = false) {
-                if (!this.enabled || !this.initialized) return;
-                const now = Tone.now();
-
-                if (isCritical) {
-                    this.thunderSynth.triggerAttackRelease("4n", now);
-                    this.hitSynth.triggerAttackRelease("A0", "4n", now + 0.02);
-                    this.slashSynth.triggerAttackRelease("8n", now + 0.05);
-                } else if (type === 'slash') {
-                    this.slashSynth.triggerAttackRelease("8n", now);
-                    this.hitSynth.triggerAttackRelease("E1", "16n", now + 0.02);
-                } else {
-                    this.hitSynth.triggerAttackRelease("C1", "8n", now);
-                    this.slashSynth.triggerAttackRelease("16n", now + 0.03);
-                }
-            }
-
-            playCounter() {
-                if (!this.enabled || !this.initialized) return;
-                this.thunderSynth.triggerAttackRelease("4n");
-            }
-
-            playCorrect() {
-                if (!this.enabled || !this.initialized) return;
-                const now = Tone.now();
-                this.chimeSynth.triggerAttackRelease(["E5", "G#5", "B5"], "16n", now);
-            }
-        }
-        const soundMgr = new SoundManager();
-
-        /* --- 4. ADVANCED CANVAS & KAIJU ILLUSTRATION ENGINE --- */
-        class ActionCanvas {
-            constructor(canvasId) {
-                this.canvas = document.getElementById(canvasId);
-                this.ctx = this.canvas.getContext('2d');
-                this.particles = [];
-                this.slashes = [];
-                this.floatingTexts = [];
-                
-                this.kaijuFrame = 0;
-                this.kaijuState = 'idle'; // idle, hit, attack, defeat
-                this.kaijuScale = 1.0;
-                this.hitFlashTimer = 0;
-                
-                this.resize();
-                window.addEventListener('resize', () => this.resize());
-                this.loop();
-            }
-
-            resize() {
-                const rect = this.canvas.parentElement.getBoundingClientRect();
-                this.canvas.width = rect.width;
-                this.canvas.height = rect.height;
-            }
-
-            triggerPlayerAttack(attackType, damage, isCritical = false) {
-                this.kaijuState = 'hit';
-                this.hitFlashTimer = 1.0;
-
-                setTimeout(() => {
-                    if (this.kaijuState === 'hit') this.kaijuState = 'idle';
-                }, 800);
-
-                const cx = this.canvas.width / 2;
-                const cy = this.canvas.height / 2;
-
-                // 1. Slashes & Lightning Emitters
-                if (isCritical) {
-                    // Critical Double Lightning Bolt + Massive Ripple
-                    this.slashes.push({
-                        type: 'lightning',
-                        x1: cx - 140, y1: cy - 100, x2: cx + 140, y2: cy + 100,
-                        progress: 0, color: '#ffe600'
-                    });
-                    this.slashes.push({
-                        type: 'lightning',
-                        x1: cx + 140, y1: cy - 100, x2: cx - 140, y2: cy + 100,
-                        progress: 0, color: '#00f0ff'
-                    });
-                } else if (attackType === 'slash') {
-                    this.slashes.push({
-                        type: 'slash',
-                        x1: cx - 110, y1: cy - 70, x2: cx + 120, y2: cy + 70,
-                        progress: 0, color: '#00f0ff'
-                    });
-                } else {
-                    this.slashes.push({
-                        type: 'punch',
-                        x: cx, y: cy, radius: 10, maxRadius: 100, color: '#00f0ff'
-                    });
-                }
-
-                // 2. Bursting Particles
-                const particleCount = isCritical ? 50 : 25;
-                for (let i = 0; i < particleCount; i++) {
-                    const angle = Math.random() * Math.PI * 2;
-                    const speed = Math.random() * (isCritical ? 16 : 9) + 4;
-                    this.particles.push({
-                        x: cx, y: cy,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        size: Math.random() * (isCritical ? 6 : 4) + 2,
-                        color: isCritical ? '#ffe600' : (Math.random() > 0.4 ? '#00f0ff' : '#ffffff'),
-                        life: 1.0,
-                        decay: Math.random() * 0.02 + 0.015
-                    });
-                }
-
-                // 3. Floating Damage Number
-                this.floatingTexts.push({
-                    text: isCritical ? `⚡ CRITICAL! -${damage}` : `-${damage}`,
-                    x: cx + (Math.random() * 40 - 20),
-                    y: cy - 40,
-                    vy: -1.0,
-                    life: 1.5,
-                    color: isCritical ? '#ffe600' : '#ff2a5f',
-                    scale: isCritical ? 1.6 : 1.1
-                });
-            }
-
-            triggerKaijuCounter() {
-                this.kaijuState = 'attack';
-                this.kaijuScale = 1.4;
-
-                setTimeout(() => {
-                    this.kaijuState = 'idle';
-                    this.kaijuScale = 1.0;
-                }, 400);
-
-                const cx = this.canvas.width / 2;
-                const cy = this.canvas.height / 2;
-                this.slashes.push({
-                    type: 'slash',
-                    x1: cx + 130, y1: cy - 90, x2: cx - 130, y2: cy + 90,
-                    progress: 0, color: '#ff2a5f'
-                });
-            }
-
-            // HIGH-QUALITY PROCEDURAL KAIJU ILLUSTRATIONS
-            drawKaiju(stageIndex) {
-                const stage = KAIJU_STAGES[stageIndex] || KAIJU_STAGES[0];
-                const cx = this.canvas.width / 2;
-                const cy = this.canvas.height / 2 + 10;
-                this.kaijuFrame += 0.04;
-
-                const breathe = Math.sin(this.kaijuFrame * 1.6) * 5;
-                const hitShakeX = this.kaijuState === 'hit' ? (Math.random() * 20 - 10) : 0;
-                const hitShakeY = this.kaijuState === 'hit' ? (Math.random() * 20 - 10) : 0;
-
-                this.ctx.save();
-                this.ctx.translate(cx + hitShakeX, cy + hitShakeY + breathe);
-                this.ctx.scale(this.kaijuScale, this.kaijuScale);
-
-                // Aura Glow
-                this.ctx.shadowColor = stage.color;
-                this.ctx.shadowBlur = 30;
-                this.ctx.fillStyle = stage.color;
-
-                switch (stage.shape) {
-                    case 'fungus': // STAGE 1: 菌類本獣
-                        // Main Core Body
-                        this.ctx.beginPath();
-                        this.ctx.ellipse(0, 0, 55, 45, 0, 0, Math.PI * 2);
-                        this.ctx.fill();
-
-                        // Spores & Eyes
-                        this.ctx.fillStyle = '#ffffff';
-                        [-25, 0, 25].forEach((x, i) => {
-                            this.ctx.beginPath();
-                            this.ctx.arc(x, -10 + (i%2)*8, 8, 0, Math.PI*2);
-                            this.ctx.fill();
-                        });
-                        this.ctx.fillStyle = '#ff2a5f';
-                        [-25, 0, 25].forEach((x, i) => {
-                            this.ctx.beginPath();
-                            this.ctx.arc(x, -10 + (i%2)*8, 4, 0, Math.PI*2);
-                            this.ctx.fill();
-                        });
-                        break;
-
-                    case 'flier': // STAGE 2: 飛翔型識別怪獣
-                        const wingAngle = Math.sin(this.kaijuFrame * 4) * 0.25;
-                        // Sharp Wings
-                        this.ctx.beginPath();
-                        this.ctx.moveTo(0, -15);
-                        this.ctx.quadraticCurveTo(70, -70 + wingAngle*50, 110, -30);
-                        this.ctx.lineTo(40, 20);
-                        this.ctx.lineTo(0, 5);
-                        this.ctx.lineTo(-40, 20);
-                        this.ctx.lineTo(-110, -30);
-                        this.ctx.quadraticCurveTo(-70, -70 + wingAngle*50, 0, -15);
-                        this.ctx.fill();
-
-                        // Glowing Beak & Eye
-                        this.ctx.fillStyle = '#ffffff';
-                        this.ctx.beginPath();
-                        this.ctx.arc(0, -30, 10, 0, Math.PI * 2);
-                        this.ctx.fill();
-                        this.ctx.fillStyle = '#00f0ff';
-                        this.ctx.beginPath();
-                        this.ctx.arc(0, -30, 5, 0, Math.PI * 2);
-                        this.ctx.fill();
-                        break;
-
-                    case 'armored': // STAGE 3: 重装甲本獣
-                        // Outer Hexagonal Armor Body
-                        this.ctx.beginPath();
-                        this.ctx.moveTo(-65, -45); this.ctx.lineTo(65, -45);
-                        this.ctx.lineTo(85, 15); this.ctx.lineTo(50, 60);
-                        this.ctx.lineTo(-50, 60); this.ctx.lineTo(-85, 15);
-                        this.ctx.closePath();
-                        this.ctx.fill();
-
-                        // Horns
-                        this.ctx.fillStyle = '#ffffff';
-                        this.ctx.beginPath();
-                        this.ctx.moveTo(-45, -45); this.ctx.lineTo(-75, -85); this.ctx.lineTo(-25, -50);
-                        this.ctx.moveTo(45, -45); this.ctx.lineTo(75, -85); this.ctx.lineTo(25, -50);
-                        this.ctx.fill();
-                        break;
-
-                    case 'humanoid': // STAGE 4: 怪獣9号風
-                        // Slender Visage & Geometry
-                        this.ctx.beginPath();
-                        this.ctx.ellipse(0, 0, 35, 65, 0, 0, Math.PI * 2);
-                        this.ctx.fill();
-
-                        // Core Orbs
-                        this.ctx.fillStyle = '#ffffff';
-                        this.ctx.beginPath();
-                        this.ctx.arc(0, -70, 14, 0, Math.PI * 2);
-                        this.ctx.fill();
-
-                        this.ctx.fillStyle = '#ec4899';
-                        this.ctx.beginPath();
-                        this.ctx.arc(0, 0, 12, 0, Math.PI * 2);
-                        this.ctx.fill();
-                        break;
-
-                    case 'kaiju8': // STAGE 5: 怪獣8号型大怪獣
-                    default:
-                        // Skull Mask & Apex Horns
-                        this.ctx.beginPath();
-                        this.ctx.moveTo(0, -80);
-                        this.ctx.lineTo(70, -20);
-                        this.ctx.lineTo(45, 50);
-                        this.ctx.lineTo(0, 70);
-                        this.ctx.lineTo(-45, 50);
-                        this.ctx.lineTo(-70, -20);
-                        this.ctx.closePath();
-                        this.ctx.fill();
-
-                        // Glowing Skull Facet & Eyes
-                        this.ctx.fillStyle = '#ffffff';
-                        this.ctx.beginPath();
-                        this.ctx.arc(-20, -25, 10, 0, Math.PI * 2);
-                        this.ctx.arc(20, -25, 10, 0, Math.PI * 2);
-                        this.ctx.fill();
-
-                        this.ctx.fillStyle = '#00f0ff';
-                        this.ctx.beginPath();
-                        this.ctx.arc(-20, -25, 5, 0, Math.PI * 2);
-                        this.ctx.arc(20, -25, 5, 0, Math.PI * 2);
-                        this.ctx.fill();
-                        break;
-                }
-
-                // White Hit Flash Overlay
-                if (this.hitFlashTimer > 0) {
-                    this.ctx.fillStyle = `rgba(255, 255, 255, ${this.hitFlashTimer})`;
-                    this.ctx.fillRect(-120, -120, 240, 240);
-                    this.hitFlashTimer -= 0.1;
-                }
-
-                this.ctx.restore();
-            }
-
-            loop() {
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-                if (game) {
-                    this.drawKaiju(game.currentStage);
-                }
-
-                // Render Attack Animations
-                for (let i = this.slashes.length - 1; i >= 0; i--) {
-                    const s = this.slashes[i];
-                    s.progress += 0.07;
-
-                    if (s.progress >= 1.0) {
-                        this.slashes.splice(i, 1);
-                        continue;
-                    }
-
-                    this.ctx.save();
-                    this.ctx.strokeStyle = s.color;
-                    this.ctx.shadowColor = s.color;
-                    this.ctx.shadowBlur = 20;
-
-                    if (s.type === 'slash' || s.type === 'lightning') {
-                        this.ctx.lineWidth = (s.type === 'lightning' ? 10 : 6) * (1 - s.progress);
-                        this.ctx.beginPath();
-                        this.ctx.moveTo(s.x1, s.y1);
-                        this.ctx.lineTo(
-                            s.x1 + (s.x2 - s.x1) * s.progress,
-                            s.y1 + (s.y2 - s.y1) * s.progress
-                        );
-                        this.ctx.stroke();
-                    } else if (s.type === 'punch') {
-                        const curR = s.radius + (s.maxRadius - s.radius) * s.progress;
-                        this.ctx.lineWidth = 6 * (1 - s.progress);
-                        this.ctx.beginPath();
-                        this.ctx.arc(s.x, s.y, curR, 0, Math.PI * 2);
-                        this.ctx.stroke();
-                    }
-
-                    this.ctx.restore();
-                }
-
-                // Render Particles
-                for (let i = this.particles.length - 1; i >= 0; i--) {
-                    const p = this.particles[i];
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.life -= p.decay;
-
-                    if (p.life <= 0) {
-                        this.particles.splice(i, 1);
-                        continue;
-                    }
-
-                    this.ctx.save();
-                    this.ctx.globalAlpha = p.life;
-                    this.ctx.fillStyle = p.color;
-                    this.ctx.beginPath();
-                    this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                    this.ctx.fill();
-                    this.ctx.restore();
-                }
-
-                // Render Floating Damage Text
-                for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
-                    const ft = this.floatingTexts[i];
-                    ft.y += ft.vy;
-                    ft.life -= 0.015;
-
-                    if (ft.life <= 0) {
-                        this.floatingTexts.splice(i, 1);
-                        continue;
-                    }
-
-                    this.ctx.save();
-                    this.ctx.globalAlpha = ft.life;
-                    this.ctx.font = `900 ${Math.floor(26 * ft.scale)}px Orbitron, sans-serif`;
-                    this.ctx.fillStyle = ft.color;
-                    this.ctx.textAlign = 'center';
-                    this.ctx.shadowColor = '#000000';
-                    this.ctx.shadowBlur = 10;
-                    this.ctx.fillText(ft.text, ft.x, ft.y);
-                    this.ctx.restore();
-                }
-
-                requestAnimationFrame(() => this.loop());
-            }
-        }
-
-        /* --- 5. PUZZLE ENGINE (MATCH & LINK) --- */
-        class PuzzleEngine {
-            constructor(gameEngine) {
-                this.game = gameEngine;
-                this.gridEl = document.getElementById('puzzle-grid');
-                this.chainText = document.getElementById('puzzle-chain-text');
-                this.cols = 6;
-                this.rows = 5;
-                this.tiles = [];
-                this.types = ['🗡️', '🔫', '⚡', '🔥', '❤️'];
-                this.isDragging = false;
-                this.chain = [];
-                
-                this.bindEvents();
-            }
-
-            initGrid() {
-                this.gridEl.innerHTML = '';
-                this.tiles = [];
-                for (let i = 0; i < this.cols * this.rows; i++) {
-                    const tile = document.createElement('div');
-                    tile.className = 'puzzle-tile flex items-center justify-center text-3xl sm:text-4xl bg-slate-900 rounded-lg border border-slate-700 shadow-sm transition-all duration-100 cursor-pointer select-none';
-                    tile.dataset.index = i;
-                    this.setRandomType(tile);
-                    this.gridEl.appendChild(tile);
-                    this.tiles.push(tile);
-                }
-                this.updateChainText();
-            }
-
-            setRandomType(tile) {
-                const type = this.types[Math.floor(Math.random() * this.types.length)];
-                tile.dataset.type = type;
-                tile.textContent = type;
-                tile.classList.remove('ring-4', 'ring-cyan-400', 'scale-90', 'opacity-50', 'bg-slate-700');
-            }
-
-            bindEvents() {
-                this.gridEl.addEventListener('pointerdown', (e) => this.startDrag(e));
-                this.gridEl.addEventListener('pointermove', (e) => this.onDrag(e));
-                window.addEventListener('pointerup', () => this.endDrag());
-            }
-
-            startDrag(e) {
-                if(this.game.isQuizActive || !this.game.isPlaying || this.game.isAnimating) return;
-                const tile = e.target.closest('.puzzle-tile');
-                if(!tile) return;
-                
-                this.isDragging = true;
-                this.chain = [parseInt(tile.dataset.index)];
-                this.highlightTile(tile);
-                this.updateChainText();
-            }
-
-            onDrag(e) {
-                if(!this.isDragging) return;
-                e.preventDefault();
-                const touch = e;
-                const el = document.elementFromPoint(touch.clientX, touch.clientY);
-                if(!el) return;
-                const tile = el.closest('.puzzle-tile');
-                if(!tile) return;
-
-                const index = parseInt(tile.dataset.index);
-                const lastIndex = this.chain[this.chain.length - 1];
-                
-                if (index === lastIndex) return;
-
-                if (this.isAdjacent(index, lastIndex) && this.tiles[index].dataset.type === this.tiles[lastIndex].dataset.type) {
-                    if (this.chain.length > 1 && index === this.chain[this.chain.length - 2]) {
-                        this.unhighlightTile(this.tiles[lastIndex]);
-                        this.chain.pop();
-                    } else if (!this.chain.includes(index)) {
-                        this.chain.push(index);
-                        this.highlightTile(tile);
-                    }
-                    this.updateChainText();
-                }
-            }
-
-            endDrag() {
-                if(!this.isDragging) return;
-                this.isDragging = false;
-                
-                if (this.chain.length >= 3) {
-                    this.processChain();
-                } else {
-                    this.chain.forEach(idx => this.unhighlightTile(this.tiles[idx]));
-                }
-                this.chain = [];
-                this.updateChainText();
-            }
-
-            isAdjacent(idx1, idx2) {
-                const c1 = idx1 % this.cols;
-                const r1 = Math.floor(idx1 / this.cols);
-                const c2 = idx2 % this.cols;
-                const r2 = Math.floor(idx2 / this.cols);
-                return Math.abs(c1 - c2) <= 1 && Math.abs(r1 - r2) <= 1;
-            }
-
-            highlightTile(tile) {
-                tile.classList.add('ring-4', 'ring-cyan-400', 'scale-90', 'opacity-80', 'bg-slate-700');
-            }
-
-            unhighlightTile(tile) {
-                tile.classList.remove('ring-4', 'ring-cyan-400', 'scale-90', 'opacity-80', 'bg-slate-700');
-            }
-
-            updateChainText() {
-                if(this.chainText) {
-                    this.chainText.textContent = `CHAIN: ${this.chain.length}`;
-                    if(this.chain.length >= 3) {
-                        this.chainText.classList.add('text-yellow-400', 'glow-yellow');
-                    } else {
-                        this.chainText.classList.remove('text-yellow-400', 'glow-yellow');
-                    }
-                }
-            }
-
-            processChain() {
-                const chainLength = this.chain.length;
-                
-                this.chain.forEach(idx => {
-                    const tile = this.tiles[idx];
-                    tile.textContent = '✨';
-                    tile.classList.add('opacity-0');
-                    this.unhighlightTile(tile);
-                });
-
-                setTimeout(() => {
-                    this.applyGravity();
-                    this.game.showQuiz(chainLength);
-                }, 300);
-            }
-
-            applyGravity() {
-                for (let c = 0; c < this.cols; c++) {
-                    let emptySlots = 0;
-                    for (let r = this.rows - 1; r >= 0; r--) {
-                        const idx = r * this.cols + c;
-                        if (this.tiles[idx].classList.contains('opacity-0')) {
-                            emptySlots++;
-                        } else if (emptySlots > 0) {
-                            const targetIdx = (r + emptySlots) * this.cols + c;
-                            this.swapTileData(idx, targetIdx);
-                        }
-                    }
-                    for (let r = 0; r < emptySlots; r++) {
-                        const idx = r * this.cols + c;
-                        this.setRandomType(this.tiles[idx]);
-                        this.tiles[idx].classList.remove('opacity-0');
-                    }
-                }
-            }
-
-            swapTileData(idx1, idx2) {
-                const t1 = this.tiles[idx1];
-                const t2 = this.tiles[idx2];
-                const type1 = t1.dataset.type;
-                const text1 = t1.textContent;
-                
-                t1.dataset.type = t2.dataset.type;
-                t1.textContent = t2.textContent;
-                t1.classList.add('opacity-0');
-                
-                t2.dataset.type = type1;
-                t2.textContent = text1;
-                t2.classList.remove('opacity-0');
-            }
-        }
-
-        /* --- 6. MAIN GAME LOGIC & CRITICAL TIMER ENGINE --- */
-        class GameEngine {
-            constructor() {
-                this.currentStage = 0;
-                this.score = 0;
-                this.combo = 0;
-                this.maxCombo = 0;
-                this.criticalCount = 0;
-                this.correctCount = 0;
-                this.totalAnswered = 0;
-                this.currentKaijuHp = 100;
-                this.maxKaijuHp = 100;
-                this.timeLeft = 30.0;
-                this.timerInterval = null;
-                this.speedInterval = null;
-                this.currentQuestion = null;
-                this.questionStartTime = 0;
-                this.wrongWords = [];
-                this.isPlaying = false;
-                this.isQuizActive = false;
-                this.isAnimating = false;
-                this.currentPuzzleMultiplier = 1.0;
-
-                this.actionCanvas = new ActionCanvas('action-canvas');
-                this.puzzleEngine = new PuzzleEngine(this);
-                this.bindEvents();
-            }
-
-            bindEvents() {
-                document.getElementById('start-btn').addEventListener('click', async () => {
-                    await soundMgr.init();
-                    this.startGame();
-                });
-
-                document.getElementById('retry-btn').addEventListener('click', () => {
-                    document.getElementById('result-screen').classList.add('hidden');
-                    this.startGame();
-                });
-
-                document.getElementById('sound-toggle').addEventListener('click', () => {
-                    soundMgr.enabled = !soundMgr.enabled;
-                    document.getElementById('sound-toggle').textContent = soundMgr.enabled ? '🔊' : '🔇';
-                });
-
-                document.getElementById('speech-btn').addEventListener('click', () => {
-                    this.speakCurrentWord();
-                });
-
-                const choiceBtns = document.querySelectorAll('.choice-btn');
-                choiceBtns.forEach(btn => {
-                    btn.addEventListener('click', (e) => this.handleAnswer(e.target.textContent.trim()));
-                });
-            }
-
-            startGame() {
-                this.currentStage = 0;
-                this.score = 0;
-                this.combo = 0;
-                this.maxCombo = 0;
-                this.criticalCount = 0;
-                this.correctCount = 0;
-                this.totalAnswered = 0;
-                this.wrongWords = [];
-                this.isPlaying = true;
-                this.isQuizActive = false;
-                this.isAnimating = false;
-
-                document.getElementById('start-screen').classList.add('hidden');
-                document.getElementById('quiz-panel').classList.add('hidden');
-                document.getElementById('score-display').textContent = '00000';
-                
-                this.puzzleEngine.initGrid();
-                this.loadStage(0);
-            }
-
-            loadStage(stageIdx) {
-                if (stageIdx >= KAIJU_STAGES.length) {
-                    this.endGame(true);
-                    return;
-                }
-
-                this.currentStage = stageIdx;
-                const stage = KAIJU_STAGES[stageIdx];
-                this.currentKaijuHp = stage.maxHp;
-                this.maxKaijuHp = stage.maxHp;
-                this.timeLeft = 30.0;
-
-                // UI Updates
-                document.getElementById('stage-badge').textContent = stage.title;
-                document.getElementById('kaiju-name').textContent = stage.name;
-                document.getElementById('fortitude-val').textContent = stage.fortitude.toFixed(1);
-                this.updateHpBar();
-
-                // Show Stage Transform Banner Animation
-                const transScreen = document.getElementById('transform-screen');
-                document.getElementById('unleash-num').textContent = stage.fortitude.toFixed(1);
-                transScreen.classList.remove('hidden');
-                
-                setTimeout(() => {
-                    transScreen.classList.add('hidden');
-                    this.startTimers();
-                }, 1100);
-            }
-
-            startTimers() {
-                clearInterval(this.timerInterval);
-                // Speed interval is now handled per quiz
-
-                // Stage Timer
-                this.timerInterval = setInterval(() => {
-                    if (!this.isPlaying || this.isAnimating) return;
-                    this.timeLeft -= 0.1;
-                    if (this.timeLeft <= 0) {
-                        this.timeLeft = 0;
-                        this.updateTimerBar();
-                        this.endGame(false);
-                    } else {
-                        this.updateTimerBar();
-                    }
-                }, 100);
-            }
-
-            updateTimerBar() {
-                document.getElementById('timer-text').textContent = `${this.timeLeft.toFixed(1)}s`;
-                const pct = Math.max(0, (this.timeLeft / 30.0) * 100);
-                document.getElementById('timer-bar').style.width = `${pct}%`;
-            }
-
-            updateHpBar() {
-                document.getElementById('kaiju-hp-text').textContent = `${Math.ceil(this.currentKaijuHp)}/${this.maxKaijuHp}`;
-                const pct = Math.max(0, (this.currentKaijuHp / this.maxKaijuHp) * 100);
-                document.getElementById('kaiju-hp-bar').style.width = `${pct}%`;
-            }
-
-            showQuiz(chainLength) {
-                this.isQuizActive = true;
-                // Calculate puzzle multiplier: 1.0 base + 0.3 per extra chain item
-                this.currentPuzzleMultiplier = 1.0 + ((chainLength - 3) * 0.3);
-                document.getElementById('damage-power').textContent = `x${this.currentPuzzleMultiplier.toFixed(1)}`;
-                
-                document.getElementById('quiz-panel').classList.remove('hidden');
-                this.nextQuestion();
-            }
-
-            nextQuestion() {
-                const randomItem = QUESTION_DATABASE[Math.floor(Math.random() * QUESTION_DATABASE.length)];
-                this.currentQuestion = randomItem;
-                this.questionStartTime = Date.now();
-
-                document.getElementById('question-category').textContent = randomItem.cat;
-                document.getElementById('word-question').textContent = randomItem.q;
-                
-                this.speakCurrentWord();
-
-                // Generate 4 Choices
-                const choices = [randomItem.answer, ...randomItem.dummy];
-                choices.sort(() => Math.random() - 0.5);
-
-                const choiceBtns = document.querySelectorAll('.choice-btn');
-                choiceBtns.forEach((btn, idx) => {
-                    btn.textContent = choices[idx];
-                });
-
-                // Start Speed Meter for Quiz
-                clearInterval(this.speedInterval);
-                this.speedInterval = setInterval(() => {
-                    if (!this.isPlaying || !this.isQuizActive) return;
-                    const elapsed = (Date.now() - this.questionStartTime) / 1000;
-                    document.getElementById('speed-ms-text').textContent = `${elapsed.toFixed(1)}s`;
-                    
-                    // Bar Pct (max 5s)
-                    const pct = Math.max(0, 100 - (elapsed / 5.0) * 100);
-                    document.getElementById('speed-bar').style.width = `${pct}%`;
-
-                    if (elapsed <= 1.5) {
-                        document.getElementById('speed-zone-text').textContent = '1.5s (3.0x DAMAGE)';
-                        document.getElementById('speed-zone-text').className = 'text-yellow-300 font-black glow-yellow';
-                    } else if (elapsed <= 2.5) {
-                        document.getElementById('speed-zone-text').textContent = '2.5s (1.5x GREAT)';
-                        document.getElementById('speed-zone-text').className = 'text-cyan-300 font-bold';
-                    } else {
-                        document.getElementById('speed-zone-text').textContent = 'SLOW (1.0x NORMAL)';
-                        document.getElementById('speed-zone-text').className = 'text-slate-400';
-                    }
-                }, 50);
-            }
-
-            speakCurrentWord() {
-                if ('speechSynthesis' in window && this.currentQuestion) {
-                    window.speechSynthesis.cancel();
-                    // Clean question string for speech (remove Japanese context if any)
-                    const cleanWord = this.currentQuestion.q.replace(/[^a-zA-Z ]/g, "").trim();
-                    if (cleanWord.length > 0) {
-                        const utterance = new SpeechSynthesisUtterance(cleanWord);
-                        utterance.lang = 'en-US';
-                        utterance.rate = 0.9;
-                        window.speechSynthesis.speak(utterance);
-                    }
-                }
-            }
-
-            triggerAttackFlash(type = 'normal') {
-                let el = document.getElementById('strike-flash');
-                if (type === 'critical') el = document.getElementById('critical-flash');
-                else if (type === 'counter') el = document.getElementById('counter-flash');
-
-                el.style.opacity = '1';
-                setTimeout(() => el.style.opacity = '0', 200);
-            }
-
-            triggerBannerText(text) {
-                const banner = document.getElementById('attack-banner');
-                banner.textContent = text;
-                banner.style.opacity = '1';
-                setTimeout(() => banner.style.opacity = '0', 900);
-            }
-
-            handleAnswer(selectedText) {
-                if (!this.isPlaying || !this.currentQuestion || !this.isQuizActive || this.isAnimating) return;
-
-                const responseTimeSec = (Date.now() - this.questionStartTime) / 1000;
-                this.totalAnswered++;
-                clearInterval(this.speedInterval);
-                this.isAnimating = true;
-
-                const isCorrect = selectedText === this.currentQuestion.answer;
-
-                if (isCorrect) {
-                    this.correctCount++;
-                    this.combo++;
-                    if (this.combo > this.maxCombo) this.maxCombo = this.combo;
-
-                    // Speed Critical Tiers
-                    const isCritical = responseTimeSec <= 1.5;
-                    const isGreat = !isCritical && responseTimeSec <= 2.5;
-
-                    if (isCritical) this.criticalCount++;
-
-                    const baseDamage = 35;
-                    const speedMultiplier = isCritical ? 3.0 : (isGreat ? 1.5 : 1.0);
-                    const comboMultiplier = 1 + (this.combo * 0.15);
-                    const damage = Math.round(baseDamage * speedMultiplier * comboMultiplier * this.currentPuzzleMultiplier);
-
-                    this.currentKaijuHp -= damage;
-                    if (this.currentKaijuHp < 0) this.currentKaijuHp = 0;
-
-                    const points = Math.round(150 * speedMultiplier * comboMultiplier * this.currentPuzzleMultiplier);
-                    this.score += points;
-                    document.getElementById('score-display').textContent = String(this.score).padStart(5, '0');
-
-                    soundMgr.playCorrect();
-                    soundMgr.playImpact('slash', isCritical);
-
-                    // Screen Flash & Screen Shake
-                    this.triggerAttackFlash(isCritical ? 'critical' : 'normal');
-                    const container = document.getElementById('game-container');
-                    container.classList.remove('shake-sm', 'shake-crit');
-                    void container.offsetWidth;
-                    container.classList.add(isCritical ? 'shake-crit' : 'shake-sm');
-
-                    // Trigger Attack Canvas Animation
-                    this.actionCanvas.triggerPlayerAttack('slash', damage, isCritical);
-
-                    // Action Banner
-                    if (isCritical) {
-                        this.triggerBannerText("⚡ CRITICAL HIT!! 隊員極大一閃！");
-                    } else if (isGreat) {
-                        this.triggerBannerText("GREAT! 高速連撃！");
-                    } else {
-                        this.triggerBannerText("隊員打撃ヒット！");
-                    }
-
-                    // Combo & Multiplier Display
-                    document.getElementById('combo-count').textContent = this.combo;
-                    document.getElementById('combo-container').style.opacity = '1';
-
-                    this.updateHpBar();
-
-                    // Check Kaiju Elimination (Stage Clear)
-                    if (this.currentKaijuHp <= 0) {
-                        clearInterval(this.timerInterval);
-                        clearInterval(this.speedInterval);
-                        this.isQuizActive = false;
-                        document.getElementById('quiz-panel').classList.add('hidden');
-
-                        // Elimination Overlay Animation
-                        setTimeout(() => {
-                            const elimOverlay = document.getElementById('eliminated-overlay');
-                            elimOverlay.style.opacity = '1';
-
-                            setTimeout(() => {
-                                elimOverlay.style.opacity = '0';
-                                this.isAnimating = false;
-                                this.loadStage(this.currentStage + 1);
-                            }, 1500);
-                        }, 800);
-                        return;
-                    }
-
-                } else {
-                    // WRONG ANSWER: KAIJU COUNTER ATTACK
-                    this.combo = 0;
-                    soundMgr.playCounter();
-
-                    this.triggerAttackFlash('counter');
-                    const container = document.getElementById('game-container');
-                    container.classList.remove('shake-sm', 'shake-crit');
-                    void container.offsetWidth;
-                    container.classList.add('shake-crit');
-
-                    this.actionCanvas.triggerKaijuCounter();
-                    this.triggerBannerText('🚨 怪獣の反撃！');
-
-                    document.getElementById('combo-container').style.opacity = '0';
-
-                    // Track Wrong Question
-                    if (!this.wrongWords.some(w => w.q === this.currentQuestion.q)) {
-                        this.wrongWords.push(this.currentQuestion);
-                    }
-
-                    // Time Penalty
-                    this.timeLeft = Math.max(0, this.timeLeft - 3.0);
-                    this.updateTimerBar();
-                }
-
-                // Update Damage Multiplier Label for Next Turn (Visual only)
-                const nextComboMultiplier = (1 + (this.combo * 0.15)).toFixed(1);
-                document.getElementById('damage-power').textContent = `x${nextComboMultiplier}`;
-
-                // Rest Time before returning to puzzle (Success: 1.8s, Fail: 1.2s)
-                const restTime = isCorrect ? 1800 : 1200;
-
-                setTimeout(() => {
-                    this.isAnimating = false;
-                    this.isQuizActive = false;
-                    document.getElementById('quiz-panel').classList.add('hidden');
-                    
-                    // Reset Speed Meter visually
-                    document.getElementById('speed-ms-text').textContent = `0.0s`;
-                    document.getElementById('speed-bar').style.width = `100%`;
-                }, restTime);
-            }
-
-            endGame(isClear) {
-                this.isPlaying = false;
-                clearInterval(this.timerInterval);
-                clearInterval(this.speedInterval);
-
-                const resScreen = document.getElementById('result-screen');
-                resScreen.classList.remove('hidden');
-
-                const resBadge = document.getElementById('result-badge');
-                const resTitle = document.getElementById('result-title');
-                const resSubtitle = document.getElementById('result-subtitle');
-
-                if (isClear) {
-                    resBadge.className = "inline-block px-3 py-1 bg-emerald-950 border border-emerald-500 text-emerald-400 text-xs font-orbitron font-bold rounded-full mb-2 box-glow-gold";
-                    resBadge.textContent = "MISSION ACCOMPLISHED";
-                    resTitle.textContent = "全怪獣 討伐完了！";
-                    resSubtitle.textContent = "防衛隊トップクラスの英語討伐力を実証しました！";
-                } else {
-                    resBadge.className = "inline-block px-3 py-1 bg-red-950 border border-red-500 text-red-400 text-xs font-orbitron font-bold rounded-full mb-2 box-glow-red";
-                    resBadge.textContent = "MISSION FAILED";
-                    resTitle.textContent = "作戦限界到達...";
-                    resSubtitle.textContent = "制限時間が尽きました。知識を再強化して挑め！";
-                }
-
-                const accuracy = this.totalAnswered > 0 ? Math.round((this.correctCount / this.totalAnswered) * 100) : 0;
-                document.getElementById('res-score').textContent = this.score;
-                document.getElementById('res-accuracy').textContent = `${accuracy}%`;
-                document.getElementById('res-criticals').textContent = `${this.criticalCount}回 (⚡)`;
-                document.getElementById('res-maxcombo').textContent = `${this.maxCombo} MAX`;
-
-                // Fill Incorrect Review List
-                const wrongListContainer = document.getElementById('wrong-words-list');
-                const wrongBadge = document.getElementById('wrong-count-badge');
-                wrongListContainer.innerHTML = '';
-                wrongBadge.textContent = `${this.wrongWords.length}件`;
-
-                if (this.wrongWords.length === 0) {
-                    wrongListContainer.innerHTML = '<div class="text-slate-400 text-center py-4">全問正解！見事な討伐成績です！</div>';
-            <div class="space-y-3 mb-2">
-                <button id="start-btn" class="w-full tech-button bg-gradient-to-r from-cyan-400 via-cyan-500 to-blue-600 text-slate-950 font-black text-lg py-4 rounded-xl shadow-xl shadow-cyan-500/30 active:scale-95 transition-all">
-                    討伐ミッション開始
-                </button>
-                <div class="text-[11px] text-slate-400 flex justify-center gap-3">
-                    <span>⚡ 全15形態怪獣</span>
-                    <span>💥 1.5sクリティカル</span>
-                    <span>📚 多角問題50+</span>
-                </div>
-            </div>
-        </div>
-                            <button class="speech-mini-btn text-xs bg-slate-800 px-2.5 py-1 rounded-md text-cyan-400 hover:bg-slate-700 active:scale-95 transition">🔊</button>
-                        `;
-                        row.querySelector('.speech-mini-btn').addEventListener('click', () => {
-                            if ('speechSynthesis' in window) {
-                                const cleanWord = item.q.replace(/[^a-zA-Z ]/g, "").trim();
-                                if (cleanWord) {
-                                    const utt = new SpeechSynthesisUtterance(cleanWord);
-                                    utt.lang = 'en-US';
-                                    window.speechSynthesis.speak(utt);
-                                }
-                            }
-                        });
-                        wrongListContainer.appendChild(row);
-                    });
-                }
-            }
-        }
-
-        // Initialize Game Engine on Window Load
-        let game = null;
-        window.addEventListener('load', () => {
-            game = new GameEngine();
-        });
-    </script>
-</body>
-</html>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>ワードアロー</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+/* layout: phone = one column. Tablet landscape = monster on the left, board on the right. Exam-paper (light) / blackboard (dark) */
+:root{
+  --bg:#eef2f5; --surface:#ffffff; --ink:#18242f; --ink2:#566676; --line:#cdd8e1; --grid:rgba(24,36,47,.06);
+  --accent:#cf3220; --on-accent:#ffffff; --mark:rgba(255,225,77,.75); --ok:#12804f;
+  --g0:#f0605a; --g1:#f3a81f; --g2:#35b27a; --g3:#4a90f2; --g4:#9a68dc;
+  --f-display:'Dela Gothic One','Zen Maru Gothic','Hiragino Maru Gothic ProN','Yu Gothic',sans-serif;
+  --f-body:'Zen Maru Gothic','Hiragino Maru Gothic ProN','Hiragino Sans','Yu Gothic',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1c17; --surface:#182a21; --ink:#eef3ea; --ink2:#9fb3a6; --line:#2d4538; --grid:rgba(238,243,234,.05);
+    --accent:#ff7a63; --on-accent:#14201a; --mark:rgba(242,217,78,.4); --ok:#5fd69b;
+    --g0:#ff7a73; --g1:#ffbf3c; --g2:#4fd093; --g3:#5ea2ff; --g4:#b184f0; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1c17; --surface:#182a21; --ink:#eef3ea; --ink2:#9fb3a6; --line:#2d4538; --grid:rgba(238,243,234,.05);
+  --accent:#ff7a63; --on-accent:#14201a; --mark:rgba(242,217,78,.4); --ok:#5fd69b;
+  --g0:#ff7a73; --g1:#ffbf3c; --g2:#4fd093; --g3:#5ea2ff; --g4:#b184f0; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{
+  background-color:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:16px; line-height:1.6;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:22px 22px;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:16px 28px; min-height:100vh;
+}
+#app{max-width:440px;margin:0 auto}
+button{font-family:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+h1,h2{text-wrap:balance}
+mark{background:linear-gradient(transparent 55%,var(--mark) 55%);color:inherit;font-weight:900;padding:0 1px}
+
+.btn{display:block;width:100%;border:2px solid var(--ink);background:var(--surface);border-radius:12px;padding:13px 18px;font-weight:900;font-size:17px;min-height:50px;box-shadow:0 3px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn.ghost{box-shadow:none;border-color:var(--line);color:var(--ink2);font-weight:700}
+.actions{display:grid;gap:12px}
+.actions.two{grid-template-columns:1fr 1fr}
+
+/* title */
+.title{display:grid;gap:20px;padding-top:12px}
+.eyebrow{font-size:13px;letter-spacing:.12em;font-weight:700;color:var(--ink2)}
+.title h1{font-family:var(--f-display);font-size:clamp(40px,13vw,58px);line-height:1.05;font-weight:400}
+.ringed{position:relative;display:inline-block;padding:0 .12em}
+.ringed svg{position:absolute;inset:-12% -8%;width:116%;height:124%;overflow:visible}
+.ringed ellipse{fill:none;stroke:var(--accent);stroke-width:4;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:0;animation:draw .9s .2s backwards}
+.lead{color:var(--ink2);font-weight:500}
+.gemrow{display:flex;gap:8px}
+.gemrow .tile{width:48px;height:48px}
+.tile{background:var(--surface);border:1.5px solid var(--line);border-radius:10px;display:grid;place-items:center;padding:4px}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start}
+.steps li::before{content:counter(s);font-family:var(--f-display);width:30px;height:30px;border-radius:50%;border:2px solid var(--ink);display:grid;place-items:center;font-size:14px;background:var(--surface)}
+.steps b{display:block;font-weight:900}
+.steps span{font-size:14px;color:var(--ink2);line-height:1.5}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modebtn{border:2px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 14px;text-align:left;display:grid;gap:2px;min-width:0}
+.modebtn b{font-family:var(--f-display);font-weight:400;font-size:24px;line-height:1.2}
+.modebtn span{font-size:13px;color:var(--ink2);font-weight:700}
+.modebtn[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 3px 0 var(--accent)}
+.modebtn[aria-pressed="true"] b{color:var(--accent)}
+.best{font-size:14px;font-weight:700;color:var(--ink2)}
+.best b{color:var(--ink)}
+
+/* study */
+.head{display:grid;gap:4px;margin-bottom:14px}
+.head .eyebrow{color:var(--accent)}
+.head h2{font-family:var(--f-display);font-weight:400;font-size:26px;line-height:1.2}
+.cards{display:grid;gap:12px;margin-bottom:16px}
+.wc{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:8px;align-content:start}
+.wc.miss{border:2px solid var(--accent)}
+.wc .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.en{font-family:var(--f-display);font-size:28px;line-height:1.15;overflow-wrap:anywhere}
+.pos{font-size:12px;font-weight:700;color:var(--ink2);border:1.5px solid var(--line);border-radius:99px;padding:0 9px}
+.ja{font-weight:900;font-size:18px}
+.ex{font-size:15px;font-weight:500}
+.exj{font-size:13px;color:var(--ink2)}
+.bigk{font-family:var(--f-body);font-weight:900;font-size:64px;line-height:1.05}
+.kinfo{display:grid;gap:2px;min-width:0}
+.tag2{font-family:var(--f-display);font-size:26px;color:var(--accent);line-height:1}
+.say{margin-left:auto;border:1.5px solid var(--line);background:transparent;border-radius:99px;padding:3px 12px;font-size:13px;font-weight:700;color:var(--ink2)}
+.sent-say{margin-left:0;justify-self:start;margin-top:4px}
+.snd{border:1.5px solid var(--line);background:transparent;border-radius:99px;padding:2px 12px;font-size:12px;font-weight:700;color:var(--ink2)}
+.sticky{position:sticky;bottom:0;padding:12px 0 calc(8px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 30%)}
+
+/* battle */
+.battle{position:relative;display:grid;gap:10px;grid-template-areas:"bar" "arena" "slot" "foot"}
+.bar{grid-area:bar;display:flex;align-items:baseline;gap:10px;font-size:13px;font-weight:700;color:var(--ink2)}
+.bar .stg{font-family:var(--f-display);color:var(--accent);font-weight:400;letter-spacing:.04em}
+.bar .stn{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar .sc{font-variant-numeric:tabular-nums;color:var(--ink)}
+.arena{grid-area:arena;display:grid;justify-items:center;gap:4px;padding:6px 0 2px}
+.mon{width:min(var(--ms,120px),100%);aspect-ratio:160/134}
+.mon svg{width:100%;height:100%;overflow:visible}
+.mon .mo{stroke:var(--ink)}
+.mon.hit svg{animation:shake .4s}
+.mon.laugh svg{animation:bob .5s}
+.mon.boom svg{animation:boom 1.1s forwards}
+.mname{font-family:var(--f-display);font-size:15px;text-align:center}
+.hp{position:relative;width:min(100%,360px);height:18px;border:2px solid var(--ink);border-radius:99px;background:var(--surface);overflow:hidden}
+.hp i{position:absolute;inset:0 auto 0 0;width:100%;background:var(--accent);transition:width .5s}
+.hp b{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--ink);text-shadow:0 0 3px var(--surface),0 0 3px var(--surface)}
+.slot{grid-area:slot;position:relative;width:100%;justify-self:center}
+.pv{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:0 6px;overflow:hidden;aspect-ratio:6/1.45;align-content:end;margin-bottom:-2px;-webkit-mask-image:linear-gradient(to top,#000 35%,transparent 100%);mask-image:linear-gradient(to top,#000 35%,transparent 100%)}
+.pcell{aspect-ratio:1;padding:3px;border:1.5px dashed var(--line);border-radius:10px;display:grid;place-items:center;min-width:0;opacity:.8}
+.pcell.far{opacity:.45}
+.pcell svg{width:100%;height:100%;stroke:var(--ink);stroke-width:2.2;stroke-linejoin:round}
+.board{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;touch-action:none;user-select:none;-webkit-user-select:none;padding:4px;border:2px solid var(--ink);border-radius:14px;background:var(--bg);overflow:hidden}
+.cell{aspect-ratio:1;padding:3px;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;display:grid;place-items:center;min-width:0}
+.cell svg{width:100%;height:100%;stroke:var(--ink);stroke-width:2.2;stroke-linejoin:round;pointer-events:none}
+.g0{fill:var(--g0)}.g1{fill:var(--g1)}.g2{fill:var(--g2)}.g3{fill:var(--g3)}.g4{fill:var(--g4)}
+.cell.sel{outline:3px solid var(--accent);outline-offset:-3px}
+.cell.fall{animation:drop .3s cubic-bezier(.3,.7,.4,1)}
+.cell.pop{animation:pop .26s forwards}
+.cell.jama{background:repeating-linear-gradient(135deg,var(--line) 0 5px,var(--surface) 5px 10px);border-color:var(--ink2)}
+.foot{grid-area:foot;font-size:13px;color:var(--ink2);font-weight:700;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.fx{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5}
+.arrow{position:absolute;width:16px;height:48px;margin:-24px 0 0 -8px}
+.arrow.big{filter:drop-shadow(0 0 7px var(--accent))}
+.arrow .nose,.arrow .fin{fill:var(--accent)}
+.arrow .body{fill:var(--ink)}
+.arrow .flame{fill:var(--g1)}
+.float{position:absolute;font-family:var(--f-display);font-size:30px;color:var(--accent);transform:translate(-50%,-50%);animation:rise .9s forwards;text-shadow:0 0 6px var(--bg),0 0 6px var(--bg);white-space:nowrap}
+.toast{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:99px;font-weight:900;font-size:14px;animation:rise 1.3s forwards;white-space:nowrap}
+.ring-wave{position:absolute;border:6px solid var(--accent);border-radius:50%}
+.part{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px}
+.part svg{width:100%;height:100%;stroke:var(--ink);stroke-width:2.5;stroke-linejoin:round}
+.flash{position:absolute;inset:0;background:#fff;opacity:0}
+.boomtxt{position:absolute;left:50%;font-family:var(--f-display);font-size:clamp(48px,13vw,96px);color:var(--accent);text-shadow:3px 3px 0 var(--ink);white-space:nowrap;transform:translate(-50%,-50%)}
+
+/* quiz */
+.quiz{display:grid;gap:12px;background:var(--surface);border:2px solid var(--ink);border-radius:14px;padding:14px}
+.qhead{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:13px;font-weight:900;flex-wrap:wrap}
+.tag{background:var(--ink);color:var(--bg);border-radius:6px;padding:1px 10px}
+.arrows{color:var(--accent)}
+.sent{font-size:19px;font-weight:700;line-height:1.7}
+.blank{display:inline-block;min-width:5.5em;border-bottom:3px solid var(--ink);margin:0 3px;vertical-align:-2px;text-align:center}
+.blank.s{min-width:1.5em}
+.blank.filled{color:var(--accent);font-weight:900;border-bottom-color:var(--accent)}
+.blank.filled:not(.s){font-family:var(--f-display);font-size:.9em}
+.bigword{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.bigword .en{font-size:36px}
+.qask{font-weight:700;color:var(--ink2);font-size:14px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.choices.one{grid-template-columns:1fr}
+.ch{position:relative;border:2px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;min-height:56px;font-weight:900;font-size:17px;text-align:center;min-width:0;overflow-wrap:anywhere}
+.ch:not(:disabled):active{transform:scale(.97)}
+.ch:disabled{cursor:default}
+.ch .ring{position:absolute;inset:-6px -4px;width:calc(100% + 8px);height:calc(100% + 12px);pointer-events:none;overflow:visible}
+.ch .ring ellipse{fill:none;stroke:var(--accent);stroke-width:3.5;stroke-dasharray:1;stroke-dashoffset:0;animation:draw .5s backwards}
+.ch.wrong{text-decoration:line-through;text-decoration-color:var(--accent);text-decoration-thickness:3px;color:var(--ink2);border-style:dashed}
+.ch.right{border-color:var(--accent)}
+.verdict{font-family:var(--f-display);font-size:22px}
+.verdict.ok{color:var(--ok)}.verdict.ng{color:var(--accent)}
+.fb{display:grid;gap:8px}
+.fb .ans{font-weight:900}
+.fb .ex{background:var(--bg);border-radius:10px;padding:8px 10px}
+
+/* review, notebook, ranking */
+.rv{display:grid;gap:10px;margin-bottom:16px}
+.badge{margin-left:auto;font-size:12px;font-weight:900;border-radius:99px;padding:1px 10px;border:1.5px solid var(--ok);color:var(--ok)}
+.badge.ng{border-color:var(--accent);color:var(--accent)}
+.bignum{font-family:var(--f-display);font-size:56px;line-height:1;color:var(--accent)}
+.sum{display:grid;gap:4px;margin-bottom:16px}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+.tab{flex:1;border:2px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 10px;font-weight:900;font-size:15px}
+.tab[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.rk{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:6px}
+.rk li{display:grid;grid-template-columns:28px 1fr auto auto;gap:10px;align-items:baseline;background:var(--surface);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px;font-weight:700}
+.rk li.me{border-color:var(--accent);border-width:2px}
+.rk .no{font-family:var(--f-display);color:var(--accent)}
+.rk .nm{min-width:0;overflow-wrap:anywhere}
+.rk .pt{font-variant-numeric:tabular-nums}
+.rk .st{font-size:12px;color:var(--ink2)}
+.namebox{display:grid;gap:10px;background:var(--surface);border:2px solid var(--accent);border-radius:14px;padding:14px;margin-bottom:16px}
+.namebox label{font-weight:900;font-size:14px}
+.namebox input{font:inherit;font-weight:700;font-size:18px;padding:10px 12px;border:2px solid var(--ink);border-radius:10px;background:var(--bg);color:var(--ink);width:100%;min-width:0}
+.sec{font-size:15px;font-weight:900;margin-bottom:8px}
+
+@keyframes draw{from{stroke-dashoffset:1}}
+@keyframes drop{from{transform:translateY(calc(var(--f)*-112%))}to{transform:none}}
+@keyframes pop{to{transform:scale(.1) rotate(40deg);opacity:0}}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-10px) rotate(-4deg)}40%{transform:translateX(9px) rotate(3deg)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+@keyframes bob{50%{transform:translateY(-12px) scale(1.06)}}
+@keyframes rise{0%{opacity:0;margin-top:10px}15%{opacity:1}100%{opacity:0;margin-top:-34px}}
+@keyframes boom{0%{transform:none;filter:none}15%{transform:translateX(-8px) rotate(-3deg);filter:brightness(2.2)}30%{transform:translateX(8px) rotate(3deg);filter:none}45%{transform:translateX(-6px) scale(1.04);filter:brightness(2.2)}70%{transform:scale(1.35);opacity:1;filter:brightness(3)}100%{transform:scale(1.7);opacity:0;filter:blur(6px) brightness(3)}}
+@media (prefers-reduced-motion:reduce){
+  .cell.fall,.mon.hit svg,.mon.laugh svg,.ringed ellipse,.ch .ring ellipse{animation:none}
+  .btn{transition:none}
+}
+
+/* tablet and up: use the whole screen */
+@media (min-width:700px){
+  body{font-size:18px}
+  #app{max-width:1120px}
+  .title{max-width:640px;margin:0 auto}
+  .head h2{font-size:36px}
+  .cards{grid-template-columns:1fr 1fr;gap:16px}
+  .rv{grid-template-columns:1fr 1fr;gap:14px}
+  .wc{padding:18px}
+  .en{font-size:38px}.ja{font-size:22px}.ex{font-size:18px}.exj{font-size:15px}.pos{font-size:14px}
+  .bigk{font-size:84px}.tag2{font-size:34px}
+  .say{font-size:15px;padding:5px 16px}
+  .sticky .btn{max-width:520px;margin:0 auto}
+  .btn{font-size:20px;min-height:58px}
+  .bar{font-size:17px}
+  .mname{font-size:22px}
+  .hp{height:26px}.hp b{font-size:14px}
+  .mon{width:min(calc(var(--ms,120px)*1.5),100%,40vh)}
+  .slot{width:min(100%,max(340px,calc((100vh - 360px)*.8)),680px)}
+  .foot{font-size:16px}
+  .quiz{padding:22px;gap:16px}
+  .qhead{font-size:16px}
+  .sent{font-size:28px}
+  .bigword .en{font-size:54px}
+  .qask{font-size:18px}
+  .choices{gap:14px}
+  .ch{font-size:23px;min-height:76px}
+  .verdict{font-size:32px}
+  .fb .ans{font-size:21px}
+  .toast{font-size:18px}
+  .float{font-size:44px}
+  .rk{max-width:640px}
+}
+@media (min-width:900px) and (orientation:landscape){
+  .battle{grid-template-columns:minmax(300px,1fr) auto;grid-template-areas:"bar bar" "arena slot" "foot slot";column-gap:32px;align-items:start}
+  .slot{width:clamp(380px,calc((100vh - 110px)*.8),820px);justify-self:end}
+  .mon{width:min(calc(var(--ms,120px)*1.9),100%)}
+  .arena{align-self:center;padding-top:24px}
+  .hp{width:min(100%,460px)}
+}
+</style>
+
+<div id="app"></div>
+
+<script>
+(function(){
+'use strict';
+var N=6;
+
+/* ---------- storage ---------- */
+function lsj(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function lsw(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+/* ---------- content ---------- */
+var MONS=[
+ {name:'ぷるぷるスライム',kind:'slime',c:'#8fe3b0'},
+ {name:'ふわふわクラウド',kind:'cloud',c:'#a9d3ff'},
+ {name:'こうもりバット',kind:'bat',c:'#b9a3f0'},
+ {name:'とげとげウニ',kind:'urchin',c:'#ffb86b'},
+ {name:'のっぽシャドウ',kind:'shade',c:'#c7b8ff'},
+ {name:'ぐるぐるドラゴン',kind:'dragon',c:'#7fd6a4'},
+ {name:'おばけキノコ',kind:'mushroom',c:'#ff9aa8',crown:1},
+ {name:'タコ入道',kind:'octo',c:'#ff8fb8',eyes:3},
+ {name:'がちゃがちゃロボ',kind:'robot',c:'#9fb7c9',crown:1},
+ {name:'ことば魔王',kind:'king',c:'#ff8f8f',eyes:3}
+];
+var MODE_NAME={e:'英検4級',k:'漢検4級'};
+var DATA={e:[],k:[]},BYID={};
+function reg(mode,si,card){card.mode=mode;card.si=si;BYID[card.id]=card;return card}
+
+/* 英検4級 */
+var EDEF=[
+ ['まいにちのことば',[
+  ['breakfast','朝食','n','I eat ___ at seven every morning.','私は毎朝7時に朝食を食べます。'],
+  ['library','図書館','n','I borrowed this book from the ___.','私はこの本を図書館で借りました。'],
+  ['umbrella','かさ','n','It is raining. Take your ___.','雨が降っています。かさを持っていきなさい。'],
+  ['tomorrow','明日','n','Today is Monday, so ___ is Tuesday.','今日は月曜日なので、明日は火曜日です。']]],
+ ['気持ちと様子',[
+  ['beautiful','美しい','adj','The flowers in the park are very ___.','公園の花はとても美しいです。'],
+  ['difficult','難しい','adj','This math question is ___ for me.','この算数の問題は私には難しいです。'],
+  ['favorite','お気に入りの','adj','Soccer is my ___ sport.','サッカーは私のお気に入りのスポーツです。'],
+  ['hungry','おなかがすいた','adj','I did not eat lunch, so I am ___.','昼食を食べなかったので、おなかがすいています。']]],
+ ['よく使う動詞',[
+  ['borrow','借りる','v','Can I ___ your pen?','あなたのペンを借りてもいいですか。'],
+  ['practice','練習する','v','I ___ the piano every day to play better.','私はじょうずになるために毎日ピアノを練習します。'],
+  ['visit','訪ねる','v','I will ___ my grandmother in Osaka this Sunday.','今度の日曜日に大阪の祖母を訪ねるつもりです。'],
+  ['enjoy','楽しむ','v','We ___ playing games after school, and we always laugh.','私たちは放課後にゲームをして楽しみ、いつも笑います。']]],
+ ['町の場所',[
+  ['station','駅','n','I wait for the train at the ___ every morning.','私は毎朝、駅で電車を待ちます。'],
+  ['hospital','病院','n','My father is a doctor at the ___.','私の父は病院の医者です。'],
+  ['airport','空港','n','The plane arrives at the ___ at noon.','飛行機は正午に空港に着きます。'],
+  ['restaurant','レストラン','n','We had dinner at an Italian ___.','私たちはイタリア料理のレストランで夕食を食べました。']]],
+ ['時と天気',[
+  ['weather','天気','n','The ___ is sunny today.','今日の天気は晴れです。'],
+  ['season','季節','n','There are four ___ in a year: spring, summer, fall and winter.','1年には春、夏、秋、冬の4つの季節があります。'],
+  ['birthday','誕生日','n','Today is my ___. I am twelve.','今日は私の誕生日です。12才になります。'],
+  ['holiday','休日','n','We have a long ___ in August.','私たちは8月に長い休みがあります。']]],
+ ['学校',[
+  ['classroom','教室','n','I clean my ___ with my classmates after school.','私は放課後、クラスメートと教室をそうじします。'],
+  ['homework','宿題','n','I have a lot of ___ today, so I cannot play.','今日は宿題がたくさんあるので、遊べません。'],
+  ['lesson','授業','n','We have an English ___ every Friday.','私たちは毎週金曜日に英語の授業があります。'],
+  ['uniform','制服','n','Students at my school wear a ___.','私の学校の生徒は制服を着ます。']]],
+ ['人と仕事',[
+  ['neighbor','となりの人','n','My ___ lives next door to us.','となりの人は私たちの家のとなりに住んでいます。'],
+  ['cousin','いとこ','n',"My uncle's daughter is my ___.",'おじの娘は私のいとこです。'],
+  ['dentist','歯医者','n','I have a bad tooth, so I will go to the ___.','歯が痛いので、歯医者に行くつもりです。'],
+  ['farmer','農家の人','n','The ___ grows rice and vegetables.','農家の人は米と野菜を育てます。']]],
+ ['様子を表すことば',[
+  ['busy','忙しい','adj','My father is very ___ at work, so he comes home late.','父は仕事がとても忙しいので、帰りがおそいです。'],
+  ['tired','つかれた','adj','I went to bed late, so I am ___ this morning.','ねるのがおそかったので、今朝はつかれています。'],
+  ['popular','人気のある','adj','This singer is very ___ with young people.','この歌手は若い人にとても人気があります。'],
+  ['interesting','おもしろい','adj','I read an ___ story about space.','私は宇宙についてのおもしろい話を読みました。']]],
+ ['動作のことば',[
+  ['cook','料理する','v','My father will ___ dinner tonight.','今夜は父が夕食を作ります。'],
+  ['carry','運ぶ','v','Can you help me ___ this heavy box upstairs?','この重い箱を2階に運ぶのを手伝ってくれますか。'],
+  ['invite','招待する','v','I want to ___ my friends to my birthday party.','私は友だちを誕生日パーティーに招待したいです。'],
+  ['forget','忘れる','v','Do not ___ to bring your lunch box.','お弁当を持ってくるのを忘れないで。']]],
+ ['さいごの試練',[
+  ['remember','覚えている','v','I cannot ___ his name, but I know his face.','彼の名前は思い出せませんが、顔は知っています。'],
+  ['travel','旅行する','v','My dream is to ___ around the world.','私の夢は世界中を旅行することです。'],
+  ['explain','説明する','v','Can you ___ this word in easy English to me?','この単語をやさしい英語で私に説明してくれますか。'],
+  ['win','勝つ','v','Our team will ___ the soccer game tomorrow.','私たちのチームは明日のサッカーの試合に勝つでしょう。']]]
+];
+EDEF.forEach(function(d,i){
+  DATA.e.push({name:d[0],cards:d[1].map(function(w){
+    return reg('e',i,{kind:'e',id:'e:'+w[0],en:w[0],ja:w[1],pos:w[2],s:w[3],sj:w[4]});
+  })});
+});
+
+/* 漢検4級 */
+var KJ=[
+ ['圧',5,'圧力','あつりょく','物をおしつける力','力',['島','薬','駅']],
+ ['扱',6,'取扱','とりあつかい','物事をあつかうこと','取',['食','歌','走']],
+ ['依',8,'依頼','いらい','人にたのむこと','頼',['鉱','雑','眠']],
+ ['易',8,'簡易','かんい','手軽でやさしいこと','簡',['都','選','港']],
+ ['往',8,'往復','おうふく','行きと帰り','復',['島','頂','森']],
+ ['刻',8,'時刻','じこく','時間のある一点','時',['人','貨','店']],
+ ['敬',12,'尊敬','そんけい','りっぱだと思ってうやまうこと','尊',['商','遠','広']],
+ ['紅',9,'紅茶','こうちゃ','茶葉を発酵させた茶','茶',['薬','馬','机']],
+ ['鉱',13,'鉱山','こうざん','鉱物をほり出す山','山',['海','空','川']],
+ ['彩',11,'色彩','しきさい','いろどり','色',['音','味','形']],
+ ['窓',11,'窓口','まどぐち','受付をする場所','口',['耳','手','足']],
+ ['郵',11,'郵便','ゆうびん','手紙や荷物を送りとどける仕組み','便',['軍','紙','畑']],
+ ['傷',13,'負傷','ふしょう','けがをすること','負',['薬','島','森']],
+ ['奏',9,'演奏','えんそう','楽器をひくこと','演',['森','畑','鳥']],
+ ['磁',14,'磁石','じしゃく','鉄を引きつける石','石',['草','魚','雨']],
+ ['孝',7,'孝行','こうこう','親を大切にすること','行',['動','事','歩']],
+ ['稿',15,'原稿','げんこう','印刷のもとになる文章','原',['島','駅','店']],
+ ['頂',11,'頂上','ちょうじょう','山のいちばん高いところ','上',['雨','木','犬']],
+ ['宙',8,'宇宙','うちゅう','地球の外に広がる空間','宇',['島','橋','畑']],
+ ['乳',8,'牛乳','ぎゅうにゅう','牛からとった乳','牛',['犬','鳥','森']]
+];
+var TL={ア:'同じ意味の漢字を重ねる',イ:'反対の意味の漢字を重ねる',ウ:'上の字が下の字を修飾する',エ:'下の字が上の字の目的になる',オ:'上の字が下の字を打ち消す'};
+var TEX={ア:'岩石',イ:'高低',ウ:'青空',エ:'着席',オ:'非常'};
+var CT={
+ 'ア1':['ア',[['岩石','がんせき','「岩」も「石」も、どちらも「いし」'],['選択','せんたく','「選」も「択」も、どちらも「えらぶ」']]],
+ 'イ1':['イ',[['高低','こうてい','「高い」と「低い」'],['強弱','きょうじゃく','「強い」と「弱い」']]],
+ 'ウ1':['ウ',[['青空','あおぞら','「青い」「空」'],['洋画','ようが','「西洋の」「絵・映画」']]],
+ 'エ1':['エ',[['着席','ちゃくせき','「席に」「着く」'],['登山','とざん','「山に」「登る」']]],
+ 'オ1':['オ',[['非常','ひじょう','「常」でない'],['不安','ふあん','「安心」でない']]],
+ 'ア2':['ア',[['道路','どうろ','「道」も「路」も、どちらも「みち」'],['暗黒','あんこく','「暗い」も「黒い」も同じ意味']]],
+ 'イ2':['イ',[['増減','ぞうげん','「増える」と「減る」'],['前後','ぜんご','「前」と「後ろ」']]],
+ 'ウ2':['ウ',[['新年','しんねん','「新しい」「年」'],['特急','とっきゅう','「特別な」「急行」']]],
+ 'エ2':['エ',[['開会','かいかい','「会を」「開く」'],['読書','どくしょ','「書を」「読む」']]],
+ 'オ2':['オ',[['無害','むがい','「害」が無い'],['未知','みち','まだ「知」らない']]]
+};
+var CORDER=['ア1','イ1','ウ1','エ1','オ1','ア2','イ2','ウ2','エ2','オ2'];
+var OS=[
+ ['右',['左払い','横','縦','横折れ','横']],
+ ['左',['横','左払い','横','縦','横']],
+ ['川',['左払い','縦','縦']],
+ ['小',['縦はね','左の点','右の点']],
+ ['木',['横','縦','左払い','右払い']],
+ ['方',['点','横','横折れはね','左払い']],
+ ['九',['左払い','横折れはね']],
+ ['力',['横折れはね','左払い']],
+ ['上',['縦','横','横']],
+ ['下',['横','縦','点']]
+];
+var NAMES=['横','縦','左払い','右払い','点','横折れ','縦はね','横折れはね','左の点','右の点'];
+var SIM=[['点','左の点','右の点'],['縦','縦はね'],['横折れ','横折れはね']];
+var KN=['漢字の入口','画数に強くなる','熟語づくり','熟語の組み立て','筆順のルール','漢字の達人','熟語マスター','組み立てを見きわめる','筆順を見きわめる','漢字の王'];
+for(var ki=0;ki<10;ki++){
+  var kc=[];
+  [KJ[ki*2],KJ[ki*2+1]].forEach(function(d){
+    kc.push(reg('k',ki,{kind:'k',id:'k:'+d[0],k:d[0],n:d[1],w:d[2],r:d[3],m:d[4],a:d[5],d:d[6]}));
+  });
+  var ct=CT[CORDER[ki]];
+  kc.push(reg('k',ki,{kind:'c',id:'c:'+CORDER[ki],t:ct[0],words:ct[1].map(function(x){return {w:x[0],r:x[1],m:x[2]}})}));
+  var od=OS[ki];
+  kc.push(reg('k',ki,{kind:'o',id:'o:'+od[0],k:od[0],s:od[1]}));
+  DATA.k.push({name:KN[ki],cards:kc});
+}
+var POS={n:'名詞',adj:'形容詞',v:'動詞'};
+var CIRC=['①','②','③','④','⑤'];
+
+/* ---------- state ---------- */
+var app=document.getElementById('app');
+var S={mode:lsj('wordarrow-mode','e'),stage:0,tot:{ok:0,ng:0},miss:{},score:0,used:{},stat:{}};
+if(S.mode!=='e'&&S.mode!=='k') S.mode='e';
+var NB={e:lsj('wordarrow-nb-e',{}),k:lsj('wordarrow-nb-k',{})};
+var SEEN={e:lsj('wordarrow-seen-e',{}),k:lsj('wordarrow-seen-k',{})};
+var RK={e:lsj('wordarrow-rank-e',[]),k:lsj('wordarrow-rank-k',[])};
+var board,slot,battle;
+
+function $(s){return document.querySelector(s)}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+function rnd(){return Math.floor(Math.random()*5)}
+function stages(){return DATA[S.mode]}
+function progGet(m){var v=+lsj('wordarrow-stage-'+m,0)||0;return v>=10?0:v}
+function progSet(m,v){lsw('wordarrow-stage-'+m,v)}
+function speak(t,lang){try{var u=new SpeechSynthesisUtterance(t);u.lang=lang||'en-US';u.rate=lang==='ja-JP'?.9:.85;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+var CAN_SPEAK=typeof window!=='undefined'&&'speechSynthesis' in window;
+function sayBtn(t,lang,label,cls){return CAN_SPEAK?'<button type="button" class="say'+(cls?' '+cls:'')+'" data-say="'+esc(t)+'"'+(lang?' data-lang="'+lang+'"':'')+'>'+(label||'発音')+'</button>':''}
+function bindSay(root){root.querySelectorAll('[data-say]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();speak(b.getAttribute('data-say'),b.getAttribute('data-lang'))})})}
+function sentHL(w){return esc(w.s).replace('___','<mark>'+w.en+'</mark>')}
+function sentSay(w){return sayBtn(w.s.replace('___',w.en),'en-US','例文を聞く','sent-say')}
+
+/* ---------- notebook / seen ---------- */
+function nbSave(m){lsw('wordarrow-nb-'+m,NB[m])}
+function nbAdd(card){var m=card.mode,x=NB[m][card.id]||{n:0};x.n++;x.t=Date.now();NB[m][card.id]=x;nbSave(m)}
+function nbDec(card){var m=card.mode,x=NB[m][card.id];if(!x)return;x.n--;x.t=Date.now();if(x.n<=0)delete NB[m][card.id];nbSave(m)}
+function nbCount(m){return Object.keys(NB[m]).filter(function(id){return BYID[id]}).length}
+function record(q,ok,fromNb){
+  var c=q.card,m=c.mode;
+  SEEN[m][q.key]=(SEEN[m][q.key]||0)+1;lsw('wordarrow-seen-'+m,SEEN[m]);
+  S.used[q.key]=1;
+  if(!ok){nbAdd(c);S.miss[c.id]=(S.miss[c.id]||0)+1}
+  else if(fromNb){nbDec(c)}
+}
+
+/* ---------- questions ---------- */
+function variants(c){
+  if(c.kind==='e') return CAN_SPEAK?['A','B','C','D','E','F','G']:['A','B','C','D','G'];
+  if(c.kind==='k') return ['N','J','M','Z'];
+  if(c.kind==='c') return ['w0','w1','t0','t1'];
+  return c.s.map(function(_,i){return 'i'+i}).concat(['N']);
+}
+function allCards(kind){return Object.keys(BYID).map(function(id){return BYID[id]}).filter(function(x){return x.kind===kind})}
+function edistract(c,field){
+  var seen={};seen[c[field]]=1;var out=[];
+  shuffle(allCards('e').filter(function(x){return x!==c&&x.pos===c.pos})).forEach(function(x){
+    if(out.length<3&&!seen[x[field]]){seen[x[field]]=1;out.push(x)}
+  });
+  return out;
+}
+function misspell(w){
+  var seen={},res=[],tries=0,V='aeiou';
+  while(res.length<3&&tries<80){
+    tries++;
+    var a=w.split(''),t=Math.floor(Math.random()*4),i=1+Math.floor(Math.random()*Math.max(1,a.length-2)),r;
+    if(t===0){if(i>=a.length-1)continue;var x=a[i];a[i]=a[i+1];a[i+1]=x}
+    else if(t===1){a.splice(i,1)}
+    else if(t===2){a.splice(i,0,a[i])}
+    else{
+      var js=[];a.forEach(function(ch,k){if(k>0&&V.indexOf(ch)>=0)js.push(k)});
+      if(!js.length) continue;
+      var j=js[Math.floor(Math.random()*js.length)];
+      a[j]=V.charAt((V.indexOf(a[j])+1+Math.floor(Math.random()*4))%5);
+    }
+    r=a.join('');
+    if(r!==w&&!seen[r]){seen[r]=1;res.push(r)}
+  }
+  while(res.length<3) res.push(w+'e'.repeat(res.length+1));
+  return res;
+}
+function makeExtra(c,v,q){
+  var ds,three;
+  if(c.kind==='e'&&'CDEFG'.indexOf(v)>=0){
+    ds=edistract(c,v==='F'?'ja':(v==='C'?'en':'en'));
+    var en=function(){return shuffle([c].concat(ds)).map(function(x){return {label:x.en,ok:x===c}})};
+    var ja=function(){return shuffle([c].concat(edistract(c,'ja'))).map(function(x){return {label:x.ja,ok:x===c}})};
+    if(v==='C'){
+      q.tag='英語をえらぼう';
+      q.stem='<div class="bigword"><span class="ja" style="font-size:34px">'+c.ja+'</span></div><p class="qask">この意味の英単語は？</p>';
+      q.opts=en();
+    }else if(v==='D'){
+      q.tag='日本語から英語へ';
+      q.stem='<p class="sent">'+esc(c.sj)+'</p><p class="qask">この日本語を英語にするとき、使う単語は？</p>';
+      q.opts=en();
+    }else if(v==='E'){
+      q.tag='聞きとり';
+      q.stem='<div class="bigword"><span class="en">？</span>'+sayBtn(c.en,'en-US','もう一度聞く')+'</div><p class="qask">聞こえた単語は？</p>';
+      q.auto=c.en;q.opts=en();
+    }else if(v==='F'){
+      q.tag='聞きとり（意味）';
+      q.stem='<div class="bigword"><span class="en">？</span>'+sayBtn(c.en,'en-US','もう一度聞く')+'</div><p class="qask">聞こえた単語の意味は？</p>';
+      q.auto=c.en;q.opts=ja();
+    }else{
+      q.tag='つづり';
+      q.stem='<div class="bigword"><span class="ja" style="font-size:34px">'+c.ja+'</span></div><p class="qask">正しいつづりはどれ？</p>';
+      q.opts=shuffle([c.en].concat(misspell(c.en))).map(function(x){return {label:x,ok:x===c.en}});
+    }
+    q.ans=c.en+'　'+c.ja;
+    q.expl='<div class="ex">'+sentHL(c)+'<div class="exj">'+esc(c.sj)+'</div>'+sentSay(c)+'</div>';
+    return q;
+  }
+  if(c.kind==='k'&&(v==='M'||v==='Z')){
+    var oth=shuffle(allCards('k').filter(function(x){return x!==c}));
+    if(v==='M'){
+      q.tag='熟語えらび';
+      q.stem='<p class="qask">次の意味の熟語は？</p><p class="sent">'+c.m+'</p>';
+      q.opts=shuffle([c].concat(oth.slice(0,3))).map(function(x){return {label:x.w,ok:x===c}});
+    }else{
+      q.tag='熟語の読み';
+      q.stem='<div class="bigword"><span class="en">'+c.w+'</span></div><p class="qask">この熟語の読みは？</p>';
+      var rs=[];oth.forEach(function(x){if(rs.length<3&&x.r!==c.r&&rs.indexOf(x.r)<0)rs.push(x.r)});
+      q.opts=shuffle([c.r].concat(rs)).map(function(x){return {label:x,ok:x===c.r}});
+    }
+    q.ans=c.w+'（'+c.r+'）';
+    q.expl='<div class="ex">'+c.w+'（'+c.r+'）<div class="exj">'+c.m+'</div></div>';
+    return q;
+  }
+  if(c.kind==='c'&&v.charAt(0)==='t'){
+    var it=c.words[+v.charAt(1)],pool=[];
+    Object.keys(CT).forEach(function(key){if(CT[key][0]!==c.t)CT[key][1].forEach(function(x){pool.push(x)})});
+    three=shuffle(pool).slice(0,3);
+    q.tag='熟語の構成';
+    q.stem='<p class="qask">次の組み立ての熟語はどれ？</p><p class="sent">'+TL[c.t]+'</p>';
+    q.opts=shuffle([[it.w,it.r,it.m]].concat(three)).map(function(x){return {label:x[0],ok:x[0]===it.w}});
+    q.ans=it.w+'（'+it.r+'）';
+    q.expl='<div class="ex">'+it.w+'（'+it.r+'）<div class="exj">'+it.m+'</div></div>';
+    return q;
+  }
+  if(c.kind==='o'&&v==='N'){
+    q.tag='画数（書き順）';
+    q.stem='<div class="bigk">'+c.k+'</div><p class="qask">この漢字の画数は？</p>';
+    q.opts=numOpts(c.s.length);
+    q.ans=c.s.length+'画';
+    q.expl='<div class="ex">「'+c.k+'」の筆順（'+c.s.length+'画）<div class="exj">'+c.s.map(function(x,j){return CIRC[j]+x}).join('　')+'</div></div>';
+    return q;
+  }
+  return null;
+}
+function pickQ(cards,lastKey){
+  var cand=[],tot=0,seen=SEEN[cards[0].mode],lastCard=lastKey?lastKey.split('|')[0]:null;
+  cards.forEach(function(c){
+    variants(c).forEach(function(v){
+      var key=c.id+'|'+v; if(key===lastKey) return;
+      var w=1/(1+(seen[key]||0)*1.5);
+      if(S.used[key]) w*=.06;
+      if(c.id===lastCard&&cards.length>1) w*=.12;
+      w*=1+((NB[c.mode][c.id]||{n:0}).n)*.6+(S.miss[c.id]||0)*.8;
+      cand.push({c:c,v:v,w:w});tot+=w;
+    });
+  });
+  if(!cand.length){var c0=cards[0];return makeQ(c0,variants(c0)[0])}
+  var p=Math.random()*tot;
+  for(var i=0;i<cand.length;i++){p-=cand[i].w;if(p<=0)return makeQ(cand[i].c,cand[i].v)}
+  return makeQ(cand[0].c,cand[0].v);
+}
+function numOpts(n){
+  var pool=[];for(var d=-3;d<=3;d++){if(d!==0&&n+d>=1)pool.push(n+d)}
+  var w=shuffle(pool).slice(0,3).concat([n]).sort(function(a,b){return a-b});
+  return w.map(function(x){return {label:x+'画',ok:x===n}});
+}
+function makeQ(c,v){
+  var q={card:c,v:v,key:c.id+'|'+v,one:false,say:null,fill:null};
+  var opts,i;
+  var ext=makeExtra(c,v,q); if(ext) return ext;
+  if(c.kind==='e'){
+    var others=DATA.e[c.si].cards.filter(function(x){return x!==c});
+    var four=shuffle([c].concat(others));
+    if(v==='A'){
+      q.tag='空所をうめよう';
+      q.stem='<p class="sent">'+esc(c.s).replace('___','<span class="blank" id="blank"></span>')+'</p>';
+      q.say={text:c.s.replace('___','blank'),lang:'en-US',label:'例文を聞く'};
+      q.fill=c.en;
+      opts=four.map(function(x){return {label:x.en,ok:x===c}});
+    }else{
+      q.tag='意味をえらぼう';
+      q.stem='<div class="bigword"><span class="en">'+c.en+'</span>'+sayBtn(c.en)+'</div><p class="qask">この単語の意味は？</p>';
+      opts=four.map(function(x){return {label:x.ja,ok:x===c}});
+    }
+    q.ans=c.en+'　'+c.ja;
+    q.expl='<div class="ex">'+sentHL(c)+'<div class="exj">'+esc(c.sj)+'</div>'+sentSay(c)+'</div>';
+  }else if(c.kind==='k'){
+    if(v==='N'){
+      q.tag='画数（書き順）';
+      q.stem='<div class="bigk">'+c.k+'</div><p class="qask">この漢字の画数は？</p>';
+      opts=numOpts(c.n);
+      q.ans=c.n+'画';
+      q.expl='<div class="ex">「'+c.k+'」は'+c.n+'画。<div class="exj">熟語：'+c.w+'（'+c.r+'）　'+c.m+'</div></div>';
+    }else{
+      q.tag='熟語づくり';
+      var idx=c.w.indexOf(c.k)===0?1:0;
+      var disp=c.w.split('').map(function(ch,j){return j===idx?'<span class="blank s" id="blank"></span>':ch}).join('');
+      q.stem='<p class="qask">読みが「'+c.r+'」になる熟語です。（'+c.m+'）</p><div class="bigword"><span class="en">'+disp+'</span>'+sayBtn(c.r,'ja-JP','読み')+'</div>';
+      q.fill=c.a;
+      opts=shuffle([c.a].concat(c.d)).map(function(x){return {label:x,ok:x===c.a}});
+      q.ans=c.w+'（'+c.r+'）';
+      q.expl='<div class="ex">'+c.w+'（'+c.r+'）<div class="exj">'+c.m+'</div></div>';
+    }
+  }else if(c.kind==='c'){
+    var wi=+v.charAt(1),it=c.words[wi];
+    q.tag='熟語の構成';q.one=true;
+    q.stem='<div class="bigword"><span class="en">'+it.w+'</span>'+sayBtn(it.r,'ja-JP','読み')+'</div><p class="qask">この熟語の組み立て（構成）は？</p>';
+    var ts=['ア','イ','ウ','エ','オ'].filter(function(t){return t!==c.t});
+    opts=shuffle([c.t].concat(shuffle(ts).slice(0,3))).map(function(t){return {label:TL[t],ok:t===c.t}});
+    q.ans=TL[c.t];
+    q.expl='<div class="ex">'+it.w+'（'+it.r+'）<div class="exj">'+it.m+'</div></div>';
+  }else{
+    var si=+v.slice(1),cor=c.s[si];
+    q.tag='筆順';
+    q.stem='<div class="bigk">'+c.k+'</div><p class="qask">「'+c.k+'」の'+(si+1)+'画目はどれ？</p>';
+    var bad=NAMES.filter(function(nm){
+      if(nm===cor) return false;
+      for(var g=0;g<SIM.length;g++){if(SIM[g].indexOf(cor)>=0&&SIM[g].indexOf(nm)>=0) return false}
+      return true;
+    });
+    opts=shuffle([cor].concat(shuffle(bad).slice(0,3))).map(function(x){return {label:x,ok:x===cor}});
+    q.ans=(si+1)+'画目は「'+cor+'」';
+    q.expl='<div class="ex">「'+c.k+'」の筆順（'+c.s.length+'画）<div class="exj">'+c.s.map(function(x,j){return CIRC[j]+x}).join('　')+'</div></div>';
+  }
+  q.opts=opts;
+  return q;
+}
+function quizUI(q,host,o){
+  return new Promise(function(resolve){
+    host.innerHTML=
+      '<div class="quiz"><div class="qhead"><span class="tag">'+(o.old?'復習問題　':'')+q.tag+'</span><span class="arrows">'+(o.head||'')+'</span></div>'+
+      q.stem+
+      (q.say?sayBtn(q.say.text,q.say.lang,q.say.label,'sent-say'):'')+
+      '<div class="choices'+(q.one?' one':'')+'">'+q.opts.map(function(x,i){return '<button type="button" class="ch" data-i="'+i+'">'+esc(x.label)+'</button>'}).join('')+'</div>'+
+      '<div class="fb" id="fb" hidden></div></div>';
+    bindSay(host);
+    if(q.auto&&CAN_SPEAK) setTimeout(function(){speak(q.auto,'en-US')},300);
+    var btns=host.querySelectorAll('.ch'),done=false;
+    btns.forEach(function(b){b.addEventListener('click',function(){
+      if(done) return; done=true;
+      var ok=q.opts[+b.dataset.i].ok;
+      if(ok) SFX.good(); else SFX.bad();
+      btns.forEach(function(x){
+        x.disabled=true;
+        if(q.opts[+x.dataset.i].ok){x.classList.add('right');x.insertAdjacentHTML('beforeend',ringSvg())}
+      });
+      if(!ok) b.classList.add('wrong');
+      var bl=host.querySelector('#blank'); if(bl&&q.fill){bl.textContent=q.fill;bl.classList.add('filled')}
+      var fb=host.querySelector('#fb');
+      fb.innerHTML=
+        '<div class="verdict '+(ok?'ok':'ng')+'">'+(ok?'せいかい！':'ざんねん')+'</div>'+
+        '<div class="ans">正解：'+esc(q.ans)+'</div>'+q.expl+
+        '<button type="button" class="btn primary" id="qnext">'+(o.next||'つぎへ')+'</button>';
+      fb.hidden=false;bindSay(fb);
+      var nx=fb.querySelector('#qnext');nx.focus({preventScroll:true});
+      nx.onclick=function(){resolve(ok)};
+    })});
+  });
+}
+
+/* ---------- sound ---------- */
+var AC=null,SND=true;
+try{SND=localStorage.getItem('wordarrow-snd')!=='0'}catch(e){}
+function ac(){
+  if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)()}catch(e){AC=null}}
+  if(AC&&AC.state==='suspended'){try{AC.resume()}catch(e){}}
+  return AC;
+}
+window.addEventListener('pointerdown',function(){ac()});
+function tone(f,t0,d,type,vol,f2){
+  if(!SND) return; var a=ac(); if(!a) return;
+  var t=a.currentTime+t0,o=a.createOscillator(),g=a.createGain();
+  o.type=type||'sine';o.frequency.setValueAtTime(f,t);
+  if(f2) o.frequency.exponentialRampToValueAtTime(f2,t+d);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol||.12,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+d+.03);
+}
+function noise(t0,d,vol){
+  if(!SND) return; var a=ac(); if(!a) return;
+  var len=Math.floor(a.sampleRate*d),buf=a.createBuffer(1,len,a.sampleRate),data=buf.getChannelData(0);
+  for(var i=0;i<len;i++) data[i]=(Math.random()*2-1)*(1-i/len);
+  var s=a.createBufferSource(),g=a.createGain(),t=a.currentTime+t0;
+  s.buffer=buf;g.gain.setValueAtTime(vol||.15,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  s.connect(g);g.connect(a.destination);s.start(t);
+}
+var SFX={
+  match:function(chain){
+    var b=523.25*Math.pow(2,Math.min(chain-1,5)*2/12);
+    [0,4,7,12].forEach(function(s,i){tone(b*Math.pow(2,s/12),i*.06,.2,'triangle',.13)});
+  },
+  good:function(){tone(784,0,.12,'square',.06);tone(1175,.1,.28,'square',.06)},
+  bad:function(){tone(240,0,.28,'sawtooth',.07,130)},
+  shot:function(big){tone(1000,0,.3,'sawtooth',.05,220);noise(0,.18,.05);if(big>1.8){tone(140,.25,.5,'sawtooth',.1,45);noise(.25,.4,.12)}},
+  defeat:function(){
+    noise(0,.5,.16);tone(520,0,.5,'sawtooth',.1,60);
+    [523.25,659.25,783.99,1046.5].forEach(function(f,i){tone(f,.55+i*.11,.3,'square',.08)});
+    tone(1046.5,1.0,.7,'triangle',.12);
+  },
+  fan:function(){[523.25,659.25,783.99,1046.5,1318.5].forEach(function(f,i){tone(f,i*.09,.3,'triangle',.1)})}
+};
+function bindSnd(){
+  var b=$('#snd'); if(!b) return;
+  function lab(){b.textContent=SND?'音 ON':'音 OFF'}
+  lab();
+  b.onclick=function(){SND=!SND;try{localStorage.setItem('wordarrow-snd',SND?'1':'0')}catch(e){}lab();if(SND)SFX.good()};
+}
+
+/* ---------- shapes ---------- */
+var SHAPES=[
+ '<circle cx="20" cy="20" r="14"/>',
+ '<rect x="7" y="7" width="26" height="26" rx="4"/>',
+ '<polygon points="20,6 35,33 5,33"/>',
+ '<polygon points="20,4 36,20 20,36 4,20"/>',
+ '<polygon points="12,6 28,6 37,20 28,34 12,34 3,20"/>'
+];
+function gem(t){return '<svg viewBox="0 0 40 40" class="g'+t+'" aria-hidden="true">'+SHAPES[t]+'</svg>'}
+var GEMNAME=['あか丸','きいろ四角','みどり三角','あおひし形','むらさき六角'];
+function ringSvg(){return '<svg class="ring" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><ellipse cx="50" cy="20" rx="47" ry="17" pathLength="1"/></svg>'}
+
+/* ---------- monster ---------- */
+function ringed(s,c){return '<g class="mo" fill="'+c+'" stroke-width="7" stroke-linejoin="round">'+s+'</g><g fill="'+c+'" stroke="none">'+s+'</g>'}
+function faceSVG(n){
+  var e;
+  if(n===1){e='<circle cx="80" cy="68" r="15" fill="#fff"/><circle cx="82" cy="70" r="7" fill="#18242f" stroke="none"/>'}
+  else{
+    e='<circle cx="62" cy="68" r="9" fill="#fff"/><circle cx="98" cy="68" r="9" fill="#fff"/><circle cx="64" cy="70" r="4" fill="#18242f" stroke="none"/><circle cx="96" cy="70" r="4" fill="#18242f" stroke="none"/>';
+    if(n===3) e+='<circle cx="80" cy="50" r="7" fill="#fff"/><circle cx="80" cy="51" r="3" fill="#18242f" stroke="none"/>';
+  }
+  return '<g class="mo" stroke-width="3" stroke-linecap="round">'+e+'<path d="M66 90 Q80 102 94 90" fill="none"/></g>';
+}
+function monsterSVG(m){
+  var body='',extra='',c=m.c,k=m.kind;
+  if(k==='cloud'){
+    body=ringed('<circle cx="50" cy="82" r="26"/><circle cx="80" cy="62" r="32"/><circle cx="112" cy="82" r="26"/><rect x="50" y="82" width="62" height="26"/>',c);
+  }else if(k==='urchin'){
+    var sp='';
+    for(var i=0;i<12;i++){var a=i/12*Math.PI*2,a1=a-.16,a2=a+.16,R=52,r=30;
+      sp+='<polygon points="'+(80+Math.cos(a1)*r).toFixed(1)+','+(70+Math.sin(a1)*r).toFixed(1)+' '+(80+Math.cos(a)*R).toFixed(1)+','+(70+Math.sin(a)*R).toFixed(1)+' '+(80+Math.cos(a2)*r).toFixed(1)+','+(70+Math.sin(a2)*r).toFixed(1)+'"/>';}
+    body=ringed(sp+'<circle cx="80" cy="70" r="38"/>',c);
+  }else if(k==='dragon'){
+    body=ringed('<ellipse cx="80" cy="76" rx="46" ry="40"/><polygon points="48,48 38,14 66,40"/><polygon points="112,48 122,14 94,40"/><polygon points="40,88 20,98 40,102"/>',c);
+  }else if(k==='shade'){
+    body=ringed('<path d="M48 122 V60 a32 32 0 0 1 64 0 V122 l-13 -10 l-13 10 l-12 -10 l-13 10 l-13 -10 z"/>',c);
+  }else if(k==='king'){
+    body=ringed('<ellipse cx="80" cy="80" rx="46" ry="40"/><polygon points="46,56 34,30 64,48"/><polygon points="114,56 126,30 96,48"/>',c);
+    extra='<g class="mo" fill="#ffd54a" stroke-width="3" stroke-linejoin="round"><polygon points="56,42 62,18 72,34 80,14 88,34 98,18 104,42"/></g>';
+  }else if(k==='slime'){
+    body=ringed('<path d="M28 114 Q22 72 54 52 Q64 30 80 30 Q96 30 106 52 Q138 72 132 114 Z"/>',c);
+  }else if(k==='bat'){
+    body=ringed('<path d="M50 72 Q16 38 6 76 Q22 70 30 90 Q42 80 52 94 Z"/><path d="M110 72 Q144 38 154 76 Q138 70 130 90 Q118 80 108 94 Z"/><ellipse cx="80" cy="80" rx="36" ry="34"/><polygon points="58,56 62,24 80,48"/><polygon points="102,56 98,24 80,48"/>',c);
+  }else if(k==='octo'){
+    body=ringed('<path d="M34 80 a46 46 0 0 1 92 0 Z"/><rect x="34" y="78" width="92" height="26"/><circle cx="44" cy="106" r="10"/><circle cx="62" cy="110" r="10"/><circle cx="80" cy="112" r="10"/><circle cx="98" cy="110" r="10"/><circle cx="116" cy="106" r="10"/>',c);
+  }else if(k==='robot'){
+    body=ringed('<rect x="34" y="34" width="92" height="82" rx="14"/><rect x="76" y="14" width="8" height="22"/><circle cx="80" cy="12" r="7"/><rect x="20" y="62" width="16" height="28" rx="4"/><rect x="124" y="62" width="16" height="28" rx="4"/>',c);
+  }else{
+    body=ringed('<path d="M22 80 a58 48 0 0 1 116 0 Z"/><rect x="54" y="76" width="52" height="44" rx="12"/>',c);
+    extra='<g fill="#fff" stroke="none"><circle cx="48" cy="56" r="8"/><circle cx="108" cy="46" r="10"/><circle cx="80" cy="34" r="6"/></g>';
+  }
+  if(m.crown&&k!=='king') extra+='<g class="mo" fill="#ffd54a" stroke-width="3" stroke-linejoin="round"><polygon points="56,38 62,14 72,30 80,10 88,30 98,14 104,38"/></g>';
+  return '<svg viewBox="0 0 160 134" role="img" aria-label="'+m.name+'">'+body+extra+faceSVG(m.eyes||2)+'</svg>';
+}
+
+/* ---------- cards ---------- */
+function cardHTML(c,o){
+  o=o||{};
+  var badge=o.badge||'',cls='wc'+(o.miss?' miss':''),del=o.del?'<button type="button" class="say" data-del="'+c.id+'">おぼえた（消す）</button>':'';
+  if(c.kind==='e'){
+    return '<div class="'+cls+'"><div class="row"><span class="en">'+c.en+'</span><span class="pos">'+POS[c.pos]+'</span>'+(badge||sayBtn(c.en))+'</div>'+
+      '<div class="ja">'+c.ja+'</div><div class="ex">'+sentHL(c)+'</div><div class="exj">'+esc(c.sj)+'</div>'+sentSay(c)+del+'</div>';
+  }
+  if(c.kind==='k'){
+    return '<div class="'+cls+'"><div class="row"><span class="bigk">'+c.k+'</span><div class="kinfo"><span class="pos" style="justify-self:start">'+c.n+'画</span><div class="ja">'+c.w+'（'+c.r+'）</div><div class="exj">'+c.m+'</div></div>'+(badge||sayBtn(c.r,'ja-JP','読み'))+'</div>'+del+'</div>';
+  }
+  if(c.kind==='c'){
+    return '<div class="'+cls+'"><div class="row"><span class="tag2">'+c.t+'</span><span class="ja">'+TL[c.t]+'</span>'+badge+'</div>'+
+      c.words.map(function(x){return '<div class="ex"><b>'+x.w+'</b>（'+x.r+'）<div class="exj">'+x.m+'</div></div>'}).join('')+
+      '<div class="exj">熟語の構成：'+(c.t==='ア'?'ア':c.t==='イ'?'イ':c.t==='ウ'?'ウ':c.t==='エ'?'エ':'オ')+'（例：'+TEX[c.t]+'）</div>'+del+'</div>';
+  }
+  return '<div class="'+cls+'"><div class="row"><span class="bigk">'+c.k+'</span><div class="kinfo"><span class="pos" style="justify-self:start">筆順 '+c.s.length+'画</span><div class="ex">'+c.s.map(function(x,j){return CIRC[j]+x}).join(' → ')+'</div></div>'+badge+'</div>'+del+'</div>';
+}
+
+/* ---------- screens ---------- */
+function bestLine(m){var r=RK[m][0];return r?'<span class="best">ベスト <b>'+esc(r.name)+'</b>　'+r.score+' pt</span>':'<span class="best">まだ記録がありません</span>'}
+function showTitle(){
+  var m=S.mode,saved=progGet(m);
+  app.innerHTML=
+  '<section class="title">'+
+   '<p class="eyebrow">パズルシューター学習ゲーム</p>'+
+   '<h1>ワード<span class="ringed">アロー<svg viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><ellipse cx="50" cy="20" rx="47" ry="17" pathLength="1"/></svg></span></h1>'+
+   '<div><p class="sec">どちらに挑戦する？</p><div class="modes">'+
+     '<button type="button" class="modebtn" data-m="e" aria-pressed="'+(m==='e')+'"><b>英検4級</b><span>単語・例文・意味</span></button>'+
+     '<button type="button" class="modebtn" data-m="k" aria-pressed="'+(m==='k')+'"><b>漢検4級</b><span>画数・熟語・筆順</span></button>'+
+   '</div></div>'+
+   '<p class="lead">3つそろえてミサイルをつくり、問題に答えて発射します。全10体の敵を倒そう。</p>'+
+   '<div class="gemrow" aria-label="ブロックは5種類">'+[0,1,2,3,4].map(function(t){return '<div class="tile">'+gem(t)+'</div>'}).join('')+'</div>'+
+   '<ol class="steps">'+
+    '<li><div><b>カードを見ておぼえる</b><span>ステージごとに4枚。'+(m==='e'?'単語と例文、発音も聞けます。':'漢字の画数、熟語、筆順を見ます。')+'</span></div></li>'+
+    '<li><div><b>パズルでミサイルをつくる</b><span>となりのブロックを入れかえて、同じ形を3つ以上そろえます。連鎖するほどミサイルが大きくなります。</span></div></li>'+
+    '<li><div><b>問題に答えて発射</b><span>正解なら全力。まちがえると威力は4分の1になり、じゃまブロックが出ます。</span></div></li>'+
+    '<li><div><b>まちがいを見直す</b><span>まちがえた問題は「まちがいノート」に残ります。</span></div></li>'+
+   '</ol>'+
+   '<div class="row" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button type="button" class="snd" id="snd"></button>'+bestLine(m)+'</div>'+
+   '<div class="actions">'+
+    '<button type="button" class="btn primary" id="go0">'+MODE_NAME[m]+'をはじめから</button>'+
+    (saved>0?'<button type="button" class="btn" id="goc">つづきから（STAGE '+(saved+1)+'）</button>':'')+
+    '<div class="actions two"><button type="button" class="btn ghost" id="nb">まちがいノート（'+nbCount(m)+'）</button><button type="button" class="btn ghost" id="rk">ランキング</button></div>'+
+   '</div>'+
+  '</section>';
+  bindSnd();
+  app.querySelectorAll('.modebtn').forEach(function(b){b.onclick=function(){S.mode=b.dataset.m;lsw('wordarrow-mode',S.mode);showTitle()}});
+  function start(si){S.tot={ok:0,ng:0};S.miss={};S.score=0;S.used={};showStudy(si)}
+  $('#go0').onclick=function(){start(0)};
+  if(saved>0) $('#goc').onclick=function(){start(saved)};
+  $('#nb').onclick=function(){showNotebook(S.mode)};
+  $('#rk').onclick=showRanking;
+}
+
+function showStudy(i){
+  S.stage=i; var st=stages()[i]; window.scrollTo(0,0);
+  app.innerHTML=
+  '<section>'+
+   '<div class="head"><p class="eyebrow">'+MODE_NAME[S.mode]+'　STAGE '+(i+1)+' / 10</p><h2>'+st.name+'</h2><p class="lead">この4枚をおぼえてから、'+MONS[i].name+'に挑みます。</p></div>'+
+   '<div class="cards">'+st.cards.map(function(c){return cardHTML(c)}).join('')+'</div>'+
+   '<div class="sticky"><button type="button" class="btn primary" id="start">バトル開始</button></div>'+
+  '</section>';
+  bindSay(app);
+  $('#start').onclick=startBattle;
+}
+
+function showNotebook(m,msg){
+  window.scrollTo(0,0);
+  var nb=NB[m],ids=Object.keys(nb).filter(function(id){return BYID[id]}).sort(function(a,b){return nb[b].n-nb[a].n||nb[b].t-nb[a].t});
+  app.innerHTML=
+  '<section><div class="head"><p class="eyebrow">まちがいノート</p><h2>まちがえた問題</h2>'+(msg?'<p class="lead" style="color:var(--ok);font-weight:900">'+msg+'</p>':'<p class="lead">まちがえた問題がここに残ります。テストで正解すると回数が減り、0回で消えます。</p>')+'</div>'+
+  '<div class="tabs"><button type="button" class="tab" data-m="e" aria-pressed="'+(m==='e')+'">英検4級 ('+nbCount('e')+')</button><button type="button" class="tab" data-m="k" aria-pressed="'+(m==='k')+'">漢検4級 ('+nbCount('k')+')</button></div>'+
+  (ids.length?'<div class="rv">'+ids.map(function(id){return cardHTML(BYID[id],{badge:'<span class="badge ng">まちがい '+nb[id].n+'回</span>',miss:1,del:1})}).join('')+'</div>':'<p class="lead" style="margin-bottom:16px">まちがいはありません。</p>')+
+  '<div class="actions" style="max-width:520px">'+(ids.length?'<button type="button" class="btn primary" id="nbt">ノートの問題をテスト（'+Math.min(ids.length,8)+'問）</button>':'')+'<button type="button" class="btn ghost" id="back">もどる</button></div></section>';
+  bindSay(app);
+  app.querySelectorAll('.tab').forEach(function(b){b.onclick=function(){showNotebook(b.dataset.m)}});
+  app.querySelectorAll('[data-del]').forEach(function(b){b.onclick=function(){delete NB[m][b.dataset.del];nbSave(m);showNotebook(m)}});
+  $('#back').onclick=showTitle;
+  var t=$('#nbt');
+  if(t) t.onclick=async function(){
+    var cards=ids.slice(0,8).map(function(id){return BYID[id]});
+    var rt=await runTest(cards,{nb:true});
+    var ok=cards.filter(function(c){return rt[c.id]}).length;
+    showNotebook(m,'テスト結果：'+ok+' / '+cards.length+'問 正解');
+  };
+}
+
+function rkHTML(m,hi){
+  var rk=RK[m];
+  if(!rk.length) return '<p class="lead" style="margin-bottom:16px">まだ記録がありません。</p>';
+  return '<ol class="rk">'+rk.map(function(r,i){
+    return '<li'+(i===hi?' class="me"':'')+'><span class="no">'+(i+1)+'</span><span class="nm">'+esc(r.name)+'</span><span class="pt">'+r.score+' pt</span><span class="st">STAGE '+r.stages+(r.date?'　'+r.date:'')+'</span></li>';
+  }).join('')+'</ol>';
+}
+function showRanking(){
+  window.scrollTo(0,0);
+  app.innerHTML=
+  '<section><div class="head"><p class="eyebrow">ランキング</p><h2>ベスト5</h2></div>'+
+  '<p class="sec">英検4級</p>'+rkHTML('e',-1)+'<p class="sec">漢検4級</p>'+rkHTML('k',-1)+
+  '<div class="actions" style="max-width:520px"><button type="button" class="btn ghost" id="back">もどる</button></div></section>';
+  $('#back').onclick=showTitle;
+}
+
+/* ---------- board logic ---------- */
+function findMatches(){
+  var s={},b=S.b,r,c,t;
+  function at(r,c){return b[r]&&b[r][c]?b[r][c].t:-9}
+  for(r=0;r<N;r++)for(c=0;c<N-2;c++){t=at(r,c);if(t>=0&&at(r,c+1)===t&&at(r,c+2)===t){s[r+','+c]=1;s[r+','+(c+1)]=1;s[r+','+(c+2)]=1}}
+  for(c=0;c<N;c++)for(r=0;r<N-2;r++){t=at(r,c);if(t>=0&&at(r+1,c)===t&&at(r+2,c)===t){s[r+','+c]=1;s[(r+1)+','+c]=1;s[(r+2)+','+c]=1}}
+  return Object.keys(s);
+}
+function hasMoves(){
+  var b=S.b;
+  for(var r=0;r<N;r++)for(var c=0;c<N;c++){
+    var d=[[0,1],[1,0]];
+    for(var k=0;k<2;k++){
+      var r2=r+d[k][0],c2=c+d[k][1]; if(r2>=N||c2>=N) continue;
+      var A=b[r][c],B=b[r2][c2]; if(A.t<0||B.t<0) continue;
+      b[r][c]=B;b[r2][c2]=A; var m=findMatches().length>0; b[r][c]=A;b[r2][c2]=B;
+      if(m) return true;
+    }
+  }
+  return false;
+}
+function fillQ(c){while(S.q[c].length<3)S.q[c].push(rnd())}
+function newBoard(){
+  var tries=0;
+  do{
+    S.b=[];
+    for(var r=0;r<N;r++){S.b[r]=[];for(var c=0;c<N;c++){
+      var t;do{t=rnd()}while((c>=2&&S.b[r][c-1].t===t&&S.b[r][c-2].t===t)||(r>=2&&S.b[r-1][c].t===t&&S.b[r-2][c].t===t));
+      S.b[r][c]={t:t,f:0};}}
+    tries++;
+  }while(!hasMoves()&&tries<50);
+  S.q=[];for(var q=0;q<N;q++){S.q[q]=[];fillQ(q)}
+}
+function reshuffle(){
+  var tries=0,cells=[],r,c;
+  for(r=0;r<N;r++)for(c=0;c<N;c++)if(S.b[r][c].t>=0)cells.push(S.b[r][c]);
+  do{
+    var ts=shuffle(cells.map(function(x){return x.t})),i=0;
+    cells.forEach(function(x){x.t=ts[i++]});
+    tries++;
+  }while((findMatches().length||!hasMoves())&&tries<60);
+}
+function jamaCount(){var n=0;for(var r=0;r<N;r++)for(var c=0;c<N;c++)if(S.b[r][c]&&S.b[r][c].t<0)n++;return n}
+function gravity(){
+  for(var c=0;c<N;c++){
+    var w=N-1,r;
+    for(r=N-1;r>=0;r--){
+      var cell=S.b[r][c];
+      if(cell){ if(w!==r){S.b[w][c]=cell;S.b[r][c]=null;cell.f=w-r} w--; }
+    }
+    for(r=w;r>=0;r--){S.b[r][c]={t:S.q[c].shift(),f:w+1};fillQ(c)}
+  }
+}
+function renderPv(){
+  var pv=$('#pv'); if(!pv||!S.q) return;
+  var h='',row,c;
+  for(row=1;row>=0;row--)for(c=0;c<N;c++){h+='<div class="pcell'+(row?' far':'')+'">'+gem(S.q[c][row])+'</div>'}
+  pv.innerHTML=h;
+}
+function render(clr){
+  board.innerHTML='';
+  for(var r=0;r<N;r++)for(var c=0;c<N;c++){
+    var cell=S.b[r][c],el=document.createElement('button');
+    el.type='button';
+    el.className='cell'+(cell.t<0?' jama':'')+(cell.f?' fall':'')+(clr&&clr[r+','+c]?' pop':'');
+    el.dataset.r=r;el.dataset.c=c;
+    if(cell.f) el.style.setProperty('--f',cell.f);
+    el.setAttribute('aria-label',cell.t<0?'じゃまブロック':GEMNAME[cell.t]);
+    el.innerHTML=cell.t<0?'':gem(cell.t);
+    board.appendChild(el); cell.f=0;
+  }
+  renderPv();renderSel();
+}
+function renderSel(){
+  board.querySelectorAll('.cell').forEach(function(el){
+    el.classList.toggle('sel',!!S.sel&&+el.dataset.r===S.sel.r&&+el.dataset.c===S.sel.c);
+  });
+}
+function updateInfo(){
+  var i=$('#info'); if(!i) return;
+  i.innerHTML='<span>手数 '+S.moves+'</span><span>れんぞく正解 '+S.streak+'</span><span>じゃま '+jamaCount()+'</span>';
+  $('#score').textContent=S.score+' pt';
+}
+function flash(msg){
+  var t=document.createElement('div');t.className='toast';t.textContent=msg;
+  $('#fx').appendChild(t);setTimeout(function(){t.remove()},1300);
+}
+
+/* ---------- battle ---------- */
+function startBattle(){
+  var st=stages()[S.stage],mon=MONS[S.stage]; window.scrollTo(0,0);
+  S.maxHp=260+S.stage*30;S.hp=S.maxHp;S.moves=0;S.streak=0;S.locked=true;S.sel=null;S.drag=null;S.lastKey=null;S.stat={};
+  st.cards.forEach(function(c){S.stat[c.id]={ok:0,ng:0,asked:0}});
+  app.innerHTML=
+  '<section class="battle" id="battle">'+
+   '<div class="bar"><span class="stg">STAGE '+(S.stage+1)+'</span><span class="stn">'+MODE_NAME[S.mode]+'　'+st.name+'</span><button type="button" class="snd" id="snd"></button><span class="sc" id="score"></span></div>'+
+   '<div class="arena"><div class="mon" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+monsterSVG(mon)+'</div><div class="mname">'+mon.name+'</div>'+
+   '<div class="hp" role="progressbar" aria-label="モンスターの体力"><i id="hpfill"></i><b id="hptxt"></b></div></div>'+
+   '<div class="slot" id="slot"><div class="pv" id="pv" aria-hidden="true"></div><div class="board" id="board"></div></div>'+
+   '<div class="foot" id="info"></div>'+
+   '<div class="fx" id="fx"></div>'+
+  '</section>';
+  board=$('#board');slot=$('#slot');battle=$('#battle');bindSnd();
+  setHp();
+  newBoard();render();updateInfo();
+  board.addEventListener('pointerdown',onDown);
+  board.addEventListener('pointermove',onMove);
+  S.locked=false;
+}
+function onDown(e){
+  var el=e.target.closest('.cell'); if(!el||S.locked) return;
+  var r=+el.dataset.r,c=+el.dataset.c;
+  if(S.sel){
+    if(S.sel.r===r&&S.sel.c===c){S.sel=null;S.drag=null;renderSel();return}
+    if(Math.abs(S.sel.r-r)+Math.abs(S.sel.c-c)===1){var a=S.sel;S.sel=null;S.drag=null;swapTry(a.r,a.c,r,c);return}
+  }
+  S.sel={r:r,c:c};S.drag={x:e.clientX,y:e.clientY,r:r,c:c};renderSel();
+}
+function onMove(e){
+  if(!S.drag||S.locked) return;
+  var dx=e.clientX-S.drag.x,dy=e.clientY-S.drag.y;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<18) return;
+  var r=S.drag.r,c=S.drag.c,r2=r,c2=c;
+  if(Math.abs(dx)>Math.abs(dy)) c2+=dx>0?1:-1; else r2+=dy>0?1:-1;
+  S.drag=null;S.sel=null;
+  if(r2>=0&&r2<N&&c2>=0&&c2<N) swapTry(r,c,r2,c2); else renderSel();
+}
+window.addEventListener('pointerup',function(){S.drag=null});
+
+function setHp(){
+  var f=$('#hpfill'),t=$('#hptxt'); if(!f) return;
+  f.style.width=(100*S.hp/S.maxHp)+'%';
+  t.textContent='HP '+S.hp+' / '+S.maxHp;
+}
+
+async function swapTry(r1,c1,r2,c2){
+  if(S.locked) return;
+  var A=S.b[r1][c1],B=S.b[r2][c2];
+  if(A.t<0||B.t<0){flash('じゃまブロックは動かせません');S.sel=null;renderSel();return}
+  S.locked=true;S.sel=null;
+  S.b[r1][c1]=B;S.b[r2][c2]=A;render();
+  if(!findMatches().length){
+    await sleep(200);S.b[r1][c1]=A;S.b[r2][c2]=B;render();S.locked=false;flash('そろいません');return;
+  }
+  S.moves++;
+  var res=await resolve();
+  var ok=await askQuiz(res.cleared,res.chain);
+  if(ok) S.streak++; else S.streak=0;
+  await fire(res.cleared,res.chain,ok);
+  if(S.hp<=0){await victory();return}
+  if(!ok){await addJama(2)}
+  if(!hasMoves()){reshuffle();render();flash('シャッフル')}
+  updateInfo();
+  S.locked=false;
+}
+async function resolve(){
+  var cleared=0,chain=0;
+  while(true){
+    var m=findMatches(); if(!m.length) break;
+    chain++; cleared+=m.length;
+    var all={};m.forEach(function(k){all[k]=1});
+    m.forEach(function(k){
+      var p=k.split(','),r=+p[0],c=+p[1];
+      [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){
+        var rr=r+d[0],cc=c+d[1];
+        if(rr>=0&&rr<N&&cc>=0&&cc<N&&S.b[rr][cc]&&S.b[rr][cc].t<0) all[rr+','+cc]=1;
+      });
+    });
+    if(chain>1) flash(chain+'連鎖！');
+    SFX.match(chain);render(all);await sleep(280);
+    Object.keys(all).forEach(function(k){var p=k.split(',');S.b[+p[0]][+p[1]]=null});
+    gravity();render();await sleep(330);
+  }
+  return {cleared:cleared,chain:chain};
+}
+async function addJama(n){
+  var free=[],r,c;
+  for(r=0;r<N;r++)for(c=0;c<N;c++)if(S.b[r][c].t>=0)free.push([r,c]);
+  var room=Math.max(0,10-jamaCount()); n=Math.min(n,room,free.length-6);
+  if(n<=0) return;
+  shuffle(free).slice(0,n).forEach(function(p){S.b[p[0]][p[1]]={t:-1,f:0}});
+  render();flash('じゃまブロックが出た！');await sleep(500);
+  if(findMatches().length){await resolve()}
+}
+
+/* ---------- asking ---------- */
+function battleQ(){
+  var cur=stages()[S.stage].cards;
+  if(S.stage>0&&Math.random()<.2){
+    var old=[];for(var i=0;i<S.stage;i++)stages()[i].cards.forEach(function(c){old.push(c)});
+    var q=pickQ(old,S.lastKey);q.old=true;return q;
+  }
+  return pickQ(cur,S.lastKey);
+}
+async function askQuiz(n,chain){
+  var q=battleQ();
+  slot.style.minHeight=slot.offsetHeight+'px';
+  board.hidden=true;$('#pv').hidden=true;
+  var host=document.createElement('div');slot.appendChild(host);
+  var head='ミサイル ×'+n+(chain>1?'　'+chain+'連鎖':'');
+  var ok=await quizUI(q,host,{head:head,next:'発射！',old:q.old});
+  host.remove();board.hidden=false;$('#pv').hidden=false;slot.style.minHeight='';
+  var s=S.stat[q.card.id];
+  if(s){s.asked++;if(ok)s.ok++;else s.ng++}
+  S.lastKey=q.key;
+  record(q,ok,false);
+  if(ok){S.tot.ok++;S.score+=50}else{S.tot.ng++}
+  return ok;
+}
+async function runTest(cards,o){
+  var rt={},lastKey=null;
+  for(var i=0;i<cards.length;i++){
+    window.scrollTo(0,0);
+    app.innerHTML='<section style="max-width:720px;margin:0 auto"><div class="head"><p class="eyebrow">'+(o.nb?'まちがいノート':'復習テスト')+' '+(i+1)+' / '+cards.length+'</p></div><div id="rtq"></div></section>';
+    var q=pickQ([cards[i]],lastKey);lastKey=q.key;
+    var ok=await quizUI(q,$('#rtq'),{head:'',next:i<cards.length-1?'つぎへ':'おわり'});
+    record(q,ok,!!o.nb);
+    rt[cards[i].id]=ok;
+  }
+  return rt;
+}
+
+/* ---------- firing ---------- */
+var ARROW='<svg viewBox="0 0 16 48" width="16" height="48" aria-hidden="true"><path class="flame" d="M5 34 L8 47 L11 34 Z"/><path class="fin" d="M3 26 L0 40 L3 36 Z M13 26 L16 40 L13 36 Z"/><rect class="body" x="3" y="14" width="10" height="21" rx="1"/><path class="nose" d="M8 0 Q13 7 13 15 H3 Q3 7 8 0 Z"/></svg>';
+async function fire(n,chain,ok){
+  var mult=(1+.75*(chain-1))*(1+Math.min(S.streak,5)*.1);
+  var dmg=Math.round(n*5*mult); if(!ok) dmg=Math.round(dmg*.25);
+  var sc=Math.min(3.4,1+(chain-1)*.65+Math.max(0,n-3)*.12);
+  SFX.shot(ok?sc:1);
+  var fx=$('#fx'),mon=$('#mon'),br=battle.getBoundingClientRect(),mr=mon.getBoundingClientRect(),sr=board.getBoundingClientRect();
+  var cnt=Math.min(Math.max(n,3),9),anims=[];
+  if(sc>2.2) cnt=Math.max(3,Math.ceil(cnt*.6));
+  for(var i=0;i<cnt;i++){
+    var a=document.createElement('div');a.className='arrow'+(sc>1.8?' big':'');a.innerHTML=ARROW;fx.appendChild(a);
+    var sx=(sr.left-br.left)+sr.width*(.12+.76*i/Math.max(cnt-1,1)),sy=(sr.top-br.top)+24;
+    a.style.left=sx+'px';a.style.top=sy+'px';
+    var tx=(mr.left-br.left+mr.width/2+(Math.random()-.5)*50)-sx,ty=(mr.top-br.top+mr.height/2)-sy;
+    var ang=Math.atan2(tx,-ty)*180/Math.PI,k=ok?1:.45,s2=ok?sc:1;
+    var frames=[{transform:'translate(0,0) rotate('+ang+'deg) scale('+s2+')',opacity:1},
+      {transform:'translate('+tx*k+'px,'+ty*k+'px) rotate('+ang+'deg) scale('+s2+')',opacity:ok?1:0}];
+    var an=a.animate(frames,{duration:430+(sc>1.8?120:0),delay:i*55,easing:'ease-in',fill:'forwards'});
+    anims.push(an.finished.catch(function(){}));
+  }
+  await Promise.all(anims);
+  fx.querySelectorAll('.arrow').forEach(function(x){x.remove()});
+  var f=document.createElement('div');f.className='float';
+  f.style.left=(mr.left-br.left+mr.width/2)+'px';f.style.top=(mr.top-br.top+mr.height/3)+'px';
+  if(ok){f.textContent='-'+dmg;f.style.fontSize=(30+(sc-1)*10)+'px';mon.classList.add('hit')}
+  else{f.textContent='弱い -'+dmg;mon.classList.add('laugh')}
+  S.hp=Math.max(0,S.hp-dmg);S.score+=dmg;setHp();
+  fx.appendChild(f);updateInfo();
+  await sleep(650);
+  mon.classList.remove('hit','laugh');f.remove();
+}
+async function victory(){
+  var fx=$('#fx'),mon=$('#mon'),br=battle.getBoundingClientRect(),mr=mon.getBoundingClientRect();
+  var cx=mr.left-br.left+mr.width/2,cy=mr.top-br.top+mr.height/2,i;
+  progSet(S.mode,S.stage+1);
+  SFX.defeat();
+  mon.classList.add('boom');
+  await sleep(520);
+  var fl=document.createElement('div');fl.className='flash';fx.appendChild(fl);
+  fl.animate([{opacity:.85},{opacity:0}],{duration:450,fill:'forwards'});
+  for(i=0;i<2;i++){
+    var w=document.createElement('div');w.className='ring-wave';
+    var sz=Math.max(40,mr.width*.5);
+    w.style.cssText='left:'+(cx-sz/2)+'px;top:'+(cy-sz/2)+'px;width:'+sz+'px;height:'+sz+'px';
+    fx.appendChild(w);
+    w.animate([{transform:'scale(.3)',opacity:1},{transform:'scale('+(3.2+i)+')',opacity:0}],{duration:800,delay:i*140,easing:'ease-out',fill:'forwards'});
+  }
+  for(i=0;i<36;i++){
+    var p=document.createElement('div');p.className='part';p.style.left=cx+'px';p.style.top=cy+'px';
+    p.innerHTML=gem(rnd());fx.appendChild(p);
+    var ang=Math.random()*Math.PI*2,dist=mr.width*(.5+Math.random()*1.1)+40;
+    p.animate([{transform:'translate(0,0) rotate(0deg) scale(1.5)',opacity:1},
+      {transform:'translate('+(Math.cos(ang)*dist)+'px,'+(Math.sin(ang)*dist+60)+'px) rotate('+Math.round(Math.random()*720-360)+'deg) scale(.2)',opacity:0}],
+      {duration:900+Math.random()*500,easing:'cubic-bezier(.2,.7,.4,1)',fill:'forwards'});
+  }
+  var t=document.createElement('div');t.className='boomtxt';t.textContent='撃破！';t.style.top=cy+'px';fx.appendChild(t);
+  t.animate([{transform:'translate(-50%,-50%) scale(.2) rotate(-8deg)',opacity:0},{transform:'translate(-50%,-50%) scale(1.25) rotate(-4deg)',opacity:1,offset:.35},{transform:'translate(-50%,-50%) scale(1) rotate(-4deg)',opacity:1}],{duration:700,easing:'ease-out',fill:'forwards'});
+  await sleep(1900);
+  showReview(false,{});
+}
+
+/* ---------- review ---------- */
+function showReview(retested,rt){
+  var st=stages()[S.stage]; window.scrollTo(0,0);
+  var missed=st.cards.filter(function(c){return S.stat[c.id]&&S.stat[c.id].ng>0});
+  var rows=st.cards.slice().sort(function(a,b){return (S.stat[b.id]?S.stat[b.id].ng:0)-(S.stat[a.id]?S.stat[a.id].ng:0)}).map(function(c){
+    var s=S.stat[c.id]||{ng:0},bad=s.ng>0,badge;
+    if(retested&&rt[c.id]!==undefined) badge=rt[c.id]?'<span class="badge">復習OK</span>':'<span class="badge ng">もう一度見直そう</span>';
+    else badge=bad?'<span class="badge ng">まちがい '+s.ng+'回</span>':'<span class="badge">ばっちり</span>';
+    return cardHTML(c,{badge:badge,miss:bad});
+  }).join('');
+  var last=S.stage>=9;
+  var btns='';
+  if(missed.length&&!retested) btns+='<button type="button" class="btn primary" id="rt">まちがえた'+missed.length+'枚をテスト</button><button type="button" class="btn ghost" id="nx">そのまま進む</button>';
+  else btns+='<button type="button" class="btn primary" id="nx">'+(last?'けっかを見る':'STAGE '+(S.stage+2)+'へ')+'</button>';
+  if(!last) btns+='<button type="button" class="btn ghost" id="quit">ここでやめて記録する</button>';
+  app.innerHTML=
+  '<section><div class="head"><p class="eyebrow">STAGE '+(S.stage+1)+' クリア</p><h2>'+MONS[S.stage].name+'を倒した！</h2>'+
+  '<p class="lead">'+(missed.length?'まちがえたカードを上にならべました。まちがいノートにも残っています。':'4枚すべて、まよわず正解できました。')+'</p></div>'+
+  '<div class="rv">'+rows+'</div><div class="actions" style="max-width:520px">'+btns+'</div></section>';
+  bindSay(app);
+  $('#nx').onclick=function(){
+    S.stage++;
+    if(S.stage>=10){progSet(S.mode,0);showFinal(10)}else showStudy(S.stage);
+  };
+  var q=$('#quit');if(q) q.onclick=function(){showFinal(S.stage+1)};
+  var rb=$('#rt');if(rb) rb.onclick=async function(){var r=await runTest(missed,{});showReview(true,r)};
+}
+
+function showFinal(cleared){
+  window.scrollTo(0,0);
+  var m=S.mode,tot=S.tot.ok+S.tot.ng,acc=tot?Math.round(100*S.tot.ok/tot):0,done=cleared>=10;
+  var ms=Object.keys(S.miss).filter(function(id){return BYID[id]}).sort(function(a,b){return S.miss[b]-S.miss[a]}).slice(0,6);
+  var rk=RK[m],best=rk.length?rk[0].score:0;
+  var qual=S.score>0&&(rk.length<5||S.score>rk[rk.length-1].score),isBest=S.score>best&&S.score>0;
+  var lastName=lsj('wordarrow-name','');
+  var saved=false;
+  if(done) SFX.fan();
+  app.innerHTML=
+  '<section><div class="head"><p class="eyebrow">'+MODE_NAME[m]+'　STAGE '+cleared+' まで到達</p><h2>'+(done?MONS[9].name+'を倒した！':'ここまでの記録')+'</h2></div>'+
+  '<div class="sum"><div class="bignum">'+S.score+'<small style="font-size:.4em"> pt</small></div><p class="lead">'+S.tot.ok+'問正解 / '+tot+'問（正答率 '+acc+'%）</p></div>'+
+  (qual?'<div class="namebox" id="nbox"><div class="verdict ok">'+(isBest?'最高記録を更新！':'ランクイン！')+'</div><label for="nm">名前を残そう</label><input id="nm" maxlength="10" autocomplete="off" value="'+esc(lastName)+'" placeholder="10文字まで"><button type="button" class="btn primary" id="save">記録する</button></div>':'')+
+  '<div id="rkbox"><p class="sec">'+MODE_NAME[m]+'のランキング</p>'+rkHTML(m,-1)+'</div>'+
+  (ms.length?'<p class="sec">まちがいが多かった問題</p><div class="rv">'+ms.map(function(id){return cardHTML(BYID[id],{badge:'<span class="badge ng">'+S.miss[id]+'回</span>',miss:1})}).join('')+'</div>':'<p class="lead" style="margin-bottom:16px">1問もまちがえませんでした。</p>')+
+  '<div class="actions two" style="max-width:520px"><button type="button" class="btn ghost" id="nbb">まちがいノート</button><button type="button" class="btn primary" id="again">タイトルへ</button></div></section>';
+  bindSay(app);
+  var sv=$('#save');
+  if(sv) sv.onclick=function(){
+    if(saved) return; saved=true;
+    var nm=($('#nm').value||'').trim().slice(0,10)||'ななし';
+    lsw('wordarrow-name',nm);
+    var d=new Date(),entry={name:nm,score:S.score,stages:cleared,date:d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()};
+    RK[m].push(entry);
+    RK[m].sort(function(a,b){return b.score-a.score});
+    RK[m]=RK[m].slice(0,5);lsw('wordarrow-rank-'+m,RK[m]);
+    var hi=RK[m].indexOf(entry);
+    $('#nbox').innerHTML='<div class="verdict ok">記録しました！</div>';
+    $('#rkbox').innerHTML='<p class="sec">'+MODE_NAME[m]+'のランキング</p>'+rkHTML(m,hi);
+    SFX.good();
+  };
+  $('#nbb').onclick=function(){showNotebook(m)};
+  $('#again').onclick=showTitle;
+}
+
+showTitle();
+})();
+</script>
+
+</body></html>
