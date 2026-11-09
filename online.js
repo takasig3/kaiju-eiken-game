@@ -16,6 +16,15 @@
   if(!window.supabase){error('supabase-jsの読み込みに失敗しました。ネット接続を確認してください。');return;}
   const client=window.supabase.createClient(config.url,config.publishableKey);
   let user,selected=null;
+  // Normal-game results are client-reported and therefore marked unverified.
+  window.WAOnline = {
+    submitNormalScore: async function(result){
+      if(!selected || !user) return;
+      const payload={p_group_id:selected,p_subject:result.subject,p_score:result.score,
+        p_stages:result.stages,p_correct:result.correct,p_total:result.total};
+      check(await client.rpc('wa_submit_normal_score',payload));
+    }
+  };
   let dailyRun=null, dailyAnswers=[], dailyIndex=0, dailyQuestions=[];
   try{
     let session=check(await client.auth.getSession()).session;
@@ -29,7 +38,7 @@
     try{
       const groups=check(await client.rpc('wa_my_groups'))||[];
       const pending=new URLSearchParams(location.search).get('group');
-      content.innerHTML=`<label>ニックネーム（20文字まで）<input id="wa-nick" maxlength="20" placeholder="例：たろう"></label><button id="wa-profile">名前を登録・変更</button><p class="hint">このブラウザに匿名アカウントを保存します。ブラウザデータ削除や端末変更では引き継げません。</p><hr><h3>グループ</h3><div id="wa-groups">${groups.length?groups.map(g=>`<div class="group"><b>${esc(g.name)}</b>（${g.member_count}人）<br><button data-open="${g.id}">開く</button></div>`).join(''):'まだグループがありません'}</div><label>新しいグループ名<input id="wa-group-name" maxlength="40" placeholder="例：4年1組"></label><button id="wa-create">グループを作成</button>${pending?'<hr><p>招待リンクが届いています。</p><button id="wa-join">このグループに参加</button>':''}<hr><button id="wa-play" class="secondary">グループなしでゲームを遊ぶ</button><p class="hint">この版のスコア・ランキングは端末内保存です。オンライン得点共有は次の実装で対応します。</p>`;
+      content.innerHTML=`<label>ニックネーム（20文字まで）<input id="wa-nick" maxlength="20" placeholder="例：たろう"></label><button id="wa-profile">名前を登録・変更</button><p class="hint">このブラウザに匿名アカウントを保存します。ブラウザデータ削除や端末変更では引き継げません。</p><hr><h3>グループ</h3><div id="wa-groups">${groups.length?groups.map(g=>`<div class="group"><b>${esc(g.name)}</b>（${g.member_count}人）<br><button data-open="${g.id}">開く</button></div>`).join(''):'まだグループがありません'}</div><label>新しいグループ名<input id="wa-group-name" maxlength="40" placeholder="例：4年1組"></label><button id="wa-create">グループを作成</button>${pending?'<hr><p>招待リンクが届いています。</p><button id="wa-join">このグループに参加</button>':''}<hr><button id="wa-play" class="secondary">グループなしでゲームを遊ぶ</button><p class="hint">グループを開いて開始した通常ゲームの得点は、終了時にオンライン共有されます。</p>`;
       $('wa-profile').onclick=async()=>{try{check(await client.rpc('wa_set_profile',{p_nickname:$('wa-nick').value,p_avatar:'🐱'}));status.textContent='名前を登録しました';}catch(e){error(e)}};
       $('wa-create').onclick=async()=>{try{const name=$('wa-group-name').value;const id=check(await client.rpc('wa_create_group',{p_name:name}));await showGroup(id);}catch(e){error(e)}};
       content.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>showGroup(b.dataset.open));
@@ -45,12 +54,13 @@
       const members=check(await client.rpc('wa_group_members',{p_group_id:id}))||[];
       selected=id;
       const invite=location.origin+location.pathname+'?group='+encodeURIComponent(g.invite_code);
-      content.innerHTML=`<h2>${esc(g.name)}</h2><p>${members.length}人が参加</p><ul>${members.map(m=>`<li>${esc(m.avatar)} ${esc(m.nickname)}</li>`).join('')}</ul><p>友達にこの招待URLを送ってください。</p><input id="wa-invite" readonly value="${esc(invite)}"><button id="wa-copy">招待URLをコピー</button><br><button id="wa-start">通常ゲームを開始</button><hr><h3>🏆 今日のオンライン対戦</h3><p class="hint">英検・漢検それぞれ1日1回。10問を全員同じ条件で解きます（1問100点）。</p><button id="wa-daily-e">英検4級に挑戦</button><button id="wa-daily-k">漢検4級に挑戦</button><div id="wa-rankings"></div><button id="wa-back" class="secondary">戻る</button><p class="hint">通常ゲームの得点は端末内保存です。オンライン対戦の得点だけが共有されます。</p>`;
+      content.innerHTML=`<h2>${esc(g.name)}</h2><p>${members.length}人が参加</p><ul>${members.map(m=>`<li>${esc(m.avatar)} ${esc(m.nickname)}</li>`).join('')}</ul><p>友達にこの招待URLを送ってください。</p><input id="wa-invite" readonly value="${esc(invite)}"><button id="wa-copy">招待URLをコピー</button><br><button id="wa-start">通常ゲームを開始</button><hr><h3>🏆 今日のオンライン対戦</h3><p class="hint">英検・漢検それぞれ1日1回。10問を全員同じ条件で解きます（1問100点）。</p><button id="wa-daily-e">英検4級に挑戦</button><button id="wa-daily-k">漢検4級に挑戦</button><div id="wa-rankings"></div><button id="wa-back" class="secondary">戻る</button><p class="hint">通常ゲームの最高得点もオンライン共有されます（自己申告スコア・未検証）。</p>`;
       $('wa-copy').onclick=async()=>{try{await navigator.clipboard.writeText(invite);status.textContent='招待URLをコピーしました'}catch(e){$('wa-invite').select();status.textContent='URLを選択しました。コピーしてください'}};
       $('wa-start').onclick=()=>{panel.hidden=true};
       $('wa-daily-e').onclick=()=>startDaily(id,'eiken4');
       $('wa-daily-k').onclick=()=>startDaily(id,'kanken4');
       await showRankings(id);
+      await showNormalRankings(id);
       $('wa-back').onclick=showHome;
     }catch(e){error(e)}
   }
@@ -64,6 +74,19 @@
       }
       host.innerHTML=out.join('');
     }catch(e){host.textContent='ランキング取得エラー: '+(e.message||e);}
+  }
+  async function showNormalRankings(groupId){
+    const host=document.createElement('section');host.id='wa-normal-rankings';
+    const daily=$('wa-rankings');if(!daily)return;
+    daily.after(host);
+    try{
+      const out=['<hr><h3>🏅 通常ゲーム・グループ最高得点</h3><p class="hint">ブラウザから送信した参考記録です。サーバーでプレイ内容の検証はしていません。</p>'];
+      for(const [subject,label] of [['eiken4','英検4級'],['kanken4','漢検4級']]){
+        const rows=check(await client.rpc('wa_normal_ranking',{p_group_id:groupId,p_subject:subject}))||[];
+        out.push(`<h4>${label}</h4>${rows.length?'<ol>'+rows.map(r=>`<li>${esc(r.avatar)} ${esc(r.nickname)} — <b>${Number(r.score)} pt</b>（STAGE ${Number(r.stages)}）</li>`).join('')+'</ol>':'<p class="hint">まだ記録がありません</p>'}`);
+      }
+      host.innerHTML=out.join('');
+    }catch(e){host.textContent='通常ゲームのランキング取得エラー: '+(e.message||e);}
   }
   async function startDaily(groupId,subject){
     try{

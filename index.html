@@ -1645,6 +1645,9 @@ function showFinal(cleared){
   (ms.length?'<p class="sec">まちがいが多かった問題</p><div class="rv">'+ms.map(function(id){return cardHTML(BYID[id],{badge:'<span class="badge ng">'+S.miss[id]+'回</span>',miss:1})}).join('')+'</div>':'<p class="lead" style="margin-bottom:16px">1問もまちがえませんでした。</p>')+
   '<div class="actions two" style="max-width:520px"><button type="button" class="btn ghost" id="nbb">まちがいノート</button><button type="button" class="btn primary" id="again">タイトルへ</button></div></section>';
   bindSay(app);
+  if(window.WAOnline && window.WAOnline.submitNormalScore){
+    window.WAOnline.submitNormalScore({subject:m==='e'?'eiken4':'kanken4',score:S.score,stages:cleared,correct:S.tot.ok,total:tot}).catch(function(e){console.warn('Online score sync failed:',e)});
+  }
   var sv=$('#save');
   if(sv) sv.onclick=function(){
     if(saved) return; saved=true;
