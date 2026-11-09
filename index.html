@@ -288,12 +288,12 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp
 
 /* ---------- content ---------- */
 var MONS=[
- {name:'ぷるぷるスライム',kind:'slime',c:'#8fe3b0'},
+ {name:'ライボルトン',kind:'slime',c:'#8fe3b0'},
  {name:'ふわふわクラウド',kind:'cloud',c:'#a9d3ff'},
  {name:'こうもりバット',kind:'bat',c:'#b9a3f0'},
  {name:'とげとげウニ',kind:'urchin',c:'#ffb86b'},
  {name:'のっぽシャドウ',kind:'shade',c:'#c7b8ff'},
- {name:'ライボルトン',kind:'dragon',c:'#7fd6a4'},
+ {name:'ぐるぐるドラゴン',kind:'dragon',c:'#7fd6a4'},
  {name:'おばけキノコ',kind:'mushroom',c:'#ff9aa8',crown:1},
  {name:'タコ入道',kind:'octo',c:'#ff8fb8',eyes:3},
  {name:'がちゃがちゃロボ',kind:'robot',c:'#9fb7c9',crown:1},
@@ -1411,7 +1411,7 @@ function startBattle(){
   app.innerHTML=
   '<section class="battle" id="battle">'+
    '<div class="bar"><span class="stg">STAGE '+(S.stage+1)+'</span><span class="stn">'+MODE_NAME[S.mode]+'　'+st.name+'</span><button type="button" class="snd" id="snd"></button><span class="sc" id="score"></span></div>'+
-   '<div class="arena"><div class="mon'+(S.stage===5?' electric-mon':'')+'" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+(S.stage===5?'<span class="electric-sprite" role="img" aria-label="電撃モンスター"></span>':monsterSVG(mon))+'</div><div class="mname">'+mon.name+'</div>'+
+   '<div class="arena"><div class="mon'+(S.stage===0?' electric-mon':'')+'" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+(S.stage===0?'<span class="electric-sprite" role="img" aria-label="電撃モンスター"></span>':monsterSVG(mon))+'</div><div class="mname">'+mon.name+'</div>'+
    '<div class="hp" role="progressbar" aria-label="モンスターの体力"><i id="hpfill"></i><b id="hptxt"></b></div></div>'+
    '<div class="slot" id="slot"><div class="pv" id="pv" aria-hidden="true"></div><div class="board" id="board"></div></div>'+
    '<div class="foot" id="info"></div>'+
