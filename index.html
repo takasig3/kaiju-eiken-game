@@ -1,4 +1,15 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+/* Original animated electric monster: 3 columns x 2 rows sprite sheet */
+.mon.electric-mon{width:min(calc(var(--ms,120px)*1.65),100%);aspect-ratio:2/3;max-height:38vh;overflow:hidden;border-radius:15px;background:#272630}
+.mon.electric-mon .electric-sprite{display:block;width:100%;height:100%;background-image:url('assets/electric-monster.png');background-size:300% 200%;background-position:0% 0%;background-repeat:no-repeat;animation:electric-idle 1.5s infinite steps(1,end)}
+@keyframes electric-idle{0%,35%{background-position:0% 0%}36%,70%{background-position:50% 0%}71%,100%{background-position:100% 100%}}
+@keyframes electric-attack{0%,18%{background-position:100% 0%}19%,55%{background-position:0% 100%}56%,100%{background-position:50% 100%}}
+.mon.electric-mon.rage .electric-sprite{animation:electric-attack .85s infinite steps(1,end);filter:saturate(1.3)}
+.mon.electric-mon.hit{animation:shake .4s}
+.mon.electric-mon.laugh{animation:bob .5s}
+.mon.electric-mon.boom{animation:boom 1.1s forwards}
+@media(prefers-reduced-motion:reduce){.mon.electric-mon .electric-sprite{animation:none}.mon.electric-mon.hit,.mon.electric-mon.laugh,.mon.electric-mon.boom{animation:none}}
+</style></head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -282,7 +293,7 @@ var MONS=[
  {name:'こうもりバット',kind:'bat',c:'#b9a3f0'},
  {name:'とげとげウニ',kind:'urchin',c:'#ffb86b'},
  {name:'のっぽシャドウ',kind:'shade',c:'#c7b8ff'},
- {name:'ぐるぐるドラゴン',kind:'dragon',c:'#7fd6a4'},
+ {name:'ライボルトン',kind:'dragon',c:'#7fd6a4'},
  {name:'おばけキノコ',kind:'mushroom',c:'#ff9aa8',crown:1},
  {name:'タコ入道',kind:'octo',c:'#ff8fb8',eyes:3},
  {name:'がちゃがちゃロボ',kind:'robot',c:'#9fb7c9',crown:1},
@@ -1400,7 +1411,7 @@ function startBattle(){
   app.innerHTML=
   '<section class="battle" id="battle">'+
    '<div class="bar"><span class="stg">STAGE '+(S.stage+1)+'</span><span class="stn">'+MODE_NAME[S.mode]+'　'+st.name+'</span><button type="button" class="snd" id="snd"></button><span class="sc" id="score"></span></div>'+
-   '<div class="arena"><div class="mon" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+monsterSVG(mon)+'</div><div class="mname">'+mon.name+'</div>'+
+   '<div class="arena"><div class="mon'+(S.stage===5?' electric-mon':'')+'" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+(S.stage===5?'<span class="electric-sprite" role="img" aria-label="電撃モンスター"></span>':monsterSVG(mon))+'</div><div class="mname">'+mon.name+'</div>'+
    '<div class="hp" role="progressbar" aria-label="モンスターの体力"><i id="hpfill"></i><b id="hptxt"></b></div></div>'+
    '<div class="slot" id="slot"><div class="pv" id="pv" aria-hidden="true"></div><div class="board" id="board"></div></div>'+
    '<div class="foot" id="info"></div>'+
