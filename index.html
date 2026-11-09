@@ -1,4 +1,9 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
+
+/* online prototype shell */
+.wa-top{display:flex;justify-content:space-between;align-items:center;padding:4px 2px 14px;border-bottom:1px solid var(--line);margin-bottom:16px}.wa-brand{font-family:var(--f-display);font-size:18px;letter-spacing:.04em}.wa-brand b{color:var(--accent)}.wa-group{font-size:12px;font-weight:900;color:var(--ink2);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:5px 10px}.wa-screen{display:grid;gap:15px;padding-bottom:10px}.wa-welcome{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0}.wa-kicker{font-size:11px;font-weight:900;letter-spacing:.14em;color:var(--accent)}.wa-welcome h1,.wa-pagehead h1{font-family:var(--f-display);font-size:28px;line-height:1.25;margin:3px 0}.wa-welcome p,.wa-pagehead p{font-size:13px;color:var(--ink2)}.wa-avatar{width:54px;height:54px;border:2px solid var(--ink);border-radius:18px;background:var(--surface);display:grid;place-items:center;font-size:30px;flex:none}.wa-card{background:var(--surface);border:1.5px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:10px}.wa-daily{background:var(--ink);color:var(--bg);border-color:var(--ink);box-shadow:0 4px 0 var(--accent)}.wa-daily p{font-size:13px;opacity:.8}.wa-daily .btn{margin-top:3px}.wa-pill{font-size:10px;font-weight:900;letter-spacing:.1em;background:var(--accent);color:var(--on-accent);border-radius:99px;padding:3px 9px}.wa-small{font-size:11px;opacity:.75}.wa-between{display:flex;justify-content:space-between;align-items:center;gap:8px}.wa-daily h2{font-family:var(--f-display);font-size:22px}.wa-progress{height:7px;border-radius:99px;background:rgba(255,255,255,.2);overflow:hidden;margin-top:3px}.wa-progress i{display:block;height:100%;background:var(--g1);border-radius:99px}.wa-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.wa-stats .wa-card{padding:10px;gap:2px}.wa-stats span,.wa-stats small{font-size:10px;color:var(--ink2)}.wa-stats b{font-family:var(--f-display);font-size:20px;line-height:1.5}.wa-sectionhead{display:flex;justify-content:space-between;align-items:center;margin-top:3px}.wa-sectionhead h2{font-family:var(--f-display);font-size:17px}.wa-sectionhead>span{font-size:10px;letter-spacing:.1em;color:var(--ink2);font-weight:900}.wa-subjects{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wa-subject{position:relative;text-align:left;display:grid;gap:3px;padding:13px;border:2px solid var(--line);border-radius:14px;background:var(--surface);font-family:inherit}.wa-subject b{font-family:var(--f-display);font-size:18px}.wa-subject small{font-size:11px;color:var(--ink2)}.wa-subicon{font-size:25px}.wa-arrow{position:absolute;right:12px;bottom:10px;color:var(--accent);font-size:20px}.wa-textbtn{border:0;background:transparent;color:var(--accent);font-weight:900;font-size:12px}.wa-rankmini{gap:0}.wa-rankrow{display:grid;grid-template-columns:28px 1fr 48px 76px;align-items:center;gap:6px;padding:10px 0;border-bottom:1px solid var(--line);font-size:12px}.wa-rankrow:last-child{border-bottom:0}.wa-medal{font-size:17px;text-align:center}.wa-rankrow strong{text-align:right;font-size:11px;font-variant-numeric:tabular-nums}.wa-accuracy{text-align:right;color:var(--ink2);font-size:11px}.wa-invite{border:1.5px dashed var(--accent);border-radius:14px;padding:13px;display:flex;align-items:center;justify-content:space-between;gap:8px}.wa-invite b{font-size:14px}.wa-invite p{font-size:11px;color:var(--ink2)}.wa-invite button{background:var(--accent);color:var(--on-accent);border:0;border-radius:10px;padding:9px 11px;font-weight:900;font-size:11px;white-space:nowrap}.wa-disclaimer{font-size:10px;line-height:1.5;color:var(--ink2);padding:8px 2px}.wa-nav{position:sticky;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:9px 0 calc(7px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 16%);margin-top:8px}.wa-nav button{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 2px;font-size:11px;font-weight:900;color:var(--ink2)}.wa-nav button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}.wa-pagehead{padding:8px 0}.wa-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.wa-tabs button{border:1.5px solid var(--line);background:var(--surface);border-radius:99px;padding:8px;font-weight:900}.wa-tabs button.active{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}.wa-rankheader{color:var(--ink2);font-size:10px;font-weight:900}.wa-notehint{background:var(--bg)}.wa-notehint p{font-size:12px;color:var(--ink2)}.wa-profile{display:flex;align-items:center;gap:13px}.wa-profile p{font-size:12px;color:var(--ink2)}.wa-settings label{display:grid;gap:5px;font-size:12px;font-weight:900}.wa-settings input,.wa-settings select{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);color:var(--ink);font:inherit}
+
+</style></head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -103,6 +108,8 @@ mark{background:linear-gradient(transparent 55%,var(--mark) 55%);color:inherit;f
 .mon{width:min(var(--ms,120px),100%);aspect-ratio:160/134}
 .mon svg{width:100%;height:100%;overflow:visible}
 .mon .mo{stroke:var(--ink)}
+.mon.rage svg{animation:tremble .11s linear infinite;filter:hue-rotate(-42deg) saturate(1.9) brightness(1.05) drop-shadow(0 0 8px var(--accent))}
+.mon.rage .mo{stroke:#6e0d0d}
 .mon.hit svg{animation:shake .4s}
 .mon.laugh svg{animation:bob .5s}
 .mon.boom svg{animation:boom 1.1s forwards}
@@ -187,21 +194,41 @@ mark{background:linear-gradient(transparent 55%,var(--mark) 55%);color:inherit;f
 .namebox input{font:inherit;font-weight:700;font-size:18px;padding:10px 12px;border:2px solid var(--ink);border-radius:10px;background:var(--bg);color:var(--ink);width:100%;min-width:0}
 .sec{font-size:15px;font-weight:900;margin-bottom:8px}
 
+/* handwriting pad */
+.wr{ruby-position:over}
+.wr rt{font-size:.34em;font-weight:700;color:var(--ink2);letter-spacing:.06em}
+.wq{font-family:var(--f-body);font-weight:900;font-size:48px;line-height:1.5}
+.hole{display:inline-block;width:.95em;height:.95em;border:3px solid var(--ink);border-radius:50%;vertical-align:-.1em;margin:0 .06em;box-shadow:0 5px 0 -2px var(--accent)}
+.padwrap{position:relative;width:min(100%,340px);aspect-ratio:1;margin:0 auto;background:var(--bg);border:2px solid var(--ink);border-radius:12px;overflow:hidden}
+.padwrap::before,.padwrap::after{content:"";position:absolute;pointer-events:none}
+.padwrap::before{left:50%;top:0;bottom:0;border-left:2px dashed var(--line)}
+.padwrap::after{top:50%;left:0;right:0;border-top:2px dashed var(--line)}
+.padwrap canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;color:var(--ink);cursor:crosshair}
+.padbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:min(100%,340px);margin:0 auto}
+.padbar .btn{min-height:44px;font-size:15px;padding:8px 12px}
+.revealrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.hint{font-size:14px;font-weight:700;color:var(--ink2)}
+.hint b{color:var(--ink)}
 @keyframes draw{from{stroke-dashoffset:1}}
 @keyframes drop{from{transform:translateY(calc(var(--f)*-112%))}to{transform:none}}
 @keyframes pop{to{transform:scale(.1) rotate(40deg);opacity:0}}
 @keyframes shake{0%,100%{transform:none}20%{transform:translateX(-10px) rotate(-4deg)}40%{transform:translateX(9px) rotate(3deg)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
 @keyframes bob{50%{transform:translateY(-12px) scale(1.06)}}
+@keyframes tremble{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(-2.5px,1px) rotate(-1.2deg)}50%{transform:translate(2px,-1.5px) rotate(1deg)}75%{transform:translate(-1.5px,-2px) rotate(-.6deg)}100%{transform:translate(2px,2px) rotate(.8deg)}}
 @keyframes rise{0%{opacity:0;margin-top:10px}15%{opacity:1}100%{opacity:0;margin-top:-34px}}
 @keyframes boom{0%{transform:none;filter:none}15%{transform:translateX(-8px) rotate(-3deg);filter:brightness(2.2)}30%{transform:translateX(8px) rotate(3deg);filter:none}45%{transform:translateX(-6px) scale(1.04);filter:brightness(2.2)}70%{transform:scale(1.35);opacity:1;filter:brightness(3)}100%{transform:scale(1.7);opacity:0;filter:blur(6px) brightness(3)}}
 @media (prefers-reduced-motion:reduce){
-  .cell.fall,.mon.hit svg,.mon.laugh svg,.ringed ellipse,.ch .ring ellipse{animation:none}
+  .cell.fall,.mon.hit svg,.mon.laugh svg,.mon.rage svg,.ringed ellipse,.ch .ring ellipse{animation:none}
   .btn{transition:none}
 }
 
 /* tablet and up: use the whole screen */
 @media (min-width:700px){
   body{font-size:18px}
+  .padwrap,.padbar{width:min(100%,440px)}
+  .wq{font-size:64px}
+  .padbar .btn{font-size:17px;min-height:52px}
+  .hint{font-size:17px}
   #app{max-width:1120px}
   .title{max-width:640px;margin:0 auto}
   .head h2{font-size:36px}
@@ -270,103 +297,163 @@ var MODE_NAME={e:'英検4級',k:'漢検4級'};
 var DATA={e:[],k:[]},BYID={};
 function reg(mode,si,card){card.mode=mode;card.si=si;BYID[card.id]=card;return card}
 
-/* 英検4級 */
-var EDEF=[
- ['まいにちのことば',[
-  ['breakfast','朝食','n','I eat ___ at seven every morning.','私は毎朝7時に朝食を食べます。'],
-  ['library','図書館','n','I borrowed this book from the ___.','私はこの本を図書館で借りました。'],
-  ['umbrella','かさ','n','It is raining. Take your ___.','雨が降っています。かさを持っていきなさい。'],
-  ['tomorrow','明日','n','Today is Monday, so ___ is Tuesday.','今日は月曜日なので、明日は火曜日です。']]],
- ['気持ちと様子',[
-  ['beautiful','美しい','adj','The flowers in the park are very ___.','公園の花はとても美しいです。'],
-  ['difficult','難しい','adj','This math question is ___ for me.','この算数の問題は私には難しいです。'],
-  ['favorite','お気に入りの','adj','Soccer is my ___ sport.','サッカーは私のお気に入りのスポーツです。'],
-  ['hungry','おなかがすいた','adj','I did not eat lunch, so I am ___.','昼食を食べなかったので、おなかがすいています。']]],
- ['よく使う動詞',[
-  ['borrow','借りる','v','Can I ___ your pen?','あなたのペンを借りてもいいですか。'],
-  ['practice','練習する','v','I ___ the piano every day to play better.','私はじょうずになるために毎日ピアノを練習します。'],
-  ['visit','訪ねる','v','I will ___ my grandmother in Osaka this Sunday.','今度の日曜日に大阪の祖母を訪ねるつもりです。'],
-  ['enjoy','楽しむ','v','We ___ playing games after school, and we always laugh.','私たちは放課後にゲームをして楽しみ、いつも笑います。']]],
- ['町の場所',[
-  ['station','駅','n','I wait for the train at the ___ every morning.','私は毎朝、駅で電車を待ちます。'],
-  ['hospital','病院','n','My father is a doctor at the ___.','私の父は病院の医者です。'],
-  ['airport','空港','n','The plane arrives at the ___ at noon.','飛行機は正午に空港に着きます。'],
-  ['restaurant','レストラン','n','We had dinner at an Italian ___.','私たちはイタリア料理のレストランで夕食を食べました。']]],
- ['時と天気',[
-  ['weather','天気','n','The ___ is sunny today.','今日の天気は晴れです。'],
-  ['season','季節','n','There are four ___ in a year: spring, summer, fall and winter.','1年には春、夏、秋、冬の4つの季節があります。'],
-  ['birthday','誕生日','n','Today is my ___. I am twelve.','今日は私の誕生日です。12才になります。'],
-  ['holiday','休日','n','We have a long ___ in August.','私たちは8月に長い休みがあります。']]],
- ['学校',[
-  ['classroom','教室','n','I clean my ___ with my classmates after school.','私は放課後、クラスメートと教室をそうじします。'],
-  ['homework','宿題','n','I have a lot of ___ today, so I cannot play.','今日は宿題がたくさんあるので、遊べません。'],
-  ['lesson','授業','n','We have an English ___ every Friday.','私たちは毎週金曜日に英語の授業があります。'],
-  ['uniform','制服','n','Students at my school wear a ___.','私の学校の生徒は制服を着ます。']]],
- ['人と仕事',[
-  ['neighbor','となりの人','n','My ___ lives next door to us.','となりの人は私たちの家のとなりに住んでいます。'],
-  ['cousin','いとこ','n',"My uncle's daughter is my ___.",'おじの娘は私のいとこです。'],
-  ['dentist','歯医者','n','I have a bad tooth, so I will go to the ___.','歯が痛いので、歯医者に行くつもりです。'],
-  ['farmer','農家の人','n','The ___ grows rice and vegetables.','農家の人は米と野菜を育てます。']]],
- ['様子を表すことば',[
-  ['busy','忙しい','adj','My father is very ___ at work, so he comes home late.','父は仕事がとても忙しいので、帰りがおそいです。'],
-  ['tired','つかれた','adj','I went to bed late, so I am ___ this morning.','ねるのがおそかったので、今朝はつかれています。'],
-  ['popular','人気のある','adj','This singer is very ___ with young people.','この歌手は若い人にとても人気があります。'],
-  ['interesting','おもしろい','adj','I read an ___ story about space.','私は宇宙についてのおもしろい話を読みました。']]],
- ['動作のことば',[
-  ['cook','料理する','v','My father will ___ dinner tonight.','今夜は父が夕食を作ります。'],
-  ['carry','運ぶ','v','Can you help me ___ this heavy box upstairs?','この重い箱を2階に運ぶのを手伝ってくれますか。'],
-  ['invite','招待する','v','I want to ___ my friends to my birthday party.','私は友だちを誕生日パーティーに招待したいです。'],
-  ['forget','忘れる','v','Do not ___ to bring your lunch box.','お弁当を持ってくるのを忘れないで。']]],
- ['さいごの試練',[
-  ['remember','覚えている','v','I cannot ___ his name, but I know his face.','彼の名前は思い出せませんが、顔は知っています。'],
-  ['travel','旅行する','v','My dream is to ___ around the world.','私の夢は世界中を旅行することです。'],
-  ['explain','説明する','v','Can you ___ this word in easy English to me?','この単語をやさしい英語で私に説明してくれますか。'],
-  ['win','勝つ','v','Our team will ___ the soccer game tomorrow.','私たちのチームは明日のサッカーの試合に勝つでしょう。']]]
+/* 英検4級: word pool. Each game draws 4 random words per stage. */
+var EPOOL=[
+ ['breakfast','朝食','n','I eat ___ at seven every morning.','私は毎朝7時に朝食を食べます。'],
+ ['library','図書館','n','I borrowed this book from the ___.','私はこの本を図書館で借りました。'],
+ ['umbrella','かさ','n','It is raining. Take your ___.','雨が降っています。かさを持っていきなさい。'],
+ ['tomorrow','明日','n','Today is Monday, so ___ is Tuesday.','今日は月曜日なので、明日は火曜日です。'],
+ ['beautiful','美しい','adj','The flowers in the park are very ___.','公園の花はとても美しいです。'],
+ ['difficult','難しい','adj','This math question is ___ for me.','この算数の問題は私には難しいです。'],
+ ['favorite','お気に入りの','adj','Soccer is my ___ sport.','サッカーは私のお気に入りのスポーツです。'],
+ ['hungry','おなかがすいた','adj','I did not eat lunch, so I am ___.','昼食を食べなかったので、おなかがすいています。'],
+ ['borrow','借りる','v','Can I ___ your pen?','あなたのペンを借りてもいいですか。'],
+ ['practice','練習する','v','I ___ the piano every day to play better.','私はじょうずになるために毎日ピアノを練習します。'],
+ ['visit','訪ねる','v','I will ___ my grandmother in Osaka this Sunday.','今度の日曜日に大阪の祖母を訪ねるつもりです。'],
+ ['enjoy','楽しむ','v','We ___ playing games after school, and we always laugh.','私たちは放課後にゲームをして楽しみ、いつも笑います。'],
+ ['station','駅','n','I wait for the train at the ___ every morning.','私は毎朝、駅で電車を待ちます。'],
+ ['hospital','病院','n','My father is a doctor at the ___.','私の父は病院の医者です。'],
+ ['airport','空港','n','The plane arrives at the ___ at noon.','飛行機は正午に空港に着きます。'],
+ ['restaurant','レストラン','n','We had dinner at an Italian ___.','私たちはイタリア料理のレストランで夕食を食べました。'],
+ ['weather','天気','n','The ___ is sunny today.','今日の天気は晴れです。'],
+ ['season','季節','n','There are four ___ in a year: spring, summer, fall and winter.','1年には春、夏、秋、冬の4つの季節があります。'],
+ ['birthday','誕生日','n','Today is my ___. I am twelve.','今日は私の誕生日です。12才になります。'],
+ ['holiday','休日','n','We have a long ___ in August.','私たちは8月に長い休みがあります。'],
+ ['classroom','教室','n','I clean my ___ with my classmates after school.','私は放課後、クラスメートと教室をそうじします。'],
+ ['homework','宿題','n','I have a lot of ___ today, so I cannot play.','今日は宿題がたくさんあるので、遊べません。'],
+ ['lesson','授業','n','We have an English ___ every Friday.','私たちは毎週金曜日に英語の授業があります。'],
+ ['uniform','制服','n','Students at my school wear a ___.','私の学校の生徒は制服を着ます。'],
+ ['neighbor','となりの人','n','My ___ lives next door to us.','となりの人は私たちの家のとなりに住んでいます。'],
+ ['cousin','いとこ','n',"My uncle's daughter is my ___.",'おじの娘は私のいとこです。'],
+ ['dentist','歯医者','n','I have a bad tooth, so I will go to the ___.','歯が痛いので、歯医者に行くつもりです。'],
+ ['farmer','農家の人','n','The ___ grows rice and vegetables.','農家の人は米と野菜を育てます。'],
+ ['busy','忙しい','adj','My father is very ___ at work, so he comes home late.','父は仕事がとても忙しいので、帰りがおそいです。'],
+ ['tired','つかれた','adj','I went to bed late, so I am ___ this morning.','ねるのがおそかったので、今朝はつかれています。'],
+ ['popular','人気のある','adj','This singer is very ___ with young people.','この歌手は若い人にとても人気があります。'],
+ ['interesting','おもしろい','adj','I read an ___ story about space.','私は宇宙についてのおもしろい話を読みました。'],
+ ['cook','料理する','v','My father will ___ dinner tonight.','今夜は父が夕食を作ります。'],
+ ['carry','運ぶ','v','Can you help me ___ this heavy box upstairs?','この重い箱を2階に運ぶのを手伝ってくれますか。'],
+ ['invite','招待する','v','I want to ___ my friends to my birthday party.','私は友だちを誕生日パーティーに招待したいです。'],
+ ['forget','忘れる','v','Do not ___ to bring your lunch box.','お弁当を持ってくるのを忘れないで。'],
+ ['remember','覚えている','v','I cannot ___ his name, but I know his face.','彼の名前は思い出せませんが、顔は知っています。'],
+ ['travel','旅行する','v','My dream is to ___ around the world.','私の夢は世界中を旅行することです。'],
+ ['explain','説明する','v','Can you ___ this word in easy English to me?','この単語をやさしい英語で私に説明してくれますか。'],
+ ['win','勝つ','v','Our team will ___ the soccer game tomorrow.','私たちのチームは明日のサッカーの試合に勝つでしょう。'],
+ ['kitchen','台所','n','My mother is cooking lunch in the ___.','母は台所で昼食を作っています。'],
+ ['bedroom','寝室','n','I sleep in my ___ every night.','私は毎晩、寝室でねます。'],
+ ['garden','庭','n','There are many flowers in our ___.','私たちの庭にはたくさんの花があります。'],
+ ['bakery','パン屋','n','We bought some bread at the ___.','私たちはパン屋でパンを買いました。'],
+ ['museum','博物館','n','We saw old pictures at the ___.','私たちは博物館で古い絵を見ました。'],
+ ['hotel','ホテル','n','We stayed at a ___ near the sea.','私たちは海の近くのホテルにとまりました。'],
+ ['mountain','山','n','We climbed the ___ last summer.','私たちは去年の夏、山に登りました。'],
+ ['river','川','n','I often swim in the ___ in summer.','私は夏によく川で泳ぎます。'],
+ ['island','島','n','Hawaii is a beautiful ___ in the Pacific Ocean.','ハワイは太平洋にある美しい島です。'],
+ ['forest','森','n','Many birds live in the ___.','たくさんの鳥が森に住んでいます。'],
+ ['vegetable','野菜','n','A carrot is a ___.','にんじんは野菜です。'],
+ ['dessert','デザート','n','We had ice cream for ___ after dinner.','夕食のあと、デザートにアイスクリームを食べました。'],
+ ['teacher','先生','n','Our ___ gives us a lot of homework.','私たちの先生はたくさん宿題を出します。'],
+ ['pilot','パイロット','n','The ___ flies the big plane.','パイロットは大きな飛行機を操縦します。'],
+ ['singer','歌手','n','My sister wants to be a ___.','姉は歌手になりたがっています。'],
+ ['ticket','切符','n','I need a ___ to ride the train.','電車に乗るには切符が必要です。'],
+ ['message','メッセージ','n','I sent a ___ to my friend by phone.','私は友だちに電話でメッセージを送りました。'],
+ ['trip','旅行','n','We went on a school ___ to Nara.','私たちは奈良へ修学旅行に行きました。'],
+ ['picture','写真','n','I took a ___ of the beautiful mountain.','私は美しい山の写真を撮りました。'],
+ ['music','音楽','n','I listen to ___ when I study.','私は勉強するとき音楽を聞きます。'],
+ ['bicycle','自転車','n','I go to school by ___.','私は自転車で学校に行きます。'],
+ ['dictionary','辞書','n','I looked up the word in my ___.','私はその単語を辞書で調べました。'],
+ ['calendar','カレンダー','n','Look at the ___. Today is the tenth.','カレンダーを見て。今日は10日です。'],
+ ['expensive','高価な','adj','This bag is too ___. I cannot buy it.','このかばんは高すぎて買えません。'],
+ ['cheap','安い','adj','I bought this T-shirt for only 500 yen. It was very ___.','私はこのTシャツをたった500円で買いました。とても安かったです。'],
+ ['dangerous','危険な','adj','It is ___ to swim in the sea when there is a big storm.','大きな嵐のときに海で泳ぐのは危険です。'],
+ ['quiet','静かな','adj','Please be ___ in the library. People are reading.','図書館では静かにしてください。人々が読書しています。'],
+ ['angry','おこった','adj','My mother was ___ because I broke the window.','窓をわったので、母はおこりました。'],
+ ['wonderful','すばらしい','adj','We had a ___ time at the party.','私たちはパーティーですばらしい時を過ごしました。'],
+ ['warm','暖かい','adj','The room is ___ because the heater is on.','ヒーターがついているので、へやは暖かいです。'],
+ ['hurry','急ぐ','v','We must ___, or we will miss the train.','急がないと、電車に乗りおくれます。'],
+ ['wait','待つ','v','Please ___ here. I will come back soon.','ここで待っていてください。すぐにもどります。'],
+ ['sing','歌う','v','Let us ___ a song together.','いっしょに歌を歌いましょう。'],
+ ['swim','泳ぐ','v','I can ___ fast in the pool.','私はプールで速く泳げます。'],
+ ['draw','描く','v','She likes to ___ pictures of animals.','彼女は動物の絵をかくのが好きです。'],
+ ['wear','着る','v','I ___ a coat when it is cold.','寒いときはコートを着ます。'],
+ ['send','送る','v','I will ___ you an e-mail tonight.','今夜あなたにメールを送ります。'],
+ ['believe','信じる','v','I ___ you. You are my best friend.','私はあなたを信じています。あなたは私の親友です。'],
+ ['catch','つかまえる','v','I ran to ___ the last train.','私は最終電車に間に合うように走りました。'],
+ ['wash','洗う','v','Please ___ your hands before dinner.','夕食の前に手を洗ってください。'],
+ ['arrive','着く','v','The train will ___ at Tokyo at noon.','電車は正午に東京に着きます。'],
+ ['decide','決める','v','I cannot ___ what to eat for lunch.','昼食に何を食べるか決められません。']
 ];
-EDEF.forEach(function(d,i){
-  DATA.e.push({name:d[0],cards:d[1].map(function(w){
-    return reg('e',i,{kind:'e',id:'e:'+w[0],en:w[0],ja:w[1],pos:w[2],s:w[3],sj:w[4]});
-  })});
-});
+EPOOL.forEach(function(w){reg('e',0,{kind:'e',id:'e:'+w[0],en:w[0],ja:w[1],pos:w[2],s:w[3],sj:w[4]})});
 
-/* 漢検4級 */
+/* 漢検4級: pools. Each game draws kanji, composition cards and stroke-order cards at random. */
 var KJ=[
- ['圧',5,'圧力','あつりょく','物をおしつける力','力',['島','薬','駅']],
- ['扱',6,'取扱','とりあつかい','物事をあつかうこと','取',['食','歌','走']],
- ['依',8,'依頼','いらい','人にたのむこと','頼',['鉱','雑','眠']],
- ['易',8,'簡易','かんい','手軽でやさしいこと','簡',['都','選','港']],
- ['往',8,'往復','おうふく','行きと帰り','復',['島','頂','森']],
- ['刻',8,'時刻','じこく','時間のある一点','時',['人','貨','店']],
- ['敬',12,'尊敬','そんけい','りっぱだと思ってうやまうこと','尊',['商','遠','広']],
- ['紅',9,'紅茶','こうちゃ','茶葉を発酵させた茶','茶',['薬','馬','机']],
- ['鉱',13,'鉱山','こうざん','鉱物をほり出す山','山',['海','空','川']],
- ['彩',11,'色彩','しきさい','いろどり','色',['音','味','形']],
- ['窓',11,'窓口','まどぐち','受付をする場所','口',['耳','手','足']],
- ['郵',11,'郵便','ゆうびん','手紙や荷物を送りとどける仕組み','便',['軍','紙','畑']],
- ['傷',13,'負傷','ふしょう','けがをすること','負',['薬','島','森']],
- ['奏',9,'演奏','えんそう','楽器をひくこと','演',['森','畑','鳥']],
- ['磁',14,'磁石','じしゃく','鉄を引きつける石','石',['草','魚','雨']],
- ['孝',7,'孝行','こうこう','親を大切にすること','行',['動','事','歩']],
- ['稿',15,'原稿','げんこう','印刷のもとになる文章','原',['島','駅','店']],
- ['頂',11,'頂上','ちょうじょう','山のいちばん高いところ','上',['雨','木','犬']],
- ['宙',8,'宇宙','うちゅう','地球の外に広がる空間','宇',['島','橋','畑']],
- ['乳',8,'牛乳','ぎゅうにゅう','牛からとった乳','牛',['犬','鳥','森']]
+ ['圧',5,'圧力','あつりょく','物をおしつける力','力'],
+ ['扱',6,'取扱','とりあつかい','物事をあつかうこと','取'],
+ ['依',8,'依頼','いらい','人にたのむこと','頼'],
+ ['易',8,'簡易','かんい','手軽でやさしいこと','簡'],
+ ['往',8,'往復','おうふく','行きと帰り','復'],
+ ['刻',8,'時刻','じこく','時間のある一点','時'],
+ ['敬',12,'尊敬','そんけい','りっぱだと思ってうやまうこと','尊'],
+ ['紅',9,'紅茶','こうちゃ','茶葉を発酵させた茶','茶'],
+ ['鉱',13,'鉱山','こうざん','鉱物をほり出す山','山'],
+ ['彩',11,'色彩','しきさい','いろどり','色'],
+ ['窓',11,'窓口','まどぐち','受付をする場所','口'],
+ ['郵',11,'郵便','ゆうびん','手紙や荷物を送りとどける仕組み','便'],
+ ['傷',13,'負傷','ふしょう','けがをすること','負'],
+ ['奏',9,'演奏','えんそう','楽器をひくこと','演'],
+ ['磁',14,'磁石','じしゃく','鉄を引きつける石','石'],
+ ['孝',7,'孝行','こうこう','親を大切にすること','行'],
+ ['稿',15,'原稿','げんこう','印刷のもとになる文章','原'],
+ ['頂',11,'頂上','ちょうじょう','山のいちばん高いところ','上'],
+ ['宙',8,'宇宙','うちゅう','地球の外に広がる空間','宇'],
+ ['乳',8,'牛乳','ぎゅうにゅう','牛からとった乳','牛'],
+ ['胃',9,'胃腸','いちょう','食べ物を消化するところ','腸'],
+ ['異',11,'異常','いじょう','ふつうとちがうこと','常'],
+ ['域',11,'地域','ちいき','ある広がりを持った土地','地'],
+ ['映',9,'映画','えいが','動く写真を見せるもの','画'],
+ ['恩',10,'恩人','おんじん','お世話になった人','人'],
+ ['奥',12,'奥地','おくち','中心から遠くはなれた所','地'],
+ ['句',5,'俳句','はいく','五・七・五の短い詩','俳'],
+ ['沿',8,'沿線','えんせん','鉄道の線路にそった地域','線'],
+ ['延',8,'延期','えんき','予定を先にのばすこと','期'],
+ ['羽',6,'羽毛','うもう','鳥の羽の毛','毛'],
+ ['衣',6,'衣服','いふく','身につける着物','服'],
+ ['汚',6,'汚染','おせん','よごれがつくこと','染'],
+ ['菓',11,'菓子','かし','おやつやデザート','子'],
+ ['憶',16,'記憶','きおく','おぼえていること','記'],
+ ['灯',6,'電灯','でんとう','電気であかりをともすもの','電'],
+ ['貯',12,'貯金','ちょきん','お金をためること','金'],
+ ['勤',12,'通勤','つうきん','仕事に通うこと','通'],
+ ['歓',15,'歓迎','かんげい','よろこんでむかえること','迎']
 ];
+KJ.forEach(function(d){reg('k',0,{kind:'k',id:'k:'+d[0],k:d[0],n:d[1],w:d[2],r:d[3],m:d[4],a:d[5]})});
+var DIST=['島','畑','橋','駅','犬','魚','雨','馬','鳥','草','歌','机','皿','筆'];
 var TL={ア:'同じ意味の漢字を重ねる',イ:'反対の意味の漢字を重ねる',ウ:'上の字が下の字を修飾する',エ:'下の字が上の字の目的になる',オ:'上の字が下の字を打ち消す'};
 var TEX={ア:'岩石',イ:'高低',ウ:'青空',エ:'着席',オ:'非常'};
 var CT={
  'ア1':['ア',[['岩石','がんせき','「岩」も「石」も、どちらも「いし」'],['選択','せんたく','「選」も「択」も、どちらも「えらぶ」']]],
- 'イ1':['イ',[['高低','こうてい','「高い」と「低い」'],['強弱','きょうじゃく','「強い」と「弱い」']]],
- 'ウ1':['ウ',[['青空','あおぞら','「青い」「空」'],['洋画','ようが','「西洋の」「絵・映画」']]],
- 'エ1':['エ',[['着席','ちゃくせき','「席に」「着く」'],['登山','とざん','「山に」「登る」']]],
- 'オ1':['オ',[['非常','ひじょう','「常」でない'],['不安','ふあん','「安心」でない']]],
  'ア2':['ア',[['道路','どうろ','「道」も「路」も、どちらも「みち」'],['暗黒','あんこく','「暗い」も「黒い」も同じ意味']]],
+ 'ア3':['ア',[['森林','しんりん','「森」も「林」も、木がたくさんある所'],['学習','がくしゅう','「学ぶ」も「習う」も同じ意味']]],
+ 'ア4':['ア',[['河川','かせん','「河」も「川」も、どちらも「かわ」'],['身体','しんたい','「身」も「体」も、どちらも「からだ」']]],
+ 'イ1':['イ',[['高低','こうてい','「高い」と「低い」'],['強弱','きょうじゃく','「強い」と「弱い」']]],
  'イ2':['イ',[['増減','ぞうげん','「増える」と「減る」'],['前後','ぜんご','「前」と「後ろ」']]],
+ 'イ3':['イ',[['左右','さゆう','「左」と「右」'],['公私','こうし','「公」と「私」']]],
+ 'イ4':['イ',[['売買','ばいばい','「売る」と「買う」'],['長短','ちょうたん','「長い」と「短い」']]],
+ 'ウ1':['ウ',[['青空','あおぞら','「青い」「空」'],['洋画','ようが','「西洋の」「絵・映画」']]],
  'ウ2':['ウ',[['新年','しんねん','「新しい」「年」'],['特急','とっきゅう','「特別な」「急行」']]],
+ 'ウ3':['ウ',[['白紙','はくし','「白い」「紙」'],['国歌','こっか','「国の」「歌」']]],
+ 'ウ4':['ウ',[['大木','たいぼく','「大きな」「木」'],['急行','きゅうこう','「急いで」「行く」']]],
+ 'エ1':['エ',[['着席','ちゃくせき','「席に」「着く」'],['登山','とざん','「山に」「登る」']]],
  'エ2':['エ',[['開会','かいかい','「会を」「開く」'],['読書','どくしょ','「書を」「読む」']]],
- 'オ2':['オ',[['無害','むがい','「害」が無い'],['未知','みち','まだ「知」らない']]]
+ 'エ3':['エ',[['帰国','きこく','「国に」「帰る」'],['作文','さくぶん','「文を」「作る」']]],
+ 'エ4':['エ',[['入学','にゅうがく','「学校に」「入る」'],['卒業','そつぎょう','「業を」「卒える」']]],
+ 'オ1':['オ',[['非常','ひじょう','「常」でない'],['不安','ふあん','「安心」でない']]],
+ 'オ2':['オ',[['無害','むがい','「害」が無い'],['未知','みち','まだ「知」らない']]],
+ 'オ3':['オ',[['不便','ふべん','「便利」でない'],['無料','むりょう','「料金」が無い']]],
+ 'オ4':['オ',[['非番','ひばん','「番」に当たっていない'],['未完','みかん','まだ「完」成していない']]]
 };
-var CORDER=['ア1','イ1','ウ1','エ1','オ1','ア2','イ2','ウ2','エ2','オ2'];
+Object.keys(CT).forEach(function(key){
+  reg('k',0,{kind:'c',id:'c:'+key,t:CT[key][0],words:CT[key][1].map(function(x){return {w:x[0],r:x[1],m:x[2]}})});
+});
 var OS=[
  ['右',['左払い','横','縦','横折れ','横']],
  ['左',['横','左払い','横','縦','横']],
@@ -377,21 +464,45 @@ var OS=[
  ['九',['左払い','横折れはね']],
  ['力',['横折れはね','左払い']],
  ['上',['縦','横','横']],
- ['下',['横','縦','点']]
+ ['下',['横','縦','点']],
+ ['口',['縦','横折れ','横']],
+ ['土',['横','縦','横']],
+ ['王',['横','横','縦','横']],
+ ['日',['縦','横折れ','横','横']],
+ ['十',['横','縦']],
+ ['工',['横','縦','横']],
+ ['大',['横','左払い','右払い']],
+ ['人',['左払い','右払い']],
+ ['入',['左払い','右払い']],
+ ['天',['横','横','左払い','右払い']],
+ ['文',['点','横','左払い','右払い']],
+ ['中',['縦','横折れ','横','縦']]
 ];
+OS.forEach(function(d){reg('k',0,{kind:'o',id:'o:'+d[0],k:d[0],s:d[1]})});
 var NAMES=['横','縦','左払い','右払い','点','横折れ','縦はね','横折れはね','左の点','右の点'];
 var SIM=[['点','左の点','右の点'],['縦','縦はね'],['横折れ','横折れはね']];
-var KN=['漢字の入口','画数に強くなる','熟語づくり','熟語の組み立て','筆順のルール','漢字の達人','熟語マスター','組み立てを見きわめる','筆順を見きわめる','漢字の王'];
-for(var ki=0;ki<10;ki++){
-  var kc=[];
-  [KJ[ki*2],KJ[ki*2+1]].forEach(function(d){
-    kc.push(reg('k',ki,{kind:'k',id:'k:'+d[0],k:d[0],n:d[1],w:d[2],r:d[3],m:d[4],a:d[5],d:d[6]}));
-  });
-  var ct=CT[CORDER[ki]];
-  kc.push(reg('k',ki,{kind:'c',id:'c:'+CORDER[ki],t:ct[0],words:ct[1].map(function(x){return {w:x[0],r:x[1],m:x[2]}})}));
-  var od=OS[ki];
-  kc.push(reg('k',ki,{kind:'o',id:'o:'+od[0],k:od[0],s:od[1]}));
-  DATA.k.push({name:KN[ki],cards:kc});
+var SN=['はじまりの草原','ことばの森','ささやきの谷','きらめく湖','風の丘','ふしぎな洞窟','雲の城','炎の山','星の塔','魔王の城'];
+
+/* a "plan" is the random set of cards for each of the 10 stages; it is saved so a game can be continued */
+function makePlan(m){
+  var plan=[],i;
+  function ids(kind){return shuffle(allCards(kind).map(function(c){return c.id}))}
+  if(m==='e'){
+    var e=ids('e');
+    for(i=0;i<10;i++) plan.push(e.slice(i*4,i*4+4));
+  }else{
+    var ks=ids('k'),os=ids('o').slice(0,10),cs=[];
+    ['ア','イ','ウ','エ','オ'].forEach(function(t){
+      shuffle(allCards('c').filter(function(c){return c.t===t})).slice(0,2).forEach(function(c){cs.push(c.id)});
+    });
+    cs=shuffle(cs);
+    for(i=0;i<10;i++) plan.push([ks[i*2],ks[i*2+1],cs[i],os[i]]);
+  }
+  return plan;
+}
+function planOK(plan){return !!plan&&plan.length===10&&plan.every(function(a){return a&&a.length===4&&a.every(function(id){return BYID[id]})})}
+function applyPlan(m,plan){
+  DATA[m]=plan.map(function(a,i){return {name:SN[i],cards:a.map(function(id){return BYID[id]})}});
 }
 var POS={n:'名詞',adj:'形容詞',v:'動詞'};
 var CIRC=['①','②','③','④','⑤'];
@@ -435,9 +546,83 @@ function record(q,ok,fromNb){
 /* ---------- questions ---------- */
 function variants(c){
   if(c.kind==='e') return CAN_SPEAK?['A','B','C','D','E','F','G']:['A','B','C','D','G'];
-  if(c.kind==='k') return ['N','J','M','Z'];
+  if(c.kind==='k') return ['N','J','M','Z','W'];
   if(c.kind==='c') return ['w0','w1','t0','t1'];
-  return c.s.map(function(_,i){return 'i'+i}).concat(['N']);
+  return c.s.map(function(_,i){return 'i'+i}).concat(['N','W']);
+}
+var SIMPLE=['横','縦','左払い','右払い','点'];
+function classify(pts,w){
+  var a=pts[0],b=pts[pts.length-1],dx=b.x-a.x,dy=b.y-a.y,pl=0,i;
+  for(i=1;i<pts.length;i++){var ex=pts[i].x-pts[i-1].x,ey=pts[i].y-pts[i-1].y;pl+=Math.sqrt(ex*ex+ey*ey)}
+  if(pl<w*.09) return '点';
+  var ang=Math.atan2(dy,dx)*180/Math.PI;
+  if(ang>-30&&ang<=28) return '横';
+  if(ang>75&&ang<=105) return '縦';
+  if(ang>28&&ang<=75) return '右払い';
+  if(ang>105) return '左払い';
+  return '?';
+}
+function initPad(cv){
+  var ctx=cv.getContext('2d'),strokes=[],cur=null,locked=false,dpr=window.devicePixelRatio||1;
+  function paint(){
+    ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,cv.clientWidth,cv.clientHeight);
+    ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=Math.max(6,cv.clientWidth/34);ctx.strokeStyle=getComputedStyle(cv).color;
+    strokes.forEach(function(s){
+      ctx.beginPath();ctx.moveTo(s[0].x,s[0].y);
+      if(s.length===1) ctx.lineTo(s[0].x+.01,s[0].y);
+      for(var i=1;i<s.length;i++) ctx.lineTo(s[i].x,s[i].y);
+      ctx.stroke();
+    });
+  }
+  function pt(e){var r=cv.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
+  cv.width=Math.round(cv.clientWidth*dpr);cv.height=Math.round(cv.clientHeight*dpr);
+  cv.addEventListener('pointerdown',function(e){if(locked)return;e.preventDefault();try{cv.setPointerCapture(e.pointerId)}catch(x){}cur=[pt(e)];strokes.push(cur);paint()});
+  cv.addEventListener('pointermove',function(e){if(!cur)return;cur.push(pt(e));paint()});
+  function end(){cur=null}
+  cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+  paint();
+  return {strokes:function(){return strokes},clear:function(){strokes.length=0;paint()},undo:function(){strokes.pop();paint()},lock:function(){locked=true},width:function(){return cv.clientWidth}};
+}
+function writeUI(q,host,o){
+  return new Promise(function(resolve){
+    host.innerHTML=
+      '<div class="quiz"><div class="qhead"><span class="tag">'+(o.old?'復習問題　':'')+q.tag+'</span><span class="arrows">'+(o.head||'')+'</span></div>'+
+      q.stem+
+      '<div class="padwrap"><canvas id="pad" aria-label="書き取りの枠"></canvas></div>'+
+      '<div class="padbar" id="padbar"><button type="button" class="btn ghost" id="undo">ひとつ戻す</button><button type="button" class="btn ghost" id="clr">全部消す</button></div>'+
+      '<button type="button" class="btn primary" id="show">答えを見る</button>'+
+      '<div class="fb" id="fb" hidden></div></div>';
+    bindSay(host);
+    var pad=initPad(host.querySelector('#pad'));
+    host.querySelector('#undo').onclick=function(){pad.undo()};
+    host.querySelector('#clr').onclick=function(){pad.clear()};
+    host.querySelector('#show').onclick=function(){
+      var st=pad.strokes(),n=st.length,hint='';
+      pad.lock();
+      host.querySelector('#show').hidden=true;host.querySelector('#padbar').hidden=true;
+      if(n===0) hint='まだ何も書いていません。';
+      else if(n!==q.n) hint='画数がちがうかも。あなた <b>'+n+'画</b>／正解 <b>'+q.n+'画</b>';
+      else{
+        hint='画数は合っています（'+q.n+'画）。';
+        if(q.expect&&q.expect.every(function(x){return SIMPLE.indexOf(x)>=0})){
+          var res=st.map(function(s,i){return classify(s,pad.width())===q.expect[i]});
+          hint+='<br>筆順のめやす：'+q.expect.map(function(x,i){return CIRC[i]+x+(res[i]?'○':'△')}).join('　')+'<br>（向きだけで見ているので、△でも合っていることがあります）';
+        }
+      }
+      var fb=host.querySelector('#fb');
+      fb.innerHTML=
+        '<div class="revealrow"><div class="bigk">'+q.answerKanji+'</div><div class="hint">'+hint+'</div></div>'+q.expl+
+        '<p class="qask">自分の字は合っていた？（正直に選んでね）</p>'+
+        '<div class="choices"><button type="button" class="ch" id="gy">書けた！</button><button type="button" class="ch" id="gn">書けなかった</button></div>';
+      fb.hidden=false;bindSay(fb);
+      function grade(ok){
+        if(ok) SFX.good(); else SFX.bad();
+        resolve(ok);
+      }
+      fb.querySelector('#gy').onclick=function(){grade(true)};
+      fb.querySelector('#gn').onclick=function(){grade(false)};
+    };
+  });
 }
 function allCards(kind){return Object.keys(BYID).map(function(id){return BYID[id]}).filter(function(x){return x.kind===kind})}
 function edistract(c,field){
@@ -498,6 +683,22 @@ function makeExtra(c,v,q){
     q.expl='<div class="ex">'+sentHL(c)+'<div class="exj">'+esc(c.sj)+'</div>'+sentSay(c)+'</div>';
     return q;
   }
+  if(c.kind==='k'&&v==='W'){
+    var wi0=c.w.indexOf(c.k);
+    var dispW=c.w.split('').map(function(ch,j){return j===wi0?'<span class="hole"></span>':ch}).join('');
+    q.write=true;q.opts=[];q.tag='書き取り';
+    q.stem='<p class="qask">○に入る漢字を、指かペンで書こう。（'+c.m+'）</p><div class="bigword"><ruby class="wr"><span class="wq">'+dispW+'</span><rt>'+c.r+'</rt></ruby></div>';
+    q.answerKanji=c.k;q.n=c.n;q.ans=c.k;
+    q.expl='<div class="ex">'+c.w+'（'+c.r+'）<div class="exj">'+c.m+'　／　「'+c.k+'」は'+c.n+'画</div></div>';
+    return q;
+  }
+  if(c.kind==='o'&&v==='W'){
+    q.write=true;q.opts=[];q.tag='書き順で書こう';
+    q.stem='<p class="qask">「'+c.k+'」を、筆順どおりに書こう。</p><div class="bigword"><span class="bigk">'+c.k+'</span><span class="ex">'+c.s.map(function(x,j){return CIRC[j]+x}).join(' → ')+'</span></div>';
+    q.answerKanji=c.k;q.n=c.s.length;q.expect=c.s;q.ans=c.k;
+    q.expl='<div class="ex">「'+c.k+'」の筆順（'+c.s.length+'画）<div class="exj">'+c.s.map(function(x,j){return CIRC[j]+x}).join('　')+'</div></div>';
+    return q;
+  }
   if(c.kind==='k'&&(v==='M'||v==='Z')){
     var oth=shuffle(allCards('k').filter(function(x){return x!==c}));
     if(v==='M'){
@@ -543,6 +744,7 @@ function pickQ(cards,lastKey){
       var w=1/(1+(seen[key]||0)*1.5);
       if(S.used[key]) w*=.06;
       if(c.id===lastCard&&cards.length>1) w*=.12;
+      if(v==='W') w*=1.5;
       w*=1+((NB[c.mode][c.id]||{n:0}).n)*.6+(S.miss[c.id]||0)*.8;
       cand.push({c:c,v:v,w:w});tot+=w;
     });
@@ -562,18 +764,16 @@ function makeQ(c,v){
   var opts,i;
   var ext=makeExtra(c,v,q); if(ext) return ext;
   if(c.kind==='e'){
-    var others=DATA.e[c.si].cards.filter(function(x){return x!==c});
-    var four=shuffle([c].concat(others));
     if(v==='A'){
       q.tag='空所をうめよう';
       q.stem='<p class="sent">'+esc(c.s).replace('___','<span class="blank" id="blank"></span>')+'</p>';
       q.say={text:c.s.replace('___','blank'),lang:'en-US',label:'例文を聞く'};
       q.fill=c.en;
-      opts=four.map(function(x){return {label:x.en,ok:x===c}});
+      opts=shuffle([c].concat(edistract(c,'en'))).map(function(x){return {label:x.en,ok:x===c}});
     }else{
       q.tag='意味をえらぼう';
       q.stem='<div class="bigword"><span class="en">'+c.en+'</span>'+sayBtn(c.en)+'</div><p class="qask">この単語の意味は？</p>';
-      opts=four.map(function(x){return {label:x.ja,ok:x===c}});
+      opts=shuffle([c].concat(edistract(c,'ja'))).map(function(x){return {label:x.ja,ok:x===c}});
     }
     q.ans=c.en+'　'+c.ja;
     q.expl='<div class="ex">'+sentHL(c)+'<div class="exj">'+esc(c.sj)+'</div>'+sentSay(c)+'</div>';
@@ -590,7 +790,7 @@ function makeQ(c,v){
       var disp=c.w.split('').map(function(ch,j){return j===idx?'<span class="blank s" id="blank"></span>':ch}).join('');
       q.stem='<p class="qask">読みが「'+c.r+'」になる熟語です。（'+c.m+'）</p><div class="bigword"><span class="en">'+disp+'</span>'+sayBtn(c.r,'ja-JP','読み')+'</div>';
       q.fill=c.a;
-      opts=shuffle([c.a].concat(c.d)).map(function(x){return {label:x,ok:x===c.a}});
+      opts=shuffle([c.a].concat(shuffle(DIST.filter(function(x){return x!==c.a&&x!==c.k})).slice(0,3))).map(function(x){return {label:x,ok:x===c.a}});
       q.ans=c.w+'（'+c.r+'）';
       q.expl='<div class="ex">'+c.w+'（'+c.r+'）<div class="exj">'+c.m+'</div></div>';
     }
@@ -619,6 +819,7 @@ function makeQ(c,v){
   return q;
 }
 function quizUI(q,host,o){
+  if(q.write) return writeUI(q,host,o);
   return new Promise(function(resolve){
     host.innerHTML=
       '<div class="quiz"><div class="qhead"><span class="tag">'+(o.old?'復習問題　':'')+q.tag+'</span><span class="arrows">'+(o.head||'')+'</span></div>'+
@@ -689,6 +890,8 @@ var SFX={
     [523.25,659.25,783.99,1046.5].forEach(function(f,i){tone(f,.55+i*.11,.3,'square',.08)});
     tone(1046.5,1.0,.7,'triangle',.12);
   },
+  rage:function(){tone(110,0,.6,'sawtooth',.1,55);tone(165,.05,.5,'square',.05,70);noise(0,.35,.08)},
+  charge:function(k){tone(330*Math.pow(1.26,k),0,.14,'triangle',.1);tone(660*Math.pow(1.26,k),.08,.18,'triangle',.08)},
   fan:function(){[523.25,659.25,783.99,1046.5,1318.5].forEach(function(f,i){tone(f,i*.09,.3,'triangle',.1)})}
 };
 function bindSnd(){
@@ -775,7 +978,7 @@ function cardHTML(c,o){
 /* ---------- screens ---------- */
 function bestLine(m){var r=RK[m][0];return r?'<span class="best">ベスト <b>'+esc(r.name)+'</b>　'+r.score+' pt</span>':'<span class="best">まだ記録がありません</span>'}
 function showTitle(){
-  var m=S.mode,saved=progGet(m);
+  var m=S.mode,savedPlan=lsj('wordarrow-plan-'+m,null),saved=planOK(savedPlan)?progGet(m):0;
   app.innerHTML=
   '<section class="title">'+
    '<p class="eyebrow">パズルシューター学習ゲーム</p>'+
@@ -788,8 +991,8 @@ function showTitle(){
    '<div class="gemrow" aria-label="ブロックは5種類">'+[0,1,2,3,4].map(function(t){return '<div class="tile">'+gem(t)+'</div>'}).join('')+'</div>'+
    '<ol class="steps">'+
     '<li><div><b>カードを見ておぼえる</b><span>ステージごとに4枚。'+(m==='e'?'単語と例文、発音も聞けます。':'漢字の画数、熟語、筆順を見ます。')+'</span></div></li>'+
-    '<li><div><b>パズルでミサイルをつくる</b><span>となりのブロックを入れかえて、同じ形を3つ以上そろえます。連鎖するほどミサイルが大きくなります。</span></div></li>'+
-    '<li><div><b>問題に答えて発射</b><span>正解なら全力。まちがえると威力は4分の1になり、じゃまブロックが出ます。</span></div></li>'+
+    '<li><div><b>パズルを3回ためる</b><span>となりのブロックを入れかえて、同じ形を3つ以上そろえます。そろえるたびに問題が出て、3回分のパワーをためます。</span></div></li>'+
+    '<li><div><b>3発合体で発射</b><span>3回の合計に、連鎖のボーナスを掛け合わせた大きなミサイルを発射。まちがえた回は威力が4分の1になり、じゃまブロックが出ます。敵はHP半分で怒りモードに変わります。</span></div></li>'+
     '<li><div><b>まちがいを見直す</b><span>まちがえた問題は「まちがいノート」に残ります。</span></div></li>'+
    '</ol>'+
    '<div class="row" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button type="button" class="snd" id="snd"></button>'+bestLine(m)+'</div>'+
@@ -802,8 +1005,10 @@ function showTitle(){
   bindSnd();
   app.querySelectorAll('.modebtn').forEach(function(b){b.onclick=function(){S.mode=b.dataset.m;lsw('wordarrow-mode',S.mode);showTitle()}});
   function start(si){S.tot={ok:0,ng:0};S.miss={};S.score=0;S.used={};showStudy(si)}
-  $('#go0').onclick=function(){start(0)};
-  if(saved>0) $('#goc').onclick=function(){start(saved)};
+  $('#go0').onclick=function(){
+    var plan=makePlan(m);lsw('wordarrow-plan-'+m,plan);progSet(m,0);applyPlan(m,plan);start(0);
+  };
+  if(saved>0) $('#goc').onclick=function(){applyPlan(m,savedPlan);start(saved)};
   $('#nb').onclick=function(){showNotebook(S.mode)};
   $('#rk').onclick=showRanking;
 }
@@ -937,7 +1142,9 @@ function renderSel(){
 }
 function updateInfo(){
   var i=$('#info'); if(!i) return;
-  i.innerHTML='<span>手数 '+S.moves+'</span><span>れんぞく正解 '+S.streak+'</span><span>じゃま '+jamaCount()+'</span>';
+  var cs=chargeStat(),pips='';
+  for(var k=0;k<3;k++) pips+=k<S.charge.length?'●':'○';
+  i.innerHTML='<span>チャージ '+pips+(S.charge.length?'　合計 '+Math.round(cs.P)+' ×'+cs.M.toFixed(1):'')+'</span><span>れんぞく正解 '+S.streak+'</span><span>じゃま '+jamaCount()+'</span>';
   $('#score').textContent=S.score+' pt';
 }
 function flash(msg){
@@ -948,7 +1155,7 @@ function flash(msg){
 /* ---------- battle ---------- */
 function startBattle(){
   var st=stages()[S.stage],mon=MONS[S.stage]; window.scrollTo(0,0);
-  S.maxHp=260+S.stage*30;S.hp=S.maxHp;S.moves=0;S.streak=0;S.locked=true;S.sel=null;S.drag=null;S.lastKey=null;S.stat={};
+  S.maxHp=300+S.stage*35;S.hp=S.maxHp;S.moves=0;S.streak=0;S.locked=true;S.sel=null;S.drag=null;S.lastKey=null;S.stat={};S.charge=[];
   st.cards.forEach(function(c){S.stat[c.id]={ok:0,ng:0,asked:0}});
   app.innerHTML=
   '<section class="battle" id="battle">'+
@@ -990,6 +1197,21 @@ function setHp(){
   var f=$('#hpfill'),t=$('#hptxt'); if(!f) return;
   f.style.width=(100*S.hp/S.maxHp)+'%';
   t.textContent='HP '+S.hp+' / '+S.maxHp;
+  var mon=$('#mon');
+  if(mon&&S.hp>0&&S.hp<=S.maxHp/2&&!mon.classList.contains('rage')){
+    mon.classList.add('rage');
+    if($('#fx')){flash('怒りモード！');SFX.rage()}
+  }
+}
+/* 3 puzzle rounds are added up (P) and their combo bonuses are multiplied (M, capped) */
+function chargeStat(){
+  var P=0,M=1,tn=0;
+  S.charge.forEach(function(m){
+    P+=m.n*4*(m.ok?1:.25);
+    M*=1+.2*(m.chain-1)+.04*Math.max(0,m.n-3);
+    tn+=m.n;
+  });
+  return {P:P,M:Math.min(3,M),tn:tn};
 }
 
 async function swapTry(r1,c1,r2,c2){
@@ -1005,7 +1227,16 @@ async function swapTry(r1,c1,r2,c2){
   var res=await resolve();
   var ok=await askQuiz(res.cleared,res.chain);
   if(ok) S.streak++; else S.streak=0;
-  await fire(res.cleared,res.chain,ok);
+  S.charge.push({n:res.cleared,chain:res.chain,ok:ok});
+  if(S.charge.length<3){
+    SFX.charge(S.charge.length);
+    var cs=chargeStat();
+    flash('チャージ '+S.charge.length+' / 3　合計 '+Math.round(cs.P)+'　×'+cs.M.toFixed(1));
+    updateInfo();
+  }else{
+    await fire();
+    S.charge=[];
+  }
   if(S.hp<=0){await victory();return}
   if(!ok){await addJama(2)}
   if(!hasMoves()){reshuffle();render();flash('シャッフル')}
@@ -1056,14 +1287,14 @@ async function askQuiz(n,chain){
   slot.style.minHeight=slot.offsetHeight+'px';
   board.hidden=true;$('#pv').hidden=true;
   var host=document.createElement('div');slot.appendChild(host);
-  var head='ミサイル ×'+n+(chain>1?'　'+chain+'連鎖':'');
-  var ok=await quizUI(q,host,{head:head,next:'発射！',old:q.old});
+  var head='チャージ '+(S.charge.length+1)+'/3　ブロック×'+n+(chain>1?'　'+chain+'連鎖':'');
+  var ok=await quizUI(q,host,{head:head,next:S.charge.length>=2?'3発合体！発射':'チャージ！',old:q.old});
   host.remove();board.hidden=false;$('#pv').hidden=false;slot.style.minHeight='';
   var s=S.stat[q.card.id];
   if(s){s.asked++;if(ok)s.ok++;else s.ng++}
   S.lastKey=q.key;
   record(q,ok,false);
-  if(ok){S.tot.ok++;S.score+=50}else{S.tot.ng++}
+  if(ok){S.tot.ok++;S.score+=30}else{S.tot.ng++}
   return ok;
 }
 async function runTest(cards,o){
@@ -1081,32 +1312,36 @@ async function runTest(cards,o){
 
 /* ---------- firing ---------- */
 var ARROW='<svg viewBox="0 0 16 48" width="16" height="48" aria-hidden="true"><path class="flame" d="M5 34 L8 47 L11 34 Z"/><path class="fin" d="M3 26 L0 40 L3 36 Z M13 26 L16 40 L13 36 Z"/><rect class="body" x="3" y="14" width="10" height="21" rx="1"/><path class="nose" d="M8 0 Q13 7 13 15 H3 Q3 7 8 0 Z"/></svg>';
-async function fire(n,chain,ok){
-  var mult=(1+.75*(chain-1))*(1+Math.min(S.streak,5)*.1);
-  var dmg=Math.round(n*5*mult); if(!ok) dmg=Math.round(dmg*.25);
-  var sc=Math.min(3.4,1+(chain-1)*.65+Math.max(0,n-3)*.12);
-  SFX.shot(ok?sc:1);
+async function fire(){
+  var cs=chargeStat(),P=cs.P,M=cs.M,tn=cs.tn;
+  var allBad=S.charge.every(function(m){return !m.ok});
+  var sb=1+Math.min(S.streak,5)*.05;
+  var dmg=Math.max(1,Math.round(P*M*sb));
+  var sc=Math.min(3.4,1+(M-1)*1.1+Math.max(0,tn-9)*.03);
+  flash('3発合体！ ×'+M.toFixed(1));
+  SFX.shot(allBad?1:sc);
   var fx=$('#fx'),mon=$('#mon'),br=battle.getBoundingClientRect(),mr=mon.getBoundingClientRect(),sr=board.getBoundingClientRect();
-  var cnt=Math.min(Math.max(n,3),9),anims=[];
+  var cnt=Math.min(9,Math.max(3,Math.ceil(tn/2))),anims=[];
   if(sc>2.2) cnt=Math.max(3,Math.ceil(cnt*.6));
   for(var i=0;i<cnt;i++){
     var a=document.createElement('div');a.className='arrow'+(sc>1.8?' big':'');a.innerHTML=ARROW;fx.appendChild(a);
     var sx=(sr.left-br.left)+sr.width*(.12+.76*i/Math.max(cnt-1,1)),sy=(sr.top-br.top)+24;
     a.style.left=sx+'px';a.style.top=sy+'px';
     var tx=(mr.left-br.left+mr.width/2+(Math.random()-.5)*50)-sx,ty=(mr.top-br.top+mr.height/2)-sy;
-    var ang=Math.atan2(tx,-ty)*180/Math.PI,k=ok?1:.45,s2=ok?sc:1;
+    var ang=Math.atan2(tx,-ty)*180/Math.PI,k=allBad?.45:1,s2=allBad?1:sc;
     var frames=[{transform:'translate(0,0) rotate('+ang+'deg) scale('+s2+')',opacity:1},
-      {transform:'translate('+tx*k+'px,'+ty*k+'px) rotate('+ang+'deg) scale('+s2+')',opacity:ok?1:0}];
-    var an=a.animate(frames,{duration:430+(sc>1.8?120:0),delay:i*55,easing:'ease-in',fill:'forwards'});
+      {transform:'translate('+tx*k+'px,'+ty*k+'px) rotate('+ang+'deg) scale('+s2+')',opacity:allBad?0:1}];
+    var an=a.animate(frames,{duration:480+(sc>1.8?120:0),delay:i*55,easing:'ease-in',fill:'forwards'});
     anims.push(an.finished.catch(function(){}));
   }
   await Promise.all(anims);
   fx.querySelectorAll('.arrow').forEach(function(x){x.remove()});
   var f=document.createElement('div');f.className='float';
   f.style.left=(mr.left-br.left+mr.width/2)+'px';f.style.top=(mr.top-br.top+mr.height/3)+'px';
-  if(ok){f.textContent='-'+dmg;f.style.fontSize=(30+(sc-1)*10)+'px';mon.classList.add('hit')}
+  if(!allBad){f.textContent='-'+dmg;f.style.fontSize=(30+(sc-1)*10)+'px';mon.classList.add('hit')}
   else{f.textContent='弱い -'+dmg;mon.classList.add('laugh')}
-  S.hp=Math.max(0,S.hp-dmg);S.score+=dmg;setHp();
+  var dealt=Math.min(S.hp,dmg);
+  S.hp=Math.max(0,S.hp-dmg);S.score+=dealt;setHp();
   fx.appendChild(f);updateInfo();
   await sleep(650);
   mon.classList.remove('hit','laugh');f.remove();
@@ -1204,7 +1439,7 @@ function showFinal(cleared){
   $('#again').onclick=showTitle;
 }
 
-showTitle();
+showOnlineHome();
 })();
 </script>
 
