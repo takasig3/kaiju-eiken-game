@@ -667,22 +667,88 @@ if(typeof window!=='undefined'&&'speechSynthesis' in window){
   refreshSpeechVoices();
   if(window.speechSynthesis.addEventListener){window.speechSynthesis.addEventListener('voiceschanged',refreshSpeechVoices)}
 }
-function speak(t,lang){
-  try{
-    if(!('speechSynthesis' in window)||!t)return;
-    var locale=lang||'en-US';
-    var u=new SpeechSynthesisUtterance(String(t));
-    u.lang=locale;
-    u.rate=locale==='ja-JP'?0.9:0.9;
-    u.pitch=1;
-    u.volume=1;
-    var voice=preferredSpeechVoice(locale);
-    if(voice)u.voice=voice;
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(u);
-  }catch(e){console.warn('Speech playback unavailable',e)}
+/* English word audio: real dictionary recordings when available.
+   Example sentences: optional hosted audio assets; otherwise device TTS.
+   No API keys are required. */
+var wordAudioCache=Object.create(null);
+var currentAudio=null;
+var playbackSerial=0;
+function stopAudio(){
+  playbackSerial++;
+  if(currentAudio){currentAudio.pause();currentAudio.currentTime=0;currentAudio=null}
+  if('speechSynthesis' in window)window.speechSynthesis.cancel();
 }
-var CAN_SPEAK=typeof window!=='undefined'&&'speechSynthesis' in window;
+function speechFallback(t,locale){
+  if(!('speechSynthesis' in window))return;
+  var u=new SpeechSynthesisUtterance(String(t));
+  u.lang=locale;
+  u.rate=locale==='ja-JP'?0.9:0.94;
+  u.pitch=1;
+  u.volume=1;
+  var voice=preferredSpeechVoice(locale);
+  if(voice)u.voice=voice;
+  window.speechSynthesis.speak(u);
+}
+async function getDictionaryAudio(word){
+  var key=word.toLowerCase();
+  if(Object.prototype.hasOwnProperty.call(wordAudioCache,key))return wordAudioCache[key];
+  try{
+    var controller=new AbortController();
+    var timeout=setTimeout(function(){controller.abort()},3500);
+    var response;
+    try{response=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(key),{signal:controller.signal})}
+    finally{clearTimeout(timeout)}
+    if(!response.ok)throw new Error('No dictionary audio');
+    var entries=await response.json(),audio='';
+    for(var entry of entries){
+      for(var phonetic of (entry.phonetics||[])){
+        if(phonetic.audio){
+          var url=new URL(phonetic.audio,location.href);
+          if(url.protocol==='https:'){
+            if(!audio||/us/i.test(url.pathname))audio=url.href;
+            if(/us/i.test(url.pathname))break;
+          }
+        }
+      }
+      if(audio)break;
+    }
+    wordAudioCache[key]=audio||null;
+  }catch(e){wordAudioCache[key]=null}
+  return wordAudioCache[key];
+}
+function playAudioUrl(url,serial,fallback){
+  if(serial!==playbackSerial)return;
+  var audio=new Audio(url);
+  currentAudio=audio;
+  audio.onended=function(){if(currentAudio===audio)currentAudio=null};
+  audio.onerror=function(){if(serial===playbackSerial){currentAudio=null;fallback()}};
+  var result=audio.play();
+  if(result&&result.catch)result.catch(function(){if(serial===playbackSerial){currentAudio=null;fallback()}});
+}
+async function speak(t,lang){
+  if(!t)return;
+  stopAudio();
+  var serial=playbackSerial,locale=lang||'en-US';
+  var fallback=function(){if(serial===playbackSerial)speechFallback(t,locale)};
+  if(locale==='en-US'){
+    var clean=String(t).trim();
+    if(/^[a-z]+(?:[-'][a-z]+)*$/i.test(clean)){
+      var recording=await getDictionaryAudio(clean);
+      if(serial!==playbackSerial)return;
+      if(recording){playAudioUrl(recording,serial,fallback);return}
+    }else{
+      // To use studio-recorded sentence audio, add files and a mapping
+      // to window.WORD_ARROW_SENTENCE_AUDIO before this script executes.
+      var mapping=window.WORD_ARROW_SENTENCE_AUDIO||{};
+      var url=mapping[clean];
+      if(typeof url==='string'&&/^(https:\/\/|\.\/?)/.test(url)){
+        playAudioUrl(url,serial,fallback);return;
+      }
+    }
+  }
+  fallback();
+}
+var CAN_SPEAK=typeof window!=='undefined'&&('speechSynthesis' in window||'Audio' in window);
 function sayBtn(t,lang,label,cls){return CAN_SPEAK?'<button type="button" class="say'+(cls?' '+cls:'')+'" data-say="'+esc(t)+'"'+(lang?' data-lang="'+lang+'"':'')+'>'+(label||'発音')+'</button>':''}
 function bindSay(root){root.querySelectorAll('[data-say]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();speak(b.getAttribute('data-say'),b.getAttribute('data-lang'))})})}
 function sentHL(w){return esc(w.s).replace('___','<mark>'+w.en+'</mark>')}
