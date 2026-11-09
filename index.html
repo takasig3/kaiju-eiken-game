@@ -7,6 +7,26 @@
 .mon.electric-mon.laugh{animation:bob .5s}
 .mon.electric-mon.boom{animation:boom 1.1s forwards}
 @media(prefers-reduced-motion:reduce){.mon.electric-mon.hit,.mon.electric-mon.laugh,.mon.electric-mon.boom{animation:none}}
+
+/* All-stage illustrated monsters: full image contained, responsive, animated */
+.mon.illustrated-mon{position:relative;width:min(calc(var(--ms,120px)*1.95),100%,36vh);aspect-ratio:1/1;overflow:visible;display:grid;place-items:center;transform-origin:50% 85%;animation:monster-breathe 2.3s ease-in-out infinite}
+.mon.illustrated-mon .monster-portrait{width:100%;height:100%;object-fit:contain;display:block;border-radius:12px;mix-blend-mode:multiply;filter:drop-shadow(0 5px 4px rgba(0,0,0,.15))}
+.mon.illustrated-mon .monster-sweat,.mon.illustrated-mon .monster-pain{display:none;position:absolute;pointer-events:none}
+.mon.illustrated-mon.exhausted{animation:monster-exhausted 1.3s ease-in-out infinite;transform-origin:50% 90%}
+.mon.illustrated-mon.exhausted .monster-portrait{filter:saturate(.62) brightness(.84) drop-shadow(0 4px 3px rgba(0,0,0,.25))}
+.mon.illustrated-mon.exhausted .monster-sweat{display:block;right:4%;top:10%;font-size:clamp(20px,3vw,36px);animation:sweat-wobble 1.2s infinite}
+.mon.illustrated-mon.exhausted .monster-pain{display:block;left:0;bottom:5%;background:#fff;border:2px solid #5c6671;color:#293746;border-radius:20px;padding:0 8px;font-size:clamp(11px,1.4vw,16px);font-weight:900;transform:rotate(-9deg)}
+.mon.illustrated-mon.hit{animation:shake .4s}
+.mon.illustrated-mon.laugh{animation:bob .5s}
+.mon.illustrated-mon.boom{animation:boom 1.1s forwards}
+@keyframes monster-breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.025)}}
+@keyframes monster-exhausted{0%,100%{transform:translateY(8px) rotate(-5deg) scale(.94)}50%{transform:translateY(12px) rotate(-7deg) scale(.92)}}
+@keyframes sweat-wobble{50%{transform:translateY(8px) rotate(10deg)}}
+@media(prefers-reduced-motion:reduce){.mon.illustrated-mon,.mon.illustrated-mon.exhausted{animation:none}}
+
+/* Frame-animated characters, including a separate exhausted expression */
+.mon.illustrated-mon .monster-portrait{mix-blend-mode:normal;object-fit:contain;border-radius:10px}
+.mon.illustrated-mon.exhausted .monster-portrait{filter:none}
 </style></head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -287,15 +307,15 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp
 /* ---------- content ---------- */
 var MONS=[
  {name:'ライボルトン',kind:'slime',c:'#8fe3b0'},
- {name:'ふわふわクラウド',kind:'cloud',c:'#a9d3ff'},
- {name:'こうもりバット',kind:'bat',c:'#b9a3f0'},
- {name:'とげとげウニ',kind:'urchin',c:'#ffb86b'},
- {name:'のっぽシャドウ',kind:'shade',c:'#c7b8ff'},
- {name:'ぐるぐるドラゴン',kind:'dragon',c:'#7fd6a4'},
- {name:'おばけキノコ',kind:'mushroom',c:'#ff9aa8',crown:1},
- {name:'タコ入道',kind:'octo',c:'#ff8fb8',eyes:3},
- {name:'がちゃがちゃロボ',kind:'robot',c:'#9fb7c9',crown:1},
- {name:'ことば魔王',kind:'king',c:'#ff8f8f',eyes:3}
+ {name:'アクアフィン',kind:'cloud',c:'#a9d3ff'},
+ {name:'フレアキトン',kind:'bat',c:'#b9a3f0'},
+ {name:'アースゴーレム',kind:'urchin',c:'#ffb86b'},
+ {name:'ウィンドルー',kind:'shade',c:'#c7b8ff'},
+ {name:'シャドーミス',kind:'dragon',c:'#7fd6a4'},
+ {name:'アイスペルク',kind:'mushroom',c:'#ff9aa8',crown:1},
+ {name:'ネイチャリス',kind:'octo',c:'#ff8fb8',eyes:3},
+ {name:'ストームヴェイル',kind:'robot',c:'#9fb7c9',crown:1},
+ {name:'エレメンタルコア',kind:'king',c:'#ff8f8f',eyes:3}
 ];
 var MODE_NAME={e:'英検4級',k:'漢検4級'};
 var DATA={e:[],k:[]},BYID={};
@@ -1409,7 +1429,7 @@ function startBattle(){
   app.innerHTML=
   '<section class="battle" id="battle">'+
    '<div class="bar"><span class="stg">STAGE '+(S.stage+1)+'</span><span class="stn">'+MODE_NAME[S.mode]+'　'+st.name+'</span><button type="button" class="snd" id="snd"></button><span class="sc" id="score"></span></div>'+
-   '<div class="arena"><div class="mon'+(S.stage===0?' electric-mon':'')+'" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+(S.stage===0?'<img class="electric-sprite" src="assets/electric-monster.gif" alt="電撃モンスター">':monsterSVG(mon))+'</div><div class="mname">'+mon.name+'</div>'+
+   '<div class="arena"><div class="mon'+' illustrated-mon'+'" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+'<img class="monster-portrait" src="assets/monster-'+String(S.stage+1).padStart(2,'0')+'-idle.gif" alt="'+esc(mon.name)+'"><span class="monster-sweat" aria-hidden="true">💦</span><span class="monster-pain" aria-hidden="true">うぅ…</span>'+'</div><div class="mname">'+mon.name+'</div>'+
    '<div class="hp" role="progressbar" aria-label="モンスターの体力"><i id="hpfill"></i><b id="hptxt"></b></div></div>'+
    '<div class="slot" id="slot"><div class="pv" id="pv" aria-hidden="true"></div><div class="board" id="board"></div></div>'+
    '<div class="foot" id="info"></div>'+
@@ -1442,14 +1462,19 @@ function onMove(e){
 }
 window.addEventListener('pointerup',function(){S.drag=null});
 
+function monsterPose(pose){
+ var m=$('#mon'),img=m&&m.querySelector('.monster-portrait');if(!img)return;
+ var base='assets/monster-'+String(S.stage+1).padStart(2,'0')+'-';
+ var next=base+pose+'.gif';if(img.getAttribute('src')!==next)img.src=next;
+}
 function setHp(){
   var f=$('#hpfill'),t=$('#hptxt'); if(!f) return;
   f.style.width=(100*S.hp/S.maxHp)+'%';
   t.textContent='HP '+S.hp+' / '+S.maxHp;
   var mon=$('#mon');
   if(mon&&S.hp>0&&S.hp<=S.maxHp/2&&!mon.classList.contains('rage')){
-    mon.classList.add('rage');
-    if($('#fx')){flash('怒りモード！');SFX.rage()}
+    mon.classList.add('exhausted');monsterPose('hurt');
+    if($('#fx')){flash('HP半分！ 苦しそう…');SFX.rage()}
   }
 }
 /* 3 puzzle rounds are added up (P) and their combo bonuses are multiplied (M, capped) */
@@ -1587,20 +1612,20 @@ async function fire(){
   fx.querySelectorAll('.arrow').forEach(function(x){x.remove()});
   var f=document.createElement('div');f.className='float';
   f.style.left=(mr.left-br.left+mr.width/2)+'px';f.style.top=(mr.top-br.top+mr.height/3)+'px';
-  if(!allBad){f.textContent='-'+dmg;f.style.fontSize=(30+(sc-1)*10)+'px';mon.classList.add('hit')}
-  else{f.textContent='弱い -'+dmg;mon.classList.add('laugh')}
+  if(!allBad){f.textContent='-'+dmg;f.style.fontSize=(30+(sc-1)*10)+'px';mon.classList.add('hit');monsterPose('damage')}
+  else{f.textContent='弱い -'+dmg;mon.classList.add('laugh');monsterPose('attack')}
   var dealt=Math.min(S.hp,dmg);
   S.hp=Math.max(0,S.hp-dmg);S.score+=dealt;setHp();
   fx.appendChild(f);updateInfo();
   await sleep(650);
-  mon.classList.remove('hit','laugh');f.remove();
+  mon.classList.remove('hit','laugh');monsterPose(S.hp>0&&S.hp<=S.maxHp/2?'hurt':'idle');f.remove();
 }
 async function victory(){
   var fx=$('#fx'),mon=$('#mon'),br=battle.getBoundingClientRect(),mr=mon.getBoundingClientRect();
   var cx=mr.left-br.left+mr.width/2,cy=mr.top-br.top+mr.height/2,i;
   progSet(S.mode,S.stage+1);
   SFX.defeat();
-  mon.classList.add('boom');
+  mon.classList.add('boom');monsterPose('defeat');
   await sleep(520);
   var fl=document.createElement('div');fl.className='flash';fx.appendChild(fl);
   fl.animate([{opacity:.85},{opacity:0}],{duration:450,fill:'forwards'});
