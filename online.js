@@ -16,6 +16,7 @@
   if(!window.supabase){error('supabase-jsの読み込みに失敗しました。ネット接続を確認してください。');return;}
   const client=window.supabase.createClient(config.url,config.publishableKey);
   let user,selected=null;
+  let dailyRun=null, dailyAnswers=[], dailyIndex=0, dailyQuestions=[];
   try{
     let session=check(await client.auth.getSession()).session;
     if(!session)session=check(await client.auth.signInAnonymously()).session;
@@ -44,10 +45,53 @@
       const members=check(await client.rpc('wa_group_members',{p_group_id:id}))||[];
       selected=id;
       const invite=location.origin+location.pathname+'?group='+encodeURIComponent(g.invite_code);
-      content.innerHTML=`<h2>${esc(g.name)}</h2><p>${members.length}人が参加</p><ul>${members.map(m=>`<li>${esc(m.avatar)} ${esc(m.nickname)}</li>`).join('')}</ul><p>友達にこの招待URLを送ってください。</p><input id="wa-invite" readonly value="${esc(invite)}"><button id="wa-copy">招待URLをコピー</button><br><button id="wa-start">ゲームを開始</button><button id="wa-back" class="secondary">戻る</button><p class="hint">オンラインランキングはまだ未実装です。ゲーム内のランキングは端末内の記録です。</p>`;
+      content.innerHTML=`<h2>${esc(g.name)}</h2><p>${members.length}人が参加</p><ul>${members.map(m=>`<li>${esc(m.avatar)} ${esc(m.nickname)}</li>`).join('')}</ul><p>友達にこの招待URLを送ってください。</p><input id="wa-invite" readonly value="${esc(invite)}"><button id="wa-copy">招待URLをコピー</button><br><button id="wa-start">通常ゲームを開始</button><hr><h3>🏆 今日のオンライン対戦</h3><p class="hint">英検・漢検それぞれ1日1回。10問を全員同じ条件で解きます（1問100点）。</p><button id="wa-daily-e">英検4級に挑戦</button><button id="wa-daily-k">漢検4級に挑戦</button><div id="wa-rankings"></div><button id="wa-back" class="secondary">戻る</button><p class="hint">通常ゲームの得点は端末内保存です。オンライン対戦の得点だけが共有されます。</p>`;
       $('wa-copy').onclick=async()=>{try{await navigator.clipboard.writeText(invite);status.textContent='招待URLをコピーしました'}catch(e){$('wa-invite').select();status.textContent='URLを選択しました。コピーしてください'}};
       $('wa-start').onclick=()=>{panel.hidden=true};
+      $('wa-daily-e').onclick=()=>startDaily(id,'eiken4');
+      $('wa-daily-k').onclick=()=>startDaily(id,'kanken4');
+      await showRankings(id);
       $('wa-back').onclick=showHome;
     }catch(e){error(e)}
   }
+  async function showRankings(groupId){
+    const host=$('wa-rankings');if(!host)return;
+    try{
+      const out=[];
+      for(const [subject,label] of [['eiken4','英検4級'],['kanken4','漢検4級']]){
+        const rows=check(await client.rpc('wa_daily_ranking',{p_group_id:groupId,p_subject:subject}))||[];
+        out.push(`<h3>${label}・本日のランキング</h3>${rows.length?'<ol>'+rows.map(r=>`<li>${esc(r.avatar)} ${esc(r.nickname)} — <b>${r.score}点</b>（${r.correct_count}/10）</li>`).join('')+'</ol>':'<p class="hint">まだ記録がありません</p>'}`);
+      }
+      host.innerHTML=out.join('');
+    }catch(e){host.textContent='ランキング取得エラー: '+(e.message||e);}
+  }
+  async function startDaily(groupId,subject){
+    try{
+      const data=check(await client.rpc('wa_start_daily',{p_group_id:groupId,p_subject:subject}));
+      if(data.finished){status.textContent='今日は回答済みです。明日また挑戦してください。';await showRankings(groupId);return;}
+      dailyRun=data.run_id;dailyQuestions=data.questions;dailyAnswers=[];dailyIndex=0;
+      selected=groupId;renderDailyQuestion();
+    }catch(e){error(e)}
+  }
+  function renderDailyQuestion(){
+    const q=dailyQuestions[dailyIndex];
+    if(!q){finishDaily();return;}
+    content.innerHTML=`<h2>🏹 今日のオンライン対戦</h2><p>第 ${dailyIndex+1} 問 / ${dailyQuestions.length} 問</p><h3>${esc(q.prompt)}</h3><div id="wa-choices"></div><p class="hint">選択後は回答を変更できません。最後にまとめて採点します。</p>`;
+    const host=$('wa-choices');
+    q.choices.forEach((choice,i)=>{
+      const btn=document.createElement('button');btn.className='secondary';btn.style.cssText='display:block;width:100%;text-align:left';
+      btn.textContent=String.fromCharCode(65+i)+'. '+choice;
+      btn.onclick=()=>{dailyAnswers.push(i);dailyIndex++;renderDailyQuestion();};host.append(btn);
+    });
+  }
+  async function finishDaily(){
+    content.innerHTML='<h2>採点中…</h2>';
+    try{
+      const result=check(await client.rpc('wa_finish_daily',{p_run_id:dailyRun,p_answers:dailyAnswers}));
+      content.innerHTML=`<h2>結果発表！</h2><p style="font-size:32px;font-weight:bold">${result.score}点</p><p>${result.correct} / ${result.total} 問正解</p><button id="wa-return">グループに戻る</button>`;
+      $('wa-return').onclick=()=>showGroup(selected);
+    }catch(e){error(e);content.innerHTML='<button id="wa-retry">再送信</button>';
+      $('wa-retry').onclick=finishDaily;}
+  }
+
 })();
