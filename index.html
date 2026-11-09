@@ -1051,11 +1051,23 @@ function quizUI(q,host,o){
     host.innerHTML=
       '<div class="quiz"><div class="qhead"><span class="tag">'+(o.old?'復習問題　':'')+q.tag+'</span><span class="arrows">'+(o.head||'')+'</span></div>'+
       q.stem+
+      (q.auto?'<button type="button" class="say sent-say" id="wa-replay-listening" aria-label="英単語の発音をもう一度聞く">🔊 もう一度聞く</button>':'')+
       (q.say?sayBtn(q.say.text,q.say.lang,q.say.label,'sent-say'):'')+
       '<div class="choices'+(q.one?' one':'')+'">'+q.opts.map(function(x,i){return '<button type="button" class="ch" data-i="'+i+'">'+esc(x.label)+'</button>'}).join('')+'</div>'+
       '<div class="fb" id="fb" hidden></div></div>';
     bindSay(host);
-    if(q.auto&&CAN_SPEAK) setTimeout(function(){speak(q.auto,'en-US')},300);
+    if(q.auto){
+      var replay=host.querySelector('#wa-replay-listening');
+      if(replay)replay.addEventListener('click',function(e){
+        e.stopPropagation();
+        // Direct user gesture: start speech immediately, avoiding network delay / autoplay restrictions.
+        stopAudio();speechFallback(q.auto,'en-US');
+      });
+      if(CAN_SPEAK)setTimeout(function(){
+        // Best effort auto playback; replay button remains available on restricted browsers.
+        stopAudio();speechFallback(q.auto,'en-US');
+      },300);
+    }
     var btns=host.querySelectorAll('.ch'),done=false;
     btns.forEach(function(b){b.addEventListener('click',function(){
       if(done) return; done=true;
