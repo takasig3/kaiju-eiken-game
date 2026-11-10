@@ -27,6 +27,18 @@
 /* Frame-animated characters, including a separate exhausted expression */
 .mon.illustrated-mon .monster-portrait{mix-blend-mode:normal;object-fit:contain;border-radius:10px}
 .mon.illustrated-mon.exhausted .monster-portrait{filter:none}
+
+/* Final boss battle and optional finishing shot */
+.battle.final-boss .arena{position:relative;isolation:isolate;border-radius:22px;background:radial-gradient(ellipse at 50% 42%,rgba(125,64,177,.25),rgba(34,23,61,.10) 52%,transparent 76%);padding:14px 10px 12px}
+.battle.final-boss .arena:before{content:"";position:absolute;inset:7% 17% 15%;border:3px solid rgba(155,83,230,.55);border-radius:50%;box-shadow:0 0 28px 7px rgba(120,54,200,.25),inset 0 0 25px rgba(113,58,196,.2);z-index:-1;animation:boss-aura 3.2s ease-in-out infinite alternate}
+.battle.final-boss .illustrated-mon{width:min(calc(var(--ms,120px)*2.2),100%,42vh);filter:drop-shadow(0 0 17px rgba(124,52,199,.55))}
+.battle.final-boss .mname{font-size:clamp(20px,2.6vw,32px);color:#6923a5;text-shadow:0 1px #fff}
+.boss-banner{font-family:var(--f-display);letter-spacing:.16em;font-size:clamp(13px,2vw,21px);font-weight:900;color:#8d29b0;text-align:center;text-shadow:0 1px 0 #fff}
+.finish-row{width:100%;display:flex;justify-content:center;padding:4px 10px 12px}
+.finish-btn{border:3px solid #8c2850;border-radius:16px;padding:12px 20px;background:linear-gradient(135deg,#ffdd62,#ff7845);color:#3a1733;font-weight:900;font-size:clamp(14px,2vw,19px);box-shadow:0 5px 0 #8c2850;cursor:pointer}
+.finish-btn:disabled{opacity:.5;cursor:wait}
+@keyframes boss-aura{from{transform:scale(.95) rotate(-4deg);opacity:.65}to{transform:scale(1.05) rotate(4deg);opacity:1}}
+@media(prefers-reduced-motion:reduce){.battle.final-boss .arena:before{animation:none}}
 </style></head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -315,7 +327,7 @@ var MONS=[
  {name:'アイスペルク',kind:'mushroom',c:'#ff9aa8',crown:1},
  {name:'ネイチャリス',kind:'octo',c:'#ff8fb8',eyes:3},
  {name:'ストームヴェイル',kind:'robot',c:'#9fb7c9',crown:1},
- {name:'エレメンタルコア',kind:'king',c:'#ff8f8f',eyes:3}
+ {name:'深淵の魔導王',kind:'king',c:'#ff8f8f',eyes:3}
 ];
 var MODE_NAME={e:'英検4級',k:'漢検4級'};
 var DATA={e:[],k:[]},BYID={};
@@ -1415,6 +1427,14 @@ function updateInfo(){
   for(var k=0;k<3;k++) pips+=k<S.charge.length?'●':'○';
   i.innerHTML='<span>チャージ '+pips+(S.charge.length?'　合計 '+Math.round(cs.P)+' ×'+cs.M.toFixed(1):'')+'</span><span>れんぞく正解 '+S.streak+'</span><span>じゃま '+jamaCount()+'</span>';
   $('#score').textContent=S.score+' pt';
+  if(!$('#finish-action'))i.insertAdjacentHTML('beforeend','<div class="finish-row" id="finish-action" hidden><button type="button" class="finish-btn" id="finish-btn">🚀 今すぐ発射！</button></div>');
+  var fin=$('#finish-action');
+  if(fin){
+    var potential=Math.max(1,Math.round(cs.P*cs.M*(1+Math.min(S.streak,5)*.05)));
+    var show=S.charge.length>0&&S.charge.length<3&&S.hp>0&&potential>=S.hp;
+    fin.hidden=!show;
+    if(show){var b=fin.querySelector('button');b.textContent='🚀 今すぐ発射！ （予想 '+potential+' ダメージ）';b.disabled=!!S.locked;}
+  }
 }
 function flash(msg){
   var t=document.createElement('div');t.className='toast';t.textContent=msg;
@@ -1427,9 +1447,9 @@ function startBattle(){
   S.maxHp=300+S.stage*35;S.hp=S.maxHp;S.moves=0;S.streak=0;S.locked=true;S.sel=null;S.drag=null;S.lastKey=null;S.stat={};S.charge=[];
   st.cards.forEach(function(c){S.stat[c.id]={ok:0,ng:0,asked:0}});
   app.innerHTML=
-  '<section class="battle" id="battle">'+
+  '<section class="battle'+(S.stage===9?' final-boss':'')+'" id="battle">'+
    '<div class="bar"><span class="stg">STAGE '+(S.stage+1)+'</span><span class="stn">'+MODE_NAME[S.mode]+'　'+st.name+'</span><button type="button" class="snd" id="snd"></button><span class="sc" id="score"></span></div>'+
-   '<div class="arena"><div class="mon'+' illustrated-mon'+'" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+'<img class="monster-portrait" src="assets/monster-'+String(S.stage+1).padStart(2,'0')+'.webp" alt="'+esc(mon.name)+'"><span class="monster-sweat" aria-hidden="true">💦</span><span class="monster-pain" aria-hidden="true">うぅ…</span>'+'</div><div class="mname">'+mon.name+'</div>'+
+   '<div class="arena">'+(S.stage===9?'<div class="boss-banner">✦ FINAL BOSS ✦</div>':'')+'<div class="mon'+' illustrated-mon'+'" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+'<img class="monster-portrait" src="assets/monster-'+String(S.stage+1).padStart(2,'0')+'.webp" alt="'+esc(mon.name)+'"><span class="monster-sweat" aria-hidden="true">💦</span><span class="monster-pain" aria-hidden="true">うぅ…</span>'+'</div><div class="mname">'+mon.name+'</div>'+
    '<div class="hp" role="progressbar" aria-label="モンスターの体力"><i id="hpfill"></i><b id="hptxt"></b></div></div>'+
    '<div class="slot" id="slot"><div class="pv" id="pv" aria-hidden="true"></div><div class="board" id="board"></div></div>'+
    '<div class="foot" id="info"></div>'+
@@ -1438,6 +1458,7 @@ function startBattle(){
   board=$('#board');slot=$('#slot');battle=$('#battle');bindSnd();
   setHp();
   newBoard();render();updateInfo();
+  $('#info').addEventListener('click',function(e){if(e.target.closest('#finish-btn'))finishEarly()});
   board.addEventListener('pointerdown',onDown);
   board.addEventListener('pointermove',onMove);
   S.locked=false;
@@ -1487,6 +1508,16 @@ function chargeStat(){
   return {P:P,M:Math.min(3,M),tn:tn};
 }
 
+async function finishEarly(){
+  if(S.locked||!S.charge.length||S.charge.length>=3||S.hp<=0)return;
+  var cs=chargeStat(),potential=Math.max(1,Math.round(cs.P*cs.M*(1+Math.min(S.streak,5)*.05)));
+  if(potential<S.hp)return;
+  S.locked=true;updateInfo();
+  await fire();S.charge=[];
+  if(S.hp<=0){await victory();return;}
+  updateInfo();S.locked=false;
+}
+
 async function swapTry(r1,c1,r2,c2){
   if(S.locked) return;
   var A=S.b[r1][c1],B=S.b[r2][c2];
@@ -1514,7 +1545,7 @@ async function swapTry(r1,c1,r2,c2){
   if(!ok){await addJama(2)}
   if(!hasMoves()){reshuffle();render();flash('シャッフル')}
   updateInfo();
-  S.locked=false;
+  S.locked=false;updateInfo();
 }
 async function resolve(){
   var cleared=0,chain=0;
