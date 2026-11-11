@@ -86,6 +86,30 @@
 .ally-boost-status{color:#7042d0;font-weight:900}
 .ally-boost-float{color:#8a4dff!important;text-shadow:0 2px 0 #fff,0 0 16px #e4aaff}
 @media(max-width:650px){.ally-quiz{padding:8px;gap:6px}.ally-avatar-img{width:76px;height:82px}.ally-avatar{font-size:35px}.ally-heading{font-size:17px}.ally-description{font-size:12px}}
+
+/* Handwriting questions: keep the drawing canvas and all action buttons visible. */
+.battle .slot .quiz:has(#pad){
+  box-sizing:border-box;
+  max-height:calc(100dvh - 105px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  align-content:start;
+  gap:clamp(5px,.8vh,10px);
+  padding:clamp(9px,1.2vh,15px);
+}
+.battle .slot .quiz:has(#pad) .padwrap{
+  box-sizing:border-box;
+  width:min(100%, 340px, 35dvh);
+  aspect-ratio:1;
+  flex-shrink:0;
+}
+.battle .slot .quiz:has(#pad) .padbar{width:min(100%,340px);gap:8px}
+.battle .slot .quiz:has(#pad) .padbar .btn{min-height:40px;padding:6px 8px;font-size:clamp(13px,1.8vh,16px)}
+.battle .slot .quiz:has(#pad) #show{min-height:46px;position:relative;z-index:1}
+.battle .slot .quiz:has(#pad) .wq{font-size:clamp(30px,5vh,52px);line-height:1.15}
+@media (max-height:700px){
+ .battle .slot .quiz:has(#pad) .padwrap{width:min(100%,280px,30dvh)}
+}
 </style><style id="wa-learning-style">
 .wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
 .slot{position:relative}
