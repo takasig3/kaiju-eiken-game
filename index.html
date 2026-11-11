@@ -44,6 +44,36 @@
 .cell.bonus-item{outline:3px solid #ffd166;outline-offset:-4px;background:radial-gradient(circle,#fff3ad,#ffd76b 65%,#a87924)!important;animation:itemPulse 1.4s ease-in-out infinite}
 .cell.bonus-item{font-size:26px;cursor:pointer}
 @keyframes itemPulse{50%{filter:brightness(1.23);transform:scale(1.045)}}
+
+/* Quiz viewport-fit: desktop landscape and short laptop screens. */
+.battle .slot .quiz{min-width:0}
+@media (min-width:900px) and (orientation:landscape){
+  .battle:has(.slot .quiz){grid-template-rows:auto minmax(0,1fr) auto;min-height:0}
+  .battle .slot:has(.quiz){width:clamp(380px,calc((100dvh - 110px)*.8),820px);min-width:0}
+  .battle .slot .quiz{
+    box-sizing:border-box;max-height:calc(100dvh - 100px);overflow-y:auto;overscroll-behavior:contain;
+    padding:clamp(10px,1.3vh,16px);gap:clamp(5px,.8vh,9px);
+    scrollbar-width:thin;
+  }
+  .battle .slot .quiz .qhead{font-size:clamp(12px,1.6vh,15px);gap:6px}
+  .battle .slot .quiz .bigword .en{font-size:clamp(30px,5vh,44px);line-height:1.05}
+  .battle .slot .quiz .bigword{gap:6px}
+  .battle .slot .quiz .sent{font-size:clamp(18px,2.8vh,24px);line-height:1.35}
+  .battle .slot .quiz .qask{font-size:clamp(13px,1.8vh,16px);margin:0}
+  .battle .slot .quiz .choices{gap:8px 10px}
+  .battle .slot .quiz .ch{min-height:clamp(43px,6.4vh,60px);padding:5px 9px;font-size:clamp(16px,2.4vh,21px)}
+  .battle .slot .quiz .fb{gap:clamp(4px,.7vh,7px)}
+  .battle .slot .quiz .verdict{font-size:clamp(23px,3.3vh,29px);line-height:1.12}
+  .battle .slot .quiz .fb .ans{font-size:clamp(15px,2.2vh,19px);line-height:1.25}
+  .battle .slot .quiz .fb .ex{padding:7px 10px;font-size:clamp(13px,1.8vh,16px);line-height:1.35}
+  .battle .slot .quiz .fb .ex .exj{font-size:clamp(12px,1.6vh,14px)}
+  .battle .slot .quiz .fb .btn{min-height:clamp(43px,5.8vh,54px);padding:6px 12px;font-size:clamp(17px,2.4vh,21px)}
+  .battle .slot .quiz .say{padding:3px 11px;font-size:13px}
+}
+/* Ensure the action is accessible even on short screens, without scrolling the whole page. */
+@media (max-height:650px){
+  .battle .slot .quiz{max-height:calc(100dvh - 85px);overflow-y:auto;overscroll-behavior:contain}
+}
 </style><style id="wa-learning-style">
 .wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
 .slot{position:relative}
@@ -1757,7 +1787,7 @@ function battleQ(){
 }
 async function askQuiz(n,chain){
   var q=battleQ();
-  slot.style.minHeight=slot.offsetHeight+'px';
+  slot.style.minHeight='';
   board.hidden=true;$('#pv').hidden=true;
   var host=document.createElement('div');slot.appendChild(host);
   var head='チャージ '+(S.charge.length+1)+'/3　ブロック×'+n+(chain>1?'　'+chain+'連鎖':'')+(S.pendingSpecial?'　'+S.pendingSpecial:'');
