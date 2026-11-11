@@ -54,11 +54,13 @@
       const members=check(await client.rpc('wa_group_members',{p_group_id:id}))||[];
       selected=id;
       const invite=location.origin+location.pathname+'?group='+encodeURIComponent(g.invite_code);
-      content.innerHTML=`<h2>${esc(g.name)}</h2><p>${members.length}人が参加</p><ul>${members.map(m=>`<li>${esc(m.avatar)} ${esc(m.nickname)}</li>`).join('')}</ul><p>友達にこの招待URLを送ってください。</p><input id="wa-invite" readonly value="${esc(invite)}"><button id="wa-copy">招待URLをコピー</button><br><button id="wa-start">通常ゲームを開始</button><hr><h3>🏆 今日のオンライン対戦</h3><p class="hint">英検・漢検それぞれ1日1回。10問を全員同じ条件で解きます（1問100点）。</p><button id="wa-daily-e">英検4級に挑戦</button><button id="wa-daily-k">漢検4級に挑戦</button><div id="wa-rankings"></div><button id="wa-back" class="secondary">戻る</button><p class="hint">通常ゲームの最高得点もオンライン共有されます（自己申告スコア・未検証）。</p>`;
+      content.innerHTML=`<h2>${esc(g.name)}</h2><p>${members.length}人が参加</p><ul>${members.map(m=>`<li>${esc(m.avatar)} ${esc(m.nickname)}</li>`).join('')}</ul><p>友達にこの招待URLを送ってください。</p><input id="wa-invite" readonly value="${esc(invite)}"><button id="wa-copy">招待URLをコピー</button><br><button id="wa-start">通常ゲームを開始</button><hr><h3>🏆 今日のオンライン対戦</h3><p class="hint">各級・各科目それぞれ1日1回。10問を全員同じ条件で解きます（1問100点）。</p><button id="wa-daily-e">英検4級に挑戦</button><button id="wa-daily-k">漢検4級に挑戦</button><button id="wa-daily-e5">英検5級に挑戦</button><button id="wa-daily-k5">漢検5級に挑戦</button><div id="wa-rankings"></div><button id="wa-back" class="secondary">戻る</button><p class="hint">通常ゲームの最高得点もオンライン共有されます（自己申告スコア・未検証）。</p>`;
       $('wa-copy').onclick=async()=>{try{await navigator.clipboard.writeText(invite);status.textContent='招待URLをコピーしました'}catch(e){$('wa-invite').select();status.textContent='URLを選択しました。コピーしてください'}};
       $('wa-start').onclick=()=>{panel.hidden=true};
       $('wa-daily-e').onclick=()=>startDaily(id,'eiken4');
       $('wa-daily-k').onclick=()=>startDaily(id,'kanken4');
+      $('wa-daily-e5').onclick=()=>startDaily(id,'eiken5');
+      $('wa-daily-k5').onclick=()=>startDaily(id,'kanken5');
       await showRankings(id);
       await showNormalRankings(id);
       $('wa-back').onclick=showHome;
@@ -68,7 +70,7 @@
     const host=$('wa-rankings');if(!host)return;
     try{
       const out=[];
-      for(const [subject,label] of [['eiken4','英検4級'],['kanken4','漢検4級']]){
+      for(const [subject,label] of [['eiken5','英検5級'],['eiken4','英検4級'],['kanken5','漢検5級'],['kanken4','漢検4級']]){
         const rows=check(await client.rpc('wa_daily_ranking',{p_group_id:groupId,p_subject:subject}))||[];
         out.push(`<h3>${label}・本日のランキング</h3>${rows.length?'<ol>'+rows.map(r=>`<li>${esc(r.avatar)} ${esc(r.nickname)} — <b>${r.score}点</b>（${r.correct_count}/10）</li>`).join('')+'</ol>':'<p class="hint">まだ記録がありません</p>'}`);
       }
@@ -81,7 +83,7 @@
     daily.after(host);
     try{
       const out=['<hr><h3>🏅 通常ゲーム・グループ最高得点</h3><p class="hint">ブラウザから送信した参考記録です。サーバーでプレイ内容の検証はしていません。</p>'];
-      for(const [subject,label] of [['eiken4','英検4級'],['kanken4','漢検4級']]){
+      for(const [subject,label] of [['eiken5','英検5級'],['eiken4','英検4級'],['kanken5','漢検5級'],['kanken4','漢検4級']]){
         const rows=check(await client.rpc('wa_normal_ranking',{p_group_id:groupId,p_subject:subject}))||[];
         out.push(`<h4>${label}</h4>${rows.length?'<ol>'+rows.map(r=>`<li>${esc(r.avatar)} ${esc(r.nickname)} — <b>${Number(r.score)} pt</b>（STAGE ${Number(r.stages)}）</li>`).join('')+'</ol>':'<p class="hint">まだ記録がありません</p>'}`);
       }
