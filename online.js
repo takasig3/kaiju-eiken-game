@@ -7,6 +7,35 @@
   document.body.append(panel);
   const style=document.createElement('style');
   style.textContent=`#wa-online{position:fixed;inset:0;z-index:99999;background:#f3f6fb;overflow:auto;padding:30px 14px;font:16px system-ui,sans-serif;color:#152233}#wa-online[hidden]{display:none!important}.wa-online-card{max-width:510px;margin:15px auto;padding:25px;background:white;border:1px solid #dce3ed;border-radius:20px;box-shadow:0 12px 30px #15223312}.wa-online-card h1{font-size:28px}.wa-online-card input,.wa-online-card select{width:100%;box-sizing:border-box;border:1px solid #c4cdd9;border-radius:9px;padding:12px;margin:7px 0 14px;font:inherit}.wa-online-card button{background:#2456c8;color:white;border:0;border-radius:9px;padding:12px 15px;margin:5px 6px 5px 0;font:inherit;cursor:pointer}.wa-online-card button.secondary{background:#e9eef7;color:#152233}.wa-online-card .group{border:1px solid #dce3ed;padding:12px;border-radius:12px;margin:10px 0}.wa-online-card .hint{font-size:13px;color:#64748b}.wa-online-card .error{color:#ba2222}`;
+  style.textContent+=`
+.wa-online-card{max-width:680px;padding:clamp(16px,3vw,28px)}
+.wa-online-card button{transition:transform .15s,filter .15s;font-weight:700}
+.wa-online-card button:hover{filter:brightness(.96);transform:translateY(-1px)}
+.wa-invite-panel{background:#f5f8fc;border:1px solid #dce5f0;border-radius:14px;padding:14px;margin:18px 0}
+.wa-invite-panel .wa-invite-label{font-weight:800;margin:0 0 8px}
+.wa-invite-row{display:flex;align-items:stretch;border:1px solid #bacadd;border-radius:11px;overflow:hidden;background:white}
+.wa-online-card .wa-invite-row input{min-width:0;flex:1;border:0;margin:0;padding:12px;background:transparent;border-radius:0;font-size:14px}
+.wa-online-card .wa-invite-row button{flex-shrink:0;margin:0;border-radius:0;background:#34465d;padding:11px 16px}
+.wa-online-card button.wa-primary-play{display:block;width:100%;padding:16px;background:#d83927;font-size:18px;margin:18px 0 22px;border-radius:13px}
+.wa-daily-wrap{border-top:1px solid #dce5f0;padding-top:14px}
+.wa-daily-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+.wa-grade-card{padding:16px;border-radius:15px;border:1px solid;min-width:0}
+.wa-grade-card h4{font-size:19px;margin:0 0 3px}
+.wa-grade-card p{font-size:12px;margin:0 0 12px;color:#54647a}
+.wa-grade-card.grade5{background:#eefaf3;border-color:#b9e2cb}
+.wa-grade-card.grade4{background:#eff5ff;border-color:#bed2f6}
+.wa-online-card .wa-grade-card button{display:block;width:100%;margin:7px 0 0;text-align:center;padding:11px 7px;font-size:14px}
+.wa-online-card .wa-grade-card.grade5 button{background:#16835a}
+.wa-online-card .wa-grade-card.grade4 button{background:#275bc0}
+.wa-rank-group{border:1px solid #dce5f0;border-radius:12px;margin:10px 0;overflow:hidden}
+.wa-rank-group summary{cursor:pointer;padding:12px 14px;font-weight:800;background:#f6f8fc}
+.wa-rank-group.grade5 summary{border-left:5px solid #16835a}
+.wa-rank-group.grade4 summary{border-left:5px solid #275bc0}
+.wa-rank-body{padding:3px 14px 12px}
+.wa-rank-body h4{margin:12px 0 5px}
+.wa-rank-body ol{padding-left:24px}
+@media(max-width:520px){.wa-daily-grid{grid-template-columns:1fr}.wa-online-card .wa-invite-row button{padding:10px}.wa-grade-card{padding:13px}}
+`;
   document.head.append(style);
   const $=id=>document.getElementById(id), status=$('wa-status'),content=$('wa-content');
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -54,7 +83,13 @@
       const members=check(await client.rpc('wa_group_members',{p_group_id:id}))||[];
       selected=id;
       const invite=location.origin+location.pathname+'?group='+encodeURIComponent(g.invite_code);
-      content.innerHTML=`<h2>${esc(g.name)}</h2><p>${members.length}人が参加</p><ul>${members.map(m=>`<li>${esc(m.avatar)} ${esc(m.nickname)}</li>`).join('')}</ul><p>友達にこの招待URLを送ってください。</p><input id="wa-invite" readonly value="${esc(invite)}"><button id="wa-copy">招待URLをコピー</button><br><button id="wa-start">通常ゲームを開始</button><hr><h3>🏆 今日のオンライン対戦</h3><p class="hint">各級・各科目それぞれ1日1回。10問を全員同じ条件で解きます（1問100点）。</p><button id="wa-daily-e">英検4級に挑戦</button><button id="wa-daily-k">漢検4級に挑戦</button><button id="wa-daily-e5">英検5級に挑戦</button><button id="wa-daily-k5">漢検5級に挑戦</button><div id="wa-rankings"></div><button id="wa-back" class="secondary">戻る</button><p class="hint">通常ゲームの最高得点もオンライン共有されます（自己申告スコア・未検証）。</p>`;
+      content.innerHTML=`<h2>${esc(g.name)}</h2><p>${members.length}人が参加</p><ul>${members.map(m=>`<li>${esc(m.avatar)} ${esc(m.nickname)}</li>`).join('')}</ul>
+      <div class="wa-invite-panel"><p class="wa-invite-label">🔗 友達を招待</p><div class="wa-invite-row"><input id="wa-invite" aria-label="招待URL" readonly value="${esc(invite)}"><button id="wa-copy" aria-label="招待URLをコピー">コピー</button></div><p class="hint" style="margin:8px 0 0">リンクを送ると、このグループに参加できます。</p></div>
+      <button id="wa-start" class="wa-primary-play">🎮 通常ゲームを開始</button>
+      <section class="wa-daily-wrap"><h3>🏆 今日のオンライン対戦</h3><p class="hint">各級・各科目それぞれ1日1回。全員が同じ10問に挑戦（1問100点）。</p>
+      <div class="wa-daily-grid"><div class="wa-grade-card grade5"><h4>🌱 5級チャレンジ</h4><p>基礎から挑戦したい人向け</p><button id="wa-daily-e5">英検5級に挑戦</button><button id="wa-daily-k5">漢検5級に挑戦</button></div>
+      <div class="wa-grade-card grade4"><h4>⚡ 4級チャレンジ</h4><p>少し難しい問題に挑戦</p><button id="wa-daily-e">英検4級に挑戦</button><button id="wa-daily-k">漢検4級に挑戦</button></div></div></section>
+      <h3>📊 今日のランキング</h3><div id="wa-rankings"></div><button id="wa-back" class="secondary">← グループ一覧へ</button><p class="hint">通常ゲームの最高得点もオンライン共有されます（自己申告スコア・未検証）。</p>`;
       $('wa-copy').onclick=async()=>{try{await navigator.clipboard.writeText(invite);status.textContent='招待URLをコピーしました'}catch(e){$('wa-invite').select();status.textContent='URLを選択しました。コピーしてください'}};
       $('wa-start').onclick=()=>{panel.hidden=true};
       $('wa-daily-e').onclick=()=>startDaily(id,'eiken4');
@@ -70,9 +105,13 @@
     const host=$('wa-rankings');if(!host)return;
     try{
       const out=[];
-      for(const [subject,label] of [['eiken5','英検5級'],['eiken4','英検4級'],['kanken5','漢検5級'],['kanken4','漢検4級']]){
-        const rows=check(await client.rpc('wa_daily_ranking',{p_group_id:groupId,p_subject:subject}))||[];
-        out.push(`<h3>${label}・本日のランキング</h3>${rows.length?'<ol>'+rows.map(r=>`<li>${esc(r.avatar)} ${esc(r.nickname)} — <b>${r.score}点</b>（${r.correct_count}/10）</li>`).join('')+'</ol>':'<p class="hint">まだ記録がありません</p>'}`);
+      for(const [grade,subjects] of [['5',[['eiken5','英検5級'],['kanken5','漢検5級']]],['4',[['eiken4','英検4級'],['kanken4','漢検4級']]]]){
+        const chunks=[];
+        for(const [subject,label] of subjects){
+          const rows=check(await client.rpc('wa_daily_ranking',{p_group_id:groupId,p_subject:subject}))||[];
+          chunks.push(`<h4>${label}</h4>${rows.length?'<ol>'+rows.map(r=>`<li>${esc(r.avatar)} ${esc(r.nickname)} — <b>${r.score}点</b>（${r.correct_count}/10）</li>`).join('')+'</ol>':'<p class="hint">まだ記録がありません</p>'}`);
+        }
+        out.push(`<details class="wa-rank-group grade${grade}" ${grade==='5'?'open':''}><summary>${grade}級のランキング</summary><div class="wa-rank-body">${chunks.join('')}</div></details>`);
       }
       host.innerHTML=out.join('');
     }catch(e){host.textContent='ランキング取得エラー: '+(e.message||e);}
