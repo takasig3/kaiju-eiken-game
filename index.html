@@ -74,6 +74,18 @@
 @media (max-height:650px){
   .battle .slot .quiz{max-height:calc(100dvh - 85px);overflow-y:auto;overscroll-behavior:contain}
 }
+
+/* Five-chain ally: compact, distinct one-time bonus quiz */
+.ally-quiz{border:2px solid #bda5ff;border-radius:16px;background:linear-gradient(140deg,#f4efff,#e7f7ff);padding:12px;display:grid;gap:9px;color:#19263b}
+.ally-hero{display:flex;align-items:center;gap:12px}
+.ally-avatar-img{width:clamp(78px,10vw,112px);height:clamp(86px,13vh,124px);object-fit:cover;object-position:47% 35%;border-radius:13px;box-shadow:0 4px 14px #6d52b755;flex-shrink:0}
+.ally-avatar{font-size:clamp(38px,6vh,62px);line-height:1;filter:drop-shadow(0 3px 6px #7b65c555)}
+.ally-heading{font-size:clamp(18px,2.6vh,25px);font-weight:900;color:#5c3bb0}
+.ally-description{font-size:clamp(12px,1.7vh,15px);font-weight:700}
+.ally-quiz .quiz{padding:12px;gap:9px}
+.ally-boost-status{color:#7042d0;font-weight:900}
+.ally-boost-float{color:#8a4dff!important;text-shadow:0 2px 0 #fff,0 0 16px #e4aaff}
+@media(max-width:650px){.ally-quiz{padding:8px;gap:6px}.ally-avatar-img{width:76px;height:82px}.ally-avatar{font-size:35px}.ally-heading{font-size:17px}.ally-description{font-size:12px}}
 </style><style id="wa-learning-style">
 .wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
 .slot{position:relative}
@@ -1532,12 +1544,12 @@ function updateInfo(){
   var i=$('#info'); if(!i) return;
   var cs=chargeStat(),pips='';
   for(var k=0;k<3;k++) pips+=k<S.charge.length?'●':'○';
-  i.innerHTML='<span>チャージ '+pips+(S.charge.length?'　合計 '+Math.round(cs.P)+' ×'+cs.M.toFixed(1)+(cs.four?' ➶'+cs.four:'')+(cs.five?' 🌈'+cs.five:''):'')+'</span><span>れんぞく正解 '+S.streak+'</span><span>じゃま '+jamaCount()+'</span>';
+  i.innerHTML='<span>チャージ '+pips+(S.charge.length?'　合計 '+Math.round(cs.P)+' ×'+cs.M.toFixed(1)+(cs.four?' ➶'+cs.four:'')+(cs.five?' 🌈'+cs.five:''):'')+'</span>'+(S.allyBoostPending?'<span class="ally-boost-status">✨ 次の攻撃×2</span>':'')+'<span>れんぞく正解 '+S.streak+'</span><span>じゃま '+jamaCount()+'</span>';
   $('#score').textContent=S.score+' pt';
   if(!$('#finish-action'))i.insertAdjacentHTML('beforeend','<div class="finish-row" id="finish-action" hidden><button type="button" class="finish-btn" id="finish-btn">🚀 今すぐ発射！</button></div>');
   var fin=$('#finish-action');
   if(fin){
-    var potential=Math.max(1,Math.round(cs.P*cs.M*(1+Math.min(S.streak,5)*.05)));
+    var potential=Math.max(1,Math.round(cs.P*cs.M*(1+Math.min(S.streak,5)*.05)*(S.allyBoostPending?2:1)));
     var show=S.charge.length>0&&S.charge.length<3&&S.hp>0&&potential>=S.hp;
     fin.hidden=!show;
     if(show){var b=fin.querySelector('button');b.textContent='🚀 今すぐ発射！ （予想 '+potential+' ダメージ）';b.disabled=!!S.locked;}
@@ -1551,7 +1563,7 @@ function flash(msg){
 /* ---------- battle ---------- */
 function startBattle(){
   var st=stages()[S.stage],mon=MONS[S.stage]; window.scrollTo(0,0);
-  S.maxHp=300+S.stage*35;S.hp=S.maxHp;S.moves=0;S.streak=0;S.locked=true;S.sel=null;S.drag=null;S.lastKey=null;S.stat={};S.charge=[];
+  S.maxHp=300+S.stage*35;S.hp=S.maxHp;S.allyBoostPending=false;S.moves=0;S.streak=0;S.locked=true;S.sel=null;S.drag=null;S.lastKey=null;S.stat={};S.charge=[];
   st.cards.forEach(function(c){S.stat[c.id]={ok:0,ng:0,asked:0}});
   app.innerHTML=
   '<section class="battle'+(S.stage===9?' final-boss':'')+'" id="battle">'+
@@ -1620,7 +1632,7 @@ function chargeStat(){
 
 async function finishEarly(){
   if(S.locked||!S.charge.length||S.charge.length>=3||S.hp<=0)return;
-  var cs=chargeStat(),potential=Math.max(1,Math.round(cs.P*cs.M*(1+Math.min(S.streak,5)*.05)));
+  var cs=chargeStat(),potential=Math.max(1,Math.round(cs.P*cs.M*(1+Math.min(S.streak,5)*.05)*(S.allyBoostPending?2:1)));
   if(potential<S.hp)return;
   S.locked=true;updateInfo();
   await fire();S.charge=[];
@@ -1698,7 +1710,33 @@ async function swapTry(r1,c1,r2,c2){
   var res=await resolve();
   await finishPuzzleTurn(res);
 }
+async function summonChainAlly(){
+  var current=stages()[S.stage].cards;
+  var ids={};current.forEach(function(c){ids[c.id]=true});
+  var other=allCards(S.mode.charAt(0)==='e'?'e':'k').filter(function(c){return c.mode===S.mode&&!ids[c.id]&&variants(c).length});
+  // For mixed kanji modes, also allow any card type from the same mode.
+  if(!other.length)other=Object.keys(BYID).map(function(k){return BYID[k]}).filter(function(c){return c.mode===S.mode&&!ids[c.id]&&variants(c).length});
+  if(!other.length)return;
+  var q=pickQ(other,S.lastKey);
+  board.hidden=true;$('#pv').hidden=true;
+  var host=document.createElement('div');host.className='ally-quiz';slot.appendChild(host);
+  var hero=document.createElement('div');hero.className='ally-hero';
+  hero.innerHTML='<img class="ally-avatar-img" src="special-ally-portrait.webp" alt="白いキツネの特別な味方" width="108" height="112"><div><div class="ally-heading">5連鎖！ 特別な味方が登場</div><div class="ally-description">今のステージとは別の問題に1回だけ挑戦！ 正解で次の攻撃が2倍</div></div>';
+  host.appendChild(hero);
+  var quizHost=document.createElement('div');host.appendChild(quizHost);
+  flash('✨ 5連鎖！ 助っ人が来た！');
+  var ok=await quizUI(q,quizHost,{head:'特別チャレンジ・回答は1回だけ',next:'バトルに戻る'});
+  record(q,ok,false);
+  S.lastKey=q.key;
+  if(ok){S.allyBoostPending=true;flash('✨ 助っ人成功！ 次の攻撃×2');}
+  else flash('助っ人チャレンジ失敗！ ボーナスなし');
+  host.remove();board.hidden=false;$('#pv').hidden=false;
+  render();updateInfo();
+}
 async function finishPuzzleTurn(res){
+  // Only an actual five-or-more cascade in this move summons the ally.
+  // The ally quiz uses cards outside the current stage, and allows exactly one answer.
+  if(res.chain>=5)await summonChainAlly();
   var learningBonus=await learningTileChallenge();
   S.pendingSpecial=(res.five?'🌈レインボー×'+res.five+' ':'')+(res.four?'➶貫通×'+res.four:'');
   var ok=await askQuiz(res.cleared,res.chain);S.pendingSpecial='';
@@ -1822,9 +1860,11 @@ async function fire(){
   var cs=chargeStat(),P=cs.P,M=cs.M,tn=cs.tn;
   var allBad=S.charge.every(function(m){return !m.ok});
   var sb=1+Math.min(S.streak,5)*.05;
-  var dmg=Math.max(1,Math.round(P*M*sb));
+  var allyDouble=!!S.allyBoostPending;
+  var dmg=Math.max(1,Math.round(P*M*sb*(allyDouble?2:1)));
+  S.allyBoostPending=false; // one shot only, regardless of its damage or victory
   var sc=Math.min(3.4,1+(M-1)*1.1+Math.max(0,tn-9)*.03);
-  flash((cs.five?'🌈レインボーアロー！ ':cs.four?'➶貫通アロー！ ':'3発合体！ ')+'×'+M.toFixed(1));
+  flash((allyDouble?'✨ 助っ人パワー2倍！ ':'')+(cs.five?'🌈レインボーアロー！ ':cs.four?'➶貫通アロー！ ':'3発合体！ ')+'×'+(M*(allyDouble?2:1)).toFixed(1));
   SFX.shot(allBad?1:sc);
   var fx=$('#fx'),mon=$('#mon'),br=battle.getBoundingClientRect(),mr=mon.getBoundingClientRect(),sr=board.getBoundingClientRect();
   var cnt=Math.min(9,Math.max(3,Math.ceil(tn/2))),anims=[];
@@ -1844,7 +1884,7 @@ async function fire(){
   fx.querySelectorAll('.arrow').forEach(function(x){x.remove()});
   var f=document.createElement('div');f.className='float';
   f.style.left=(mr.left-br.left+mr.width/2)+'px';f.style.top=(mr.top-br.top+mr.height/3)+'px';
-  if(!allBad){f.textContent='-'+dmg;f.style.fontSize=(30+(sc-1)*10)+'px';mon.classList.add('hit')}
+  if(!allBad){f.textContent=(allyDouble?'✨×2 ':'')+'-'+dmg;if(allyDouble)f.classList.add('ally-boost-float');f.style.fontSize=(30+(sc-1)*10)+'px';mon.classList.add('hit')}
   else{f.textContent='弱い -'+dmg;mon.classList.add('laugh')}
   var dealt=Math.min(S.hp,dmg);
   S.hp=Math.max(0,S.hp-dmg);S.score+=dealt;setHp();
