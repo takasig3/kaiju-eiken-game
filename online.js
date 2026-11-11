@@ -36,6 +36,43 @@
 .wa-rank-body ol{padding-left:24px}
 @media(max-width:520px){.wa-daily-grid{grid-template-columns:1fr}.wa-online-card .wa-invite-row button{padding:10px}.wa-grade-card{padding:13px}}
 `;
+
+  style.textContent+=`
+#wa-online{background:radial-gradient(ellipse at 50% -15%,#30527f 0%,#13233d 45%,#0b1425 100%);color:#edf4ff;padding:clamp(12px,3vw,28px) 12px}
+.wa-online-card{background:linear-gradient(145deg,#182b48,#101d32);color:#eef5ff;border:1px solid #47648a;box-shadow:0 22px 60px #030917a0;max-width:720px;padding:clamp(16px,3vw,28px);border-radius:22px}
+.wa-online-card h1{font-size:clamp(24px,5vw,32px);margin:0 0 5px;color:#fff;letter-spacing:.03em}
+.wa-online-card h2,.wa-online-card h3{color:#fff}.wa-online-card hr{border:0;border-top:1px solid #425b7a;margin:20px 0}
+.wa-online-card .hint{color:#b5c8e2;line-height:1.65}
+.wa-online-card input,.wa-online-card select{background:#10213a;border:1px solid #5b7394;color:#fff;outline-offset:2px}
+.wa-online-card input::placeholder{color:#a0b2cc}
+.wa-online-card button{background:#3978d5;color:#fff;border-radius:12px;min-height:44px}
+.wa-online-card button.secondary{background:#273d5c;color:#f1f5ff;border:1px solid #627a99}
+.wa-online-card .group{background:#243a59;border:1px solid #557397;border-radius:16px;padding:16px}
+.wa-online-card .wa-primary-play{background:#e2a93f;color:#152238}
+.wa-invite-panel{background:#203450;border-color:#4a668a}.wa-invite-row{background:#10213a;border-color:#58779b}.wa-online-card .wa-invite-row input{color:#eaf4ff}.wa-online-card .wa-invite-row button{background:#d6a13b;color:#132138}
+.wa-grade-card.grade5{background:#183b38;border-color:#3b8d70}.wa-grade-card.grade4{background:#213961;border-color:#517fcb}.wa-grade-card h4{color:#fff}.wa-grade-card p{color:#bdd0e4}
+.wa-rank-group{border-color:#506a8b}.wa-rank-group summary{background:#203653;color:#fff}.wa-rank-body{background:#152740;color:#fff}
+.wa-online-card .error{color:#ffb1a6}
+.wa-guild-hero{position:relative;overflow:hidden;border:1px solid #5a759a;border-radius:18px;padding:20px;background:radial-gradient(circle at 85% 20%,#315e91 0%,#1e3554 40%,#15243d 100%);margin:12px 0 18px;min-height:125px}
+.wa-guild-hero .eyebrow{color:#f5c66c;font-weight:800;font-size:11px;letter-spacing:.13em;margin:0 0 9px}
+.wa-guild-hero h2{font-size:clamp(24px,5vw,34px);margin:0 0 8px}
+.wa-guild-hero p{color:#c5d7f0;margin:0;max-width:75%;font-size:14px}
+.wa-guild-hero img{position:absolute;right:-5px;bottom:-20px;width:clamp(100px,30%,190px);height:155px;object-fit:cover;object-position:17% 45%;border-radius:80px;mask-image:linear-gradient(90deg,transparent,#000 24%);pointer-events:none}
+.wa-guild-panel{background:#223754;border:1px solid #496789;border-radius:17px;padding:18px;margin:14px 0}
+.wa-guild-panel h3{margin:0 0 7px;font-size:19px}.wa-guild-panel p{margin:0 0 12px}
+.wa-guild-panel label{display:block;font-weight:700}.wa-guild-panel input{margin:10px 0 8px}
+.wa-online-card .wa-guild-panel button{margin:6px 0 0}
+.wa-online-card .wa-register{background:#e5ad43;color:#14233a}
+.wa-online-card .wa-enter{background:#367bd3}
+.wa-online-card .wa-create{background:#4b6689}
+.wa-online-card .wa-solo{display:block;width:100%;background:#152943;border:1px solid #6382a6;color:#fff;margin:16px 0 6px;padding:15px}
+.wa-guild-members{display:grid;gap:10px;margin-top:10px}.wa-guild-members .group{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0}
+.wa-guild-members .group b{font-size:18px}.wa-guild-members .group button{margin:0;white-space:nowrap}
+.wa-online-card .wa-pending{background:#183e38;border-color:#4a9878}
+.wa-online-card .wa-pending button{background:#16835a}
+.wa-online-card #wa-status{font-size:13px;color:#b6d8c9;margin:4px 0 8px}
+@media(max-width:480px){.wa-guild-hero{padding:16px}.wa-guild-hero p{max-width:72%}.wa-guild-panel{padding:14px}.wa-guild-members .group{align-items:flex-start}.wa-guild-members .group b{font-size:16px}}
+`;
   document.head.append(style);
   const $=id=>document.getElementById(id), status=$('wa-status'),content=$('wa-content');
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -67,7 +104,13 @@
     try{
       const groups=check(await client.rpc('wa_my_groups'))||[];
       const pending=new URLSearchParams(location.search).get('group');
-      content.innerHTML=`<label>ニックネーム（20文字まで）<input id="wa-nick" maxlength="20" placeholder="例：たろう"></label><button id="wa-profile">名前を登録・変更</button><p class="hint">このブラウザに匿名アカウントを保存します。ブラウザデータ削除や端末変更では引き継げません。</p><hr><h3>グループ</h3><div id="wa-groups">${groups.length?groups.map(g=>`<div class="group"><b>${esc(g.name)}</b>（${g.member_count}人）<br><button data-open="${g.id}">開く</button></div>`).join(''):'まだグループがありません'}</div><label>新しいグループ名<input id="wa-group-name" maxlength="40" placeholder="例：4年1組"></label><button id="wa-create">グループを作成</button>${pending?'<hr><p>招待リンクが届いています。</p><button id="wa-join">このグループに参加</button>':''}<hr><button id="wa-play" class="secondary">グループなしでゲームを遊ぶ</button><p class="hint">グループを開いて開始した通常ゲームの得点は、終了時にオンライン共有されます。</p>`;
+      content.innerHTML=`
+      <section class="wa-guild-hero"><p class="eyebrow">WORD ARROW · ADVENTURER GUILD</p><h2>🏹 冒険者ギルド</h2><p>仲間と学んで、モンスターに挑もう！</p><img src="special-ally-portrait.webp" alt="冒険を応援する白いキツネ" onerror="this.style.display='none'"></section>
+      <section class="wa-guild-panel"><h3>🦊 冒険者登録</h3><p class="hint">ランキングに表示する名前を決めよう</p><label for="wa-nick">ニックネーム（20文字まで）</label><input id="wa-nick" maxlength="20" placeholder="例：たろう"><button id="wa-profile" class="wa-register">冒険者として登録・変更</button><p class="hint" style="margin-top:12px">このブラウザに匿名アカウントを保存します。ブラウザデータ削除や端末変更では引き継げません。</p></section>
+      <section class="wa-guild-panel"><h3>🛡️ 所属ギルド</h3><p class="hint">仲間のいるギルドを選んで冒険を始めよう</p><div class="wa-guild-members" id="wa-groups">${groups.length?groups.map(g=>`<div class="group"><div><b>${esc(g.name)}</b><div class="hint">${Number(g.member_count)}人が参加中</div></div><button class="wa-enter" data-open="${esc(g.id)}">ギルドに入る</button></div>`).join(''):'<p class="hint">まだギルドがありません。下から作成できます。</p>'}</div></section>
+      ${pending?'<section class="wa-guild-panel wa-pending"><h3>✉️ 招待状が届いています</h3><p class="hint">招待されたギルドに参加できます。</p><button id="wa-join">このギルドに参加</button></section>':''}
+      <section class="wa-guild-panel"><h3>✚ 新しいギルドを作る</h3><label for="wa-group-name">ギルド名</label><input id="wa-group-name" maxlength="40" placeholder="例：5年1組"><button id="wa-create" class="wa-create">ギルドを作成</button></section>
+      <button id="wa-play" class="wa-solo">ひとりで冒険する <span style="display:block;font-size:12px;font-weight:400;color:#bdd0e4;margin-top:4px">グループなしで通常ゲームをプレイ</span></button><p class="hint">ギルドを開いて開始した通常ゲームの得点は、終了時にオンライン共有されます。</p>`;
       $('wa-profile').onclick=async()=>{try{check(await client.rpc('wa_set_profile',{p_nickname:$('wa-nick').value,p_avatar:'🐱'}));status.textContent='名前を登録しました';}catch(e){error(e)}};
       $('wa-create').onclick=async()=>{try{const name=$('wa-group-name').value;const id=check(await client.rpc('wa_create_group',{p_name:name}));await showGroup(id);}catch(e){error(e)}};
       content.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>showGroup(b.dataset.open));
