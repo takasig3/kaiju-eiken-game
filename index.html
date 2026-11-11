@@ -1676,20 +1676,46 @@ var WA_LEARN_K=[
  ['攻','撃','攻撃','激','攻激'],['警','戒','警戒','械','警械'],
  ['破','壊','破壊','懐','破懐'],['配','慮','配慮','虜','配虜']
 ];
+// Keep a separate, stage-independent history for learning-tile puzzles.
+// Each mode has its own deck; no question repeats until its available deck is exhausted.
+var WA_LEARN_DECKS={};
+function nextLearningTile(){
+ var mode=S.mode,eng=mode==='e'||mode==='e5';
+ var pool=[];
+ if(eng){
+  pool=allCards('e').filter(function(c){return c.mode===mode&&c.en&&c.ja})
+   .map(function(c){return [c.en,c.ja]});
+ }else{
+  pool=allCards('k').filter(function(c){return c.mode===mode&&c.source==='compound'&&c.w&&c.w.length===2&&c.a})
+   .map(function(c){return [c.w[0],c.w[1],c.w]});
+  // Some modes store compounds in the advanced kanji entries instead.
+  if(pool.length<12){
+   var advanced=(mode==='k'?K4_ADVANCED:[]);
+   advanced.forEach(function(c){if(c[1]&&c[1].length===2)pool.push([c[1][0],c[1][1],c[1]])});
+  }
+ }
+ var unique={},items=[];
+ pool.forEach(function(x){var key=x[0]+'|'+x[1];if(!unique[key]){unique[key]=true;items.push(x)}});
+ if(!items.length){
+  var fallback=eng?(mode==='e5'?WA_LEARN_E5:WA_LEARN_E):(mode==='k5'?WA_LEARN_K5:WA_LEARN_K);
+  items=fallback.map(function(x){return x.slice(0,eng?2:3)});
+ }
+ var deck=WA_LEARN_DECKS[mode];
+ if(!deck||deck.poolSize!==items.length||deck.cursor>=deck.order.length){
+  deck={poolSize:items.length,order:shuffle(items.map(function(_,i){return i})),cursor:0};
+  WA_LEARN_DECKS[mode]=deck;
+ }
+ var picked=items[deck.order[deck.cursor++]];
+ if(eng){
+  var wrong=shuffle(items.map(function(x){return x[1]}).filter(function(x,i,a){return x!==picked[1]&&a.indexOf(x)===i})).slice(0,2);
+  return [picked[0],picked[1],wrong[0]||'わからない',wrong[1]||'その他'];
+ }
+ var wrongK=shuffle(items.map(function(x){return x[1]}).filter(function(x,i,a){return x!==picked[1]&&a.indexOf(x)===i})).slice(0,2);
+ return [picked[0],picked[1],picked[2],wrongK[0]||'他',wrongK[1]||'別'];
+}
 function learningTileChallenge(){
  return new Promise(function(resolve){
-  var idx=(S.moves-1)%8,eng=S.mode==='e'||S.mode==='e5',d=eng?WA_LEARN_E[idx]:WA_LEARN_K[idx];
-  if(S.mode==='e5'){
-    var ec=shuffle(allCards('e').filter(function(c){return c.mode==='e5'})).slice(0,1)[0];
-    var ewrong=shuffle(allCards('e').filter(function(c){return c.mode==='e5'&&c.ja!==ec.ja})).slice(0,12).map(function(c){return c.ja});
-    ewrong=ewrong.filter(function(x,i,a){return a.indexOf(x)===i}).slice(0,2);
-    d=[ec.en,ec.ja,ewrong[0],ewrong[1]];
-  }
-  if(S.mode==='k5'){
-    var kc=shuffle(allCards('k').filter(function(c){return c.mode==='k5'&&c.source==='compound'&&c.w.length===2&&c.a}))[0];
-    var bad=shuffle(allCards('k').filter(function(c){return c.mode==='k5'&&c.k!==kc.a&&c.k!==kc.k})).slice(0,2).map(function(c){return c.k});
-    d=[kc.w[0],kc.w[1],kc.w,bad[0],bad[1]];
-  }
+  var eng=S.mode==='e'||S.mode==='e5',d=nextLearningTile();
   var answer=d[1],options=eng?[d[1],d[2],d[3]]:[d[1],d[3],d[4]||'他'];
   options=shuffle(options.slice());
   var pane=document.createElement('div');
