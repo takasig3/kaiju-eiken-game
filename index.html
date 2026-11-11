@@ -39,7 +39,19 @@
 .finish-btn:disabled{opacity:.5;cursor:wait}
 @keyframes boss-aura{from{transform:scale(.95) rotate(-4deg);opacity:.65}to{transform:scale(1.05) rotate(4deg);opacity:1}}
 @media(prefers-reduced-motion:reduce){.battle.final-boss .arena:before{animation:none}}
-</style></head><body>
+</style><style id="wa-learning-style">
+.wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
+.slot{position:relative}
+.wa-learn-title{font-size:clamp(19px,2vw,29px);font-weight:900;color:#304c9d}
+.wa-learn-hint{font-size:clamp(13px,1.4vw,18px);color:#35435d}
+.wa-learn-main{font-size:clamp(24px,3vw,42px);font-weight:900;color:#192c52;background:#fff;border:2px solid #c5d5ed;padding:10px 22px;border-radius:12px}
+.wa-learn-main span{color:#d06b19}
+.wa-learn-choices{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;width:100%}
+.wa-learn-choice{font-size:clamp(17px,2vw,26px);font-weight:900;background:#fff;color:#21385d;border:2px solid #7290c7;border-radius:12px;padding:12px 18px;min-width:75px;cursor:pointer}
+.wa-learn-choice:hover,.wa-learn-choice:focus-visible{background:#dbedff;outline:2px solid #3369c9}
+.wa-learn-skip{border:0;background:transparent;color:#50617d;text-decoration:underline;cursor:pointer;font-size:13px;padding:8px}
+</style>
+</head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1501,7 +1513,7 @@ function setHp(){
 function chargeStat(){
   var P=0,M=1,tn=0;
   S.charge.forEach(function(m){
-    P+=m.n*4*(m.ok?1:.25);
+    P+=m.n*4*(m.ok?1:.25)+(m.bonus||0);
     M*=1+.2*(m.chain-1)+.04*Math.max(0,m.n-3);
     tn+=m.n;
   });
@@ -1518,6 +1530,50 @@ async function finishEarly(){
   updateInfo();S.locked=false;
 }
 
+
+/* Learning tiles: a normal three-match unlocks a brief linked word puzzle.
+   This is an overlay, not permanent board cells, so match-three rules stay intact. */
+var WA_LEARN_E=[
+ ['borrow','借りる','貸す','売る'],['usually','たいてい','決して〜ない','すぐに'],
+ ['important','重要な','危険な','静かな'],['different','異なる','同じ','簡単な'],
+ ['invite','招待する','忘れる','選ぶ'],['arrive','到着する','出発する','眠る'],
+ ['practice','練習する','約束する','修理する'],['enough','十分な','珍しい','正確な']
+];
+var WA_LEARN_K=[
+ ['環','境','環境','鏡','鏡環'],['維','持','維持','治','維治'],
+ ['支','援','支援','縁','支縁'],['継','続','継続','属','継属'],
+ ['攻','撃','攻撃','激','攻激'],['警','戒','警戒','械','警械'],
+ ['破','壊','破壊','懐','破懐'],['配','慮','配慮','虜','配虜']
+];
+function learningTileChallenge(){
+ return new Promise(function(resolve){
+  var idx=(S.moves-1)%8,eng=S.mode==='e',d=eng?WA_LEARN_E[idx]:WA_LEARN_K[idx];
+  var answer=eng?d[1]:d[1],options=eng?[d[1],d[2],d[3]]:[d[1],d[3],['観','治','劇','概','縁','属','激','虜'][idx]];
+  options=shuffle(options.slice());
+  var pane=document.createElement('div');
+  pane.className='wa-learn-panel';
+  pane.innerHTML='<div class="wa-learn-title">✨ 学習タイル出現！</div>'+
+   '<div class="wa-learn-hint">'+(eng?'英単語と意味を組み合わせよう':'漢字を組み合わせて熟語を完成！')+'</div>'+
+   '<div class="wa-learn-main">'+(eng?esc(d[0])+' <span>＋</span> ？':esc(d[0])+' <span>＋</span> ？')+'</div>'+
+   '<div class="wa-learn-choices">'+options.map(function(x){return '<button type="button" class="wa-learn-choice" data-v="'+esc(x)+'">'+esc(x)+'</button>'}).join('')+'</div>'+
+   '<button type="button" class="wa-learn-skip">スキップ（通常チャージのみ）</button>';
+  slot.appendChild(pane);
+  var done=false;
+  function finish(ok){
+   if(done)return;done=true;
+   pane.remove();
+   if(ok){flash('学習コンボ成功！ チャージ＋12');S.score+=15;}
+   else flash('学習コンボなし・通常チャージ');
+   resolve(ok?12:0);
+  }
+  pane.addEventListener('click',function(e){
+   var b=e.target.closest('.wa-learn-choice');
+   if(b)finish(b.dataset.v===answer);
+   else if(e.target.closest('.wa-learn-skip'))finish(false);
+  });
+ });
+}
+
 async function swapTry(r1,c1,r2,c2){
   if(S.locked) return;
   var A=S.b[r1][c1],B=S.b[r2][c2];
@@ -1529,9 +1585,10 @@ async function swapTry(r1,c1,r2,c2){
   }
   S.moves++;
   var res=await resolve();
+  var learningBonus=await learningTileChallenge();
   var ok=await askQuiz(res.cleared,res.chain);
   if(ok) S.streak++; else S.streak=0;
-  S.charge.push({n:res.cleared,chain:res.chain,ok:ok});
+  S.charge.push({n:res.cleared,chain:res.chain,ok:ok,bonus:learningBonus});
   if(S.charge.length<3){
     SFX.charge(S.charge.length);
     var cs=chargeStat();
