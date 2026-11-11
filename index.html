@@ -341,8 +341,8 @@ var MONS=[
  {name:'ストームヴェイル',kind:'robot',c:'#9fb7c9',crown:1},
  {name:'深淵の魔導王',kind:'king',c:'#ff8f8f',eyes:3}
 ];
-var MODE_NAME={e:'英検4級',k:'漢検4級'};
-var DATA={e:[],k:[]},BYID={};
+var MODE_NAME={e:'英検4級',k:'漢検4級',e5:'英検5級',k5:'漢検5級'};
+var DATA={e:[],k:[],e5:[],k5:[]},BYID={};
 function reg(mode,si,card){card.mode=mode;card.si=si;BYID[card.id]=card;return card}
 
 /* 英検4級: word pool. Each game draws 4 random words per stage. */
@@ -594,6 +594,13 @@ KJ.forEach(function(d){reg('k',0,{kind:'k',id:'k:'+d[0],k:d[0],n:d[1],w:d[2],r:d
 var K4_ADVANCED=[["握","握手","あくしゅ","手をにぎり合うこと","手"],["威","威力","いりょく","相手を圧倒する強い力","力"],["維","維持","いじ","同じ状態を保つこと","持"],["緯","緯度","いど","赤道から南北への角度","度"],["陰","陰影","いんえい","光が当たらずできる暗い部分","影"],["隠","隠居","いんきょ","仕事を退いて静かに暮らすこと","居"],["鋭","鋭利","えいり","刃物などが鋭く切れること","利"],["越","越境","えっきょう","境界を越えること","境"],["援","支援","しえん","力を貸して助けること","支"],["煙","煙突","えんとつ","煙を外へ出すための設備","突"],["鉛","鉛筆","えんぴつ","文字を書くための道具","筆"],["縁","縁側","えんがわ","家の部屋の外側にある細長い板敷き","側"],["戒","警戒","けいかい","危険に備えて注意すること","警"],["壊","破壊","はかい","物をこわすこと","破"],["獲","獲得","かくとく","努力して手に入れること","得"],["監","監督","かんとく","全体を見て指導すること","督"],["環","環境","かんきょう","周囲を取り巻く状態","境"],["鑑","鑑賞","かんしょう","芸術作品を味わい楽しむこと","賞"],["響","反響","はんきょう","音が反射して響くこと","反"],["驚","驚異","きょうい","驚くほど不思議なこと","異"],["傾","傾向","けいこう","物事がある方向に進む様子","向"],["継","継続","けいぞく","途切れずに続けること","続"],["撃","攻撃","こうげき","相手を攻めること","攻"],["遣","派遣","はけん","人をある場所へ送り出すこと","派"],["誇","誇張","こちょう","実際より大げさに表すこと","張"],["抗","抵抗","ていこう","相手に逆らって対抗すること","抵"],["恒","恒例","こうれい","毎回決まって行われること","例"],["惨","悲惨","ひさん","見るに耐えないほど痛ましいこと","悲"],["執","執筆","しっぴつ","文章を書くこと","筆"],["斜","斜面","しゃめん","傾いた面","面"],["襲","襲撃","しゅうげき","突然おそいかかること","撃"],["瞬","瞬間","しゅんかん","ごく短い時間","間"],["侵","侵入","しんにゅう","許可なく入り込むこと","入"],["慎","慎重","しんちょう","軽率に行動しないこと","重"],["震","震源","しんげん","地震が発生した場所","源"],["訴","訴訟","そしょう","裁判所に判断を求める手続き","訟"],["濁","濁流","だくりゅう","泥などで濁った水の流れ","流"],["蓄","蓄積","ちくせき","少しずつためて重ねること","積"],["徴","特徴","とくちょう","ほかと区別できる目立つ性質","特"],["摘","指摘","してき","問題点などを取り上げて示すこと","指"],["避","回避","かいひ","危険などを避けること","回"],["繁","繁栄","はんえい","勢いが盛んになること","栄"],["敏","敏感","びんかん","小さな変化にもすぐ気づくこと","感"],["腐","腐敗","ふはい","食べ物などが腐ること","敗"],["霧","濃霧","のうむ","濃く立ちこめた霧","濃"],["躍","飛躍","ひやく","大きく進歩すること","飛"],["慮","配慮","はいりょ","相手の事情を考えて気を配ること","配"],["劣","劣等","れっとう","他よりも能力などが劣ること","等"],["惑","困惑","こんわく","どうしたらよいか迷うこと","困"]];
 K4_ADVANCED.forEach(function(d){reg('k',0,{kind:'k',advanced:true,id:'k:'+d[0],k:d[0],n:null,w:d[1],r:d[2],m:d[3],a:d[4]})});
 
+
+/* Grade 5 practice pools: 50 cards per subject. */
+var E5_POOL=[["apple","りんご","n","I eat an ___ every day.","私は毎日りんごを食べます。"],["book","本","n","This is my ___.","これは私の本です。"],["school","学校","n","I go to ___ every day.","私は毎日学校へ行きます。"],["teacher","先生","n","My ___ is kind.","私の先生は親切です。"],["student","生徒","n","He is a ___.","彼は生徒です。"],["friend","友達","n","She is my ___.","彼女は私の友達です。"],["family","家族","n","I love my ___.","私は家族が大好きです。"],["mother","母","n","My ___ cooks dinner.","母は夕食を作ります。"],["father","父","n","My ___ likes music.","父は音楽が好きです。"],["brother","兄弟","n","My ___ plays soccer.","兄弟はサッカーをします。"],["sister","姉妹","n","My ___ is ten.","姉妹は10歳です。"],["dog","犬","n","My ___ is small.","私の犬は小さいです。"],["cat","猫","n","The ___ is sleeping.","猫は眠っています。"],["water","水","n","I drink ___ after lunch.","私は昼食後に水を飲みます。"],["milk","牛乳","n","I like ___.","私は牛乳が好きです。"],["bread","パン","n","I eat ___ for breakfast.","私は朝食にパンを食べます。"],["rice","ご飯","n","We eat ___ every day.","私たちは毎日ご飯を食べます。"],["music","音楽","n","I listen to ___.","私は音楽を聴きます。"],["soccer","サッカー","n","I play ___ on Sunday.","私は日曜日にサッカーをします。"],["tennis","テニス","n","She plays ___.","彼女はテニスをします。"],["pencil","鉛筆","n","I have a ___.","私は鉛筆を持っています。"],["desk","机","n","This is my ___.","これは私の机です。"],["chair","椅子","n","Sit on the ___.","椅子に座ってください。"],["window","窓","n","Open the ___.","窓を開けてください。"],["door","ドア","n","Close the ___.","ドアを閉めてください。"],["morning","朝","n","Good ___.","おはようございます。"],["night","夜","n","Good ___.","おやすみなさい。"],["today","今日","n","I am happy ___.","私は今日うれしいです。"],["Sunday","日曜日","n","I play on ___.","私は日曜日に遊びます。"],["Monday","月曜日","n","I study on ___.","私は月曜日に勉強します。"],["happy","うれしい","adj","I am ___.","私はうれしいです。"],["big","大きい","adj","This is a ___ dog.","これは大きな犬です。"],["small","小さい","adj","This is a ___ cat.","これは小さな猫です。"],["new","新しい","adj","I have a ___ bag.","私は新しいかばんを持っています。"],["old","古い","adj","This is an ___ book.","これは古い本です。"],["good","良い","adj","This is a ___ idea.","これは良い考えです。"],["like","好きである","v","I ___ apples.","私はりんごが好きです。"],["play","遊ぶ","v","We ___ after school.","私たちは放課後に遊びます。"],["read","読む","v","I ___ books.","私は本を読みます。"],["write","書く","v","I ___ my name.","私は自分の名前を書きます。"],["eat","食べる","v","I ___ breakfast.","私は朝食を食べます。"],["drink","飲む","v","I ___ water.","私は水を飲みます。"],["run","走る","v","I ___ in the park.","私は公園で走ります。"],["walk","歩く","v","I ___ to school.","私は歩いて学校へ行きます。"],["sing","歌う","v","I ___ a song.","私は歌を歌います。"],["swim","泳ぐ","v","I ___ in summer.","私は夏に泳ぎます。"],["study","勉強する","v","I ___ English.","私は英語を勉強します。"],["open","開ける","v","Please ___ the door.","ドアを開けてください。"],["close","閉める","v","Please ___ the window.","窓を閉めてください。"],["help","助ける","v","I ___ my mother.","私は母を手伝います。"]];
+E5_POOL.forEach(function(w){reg('e5',0,{kind:'e',id:'e5:'+w[0],en:w[0],ja:w[1],pos:w[2],s:w[3],sj:w[4]})});
+var K5_POOL=[["宇",6,"宇宙","うちゅう","地球の外に広がる空間","宙"],["宙",8,"宇宙","うちゅう","地球の外に広がる空間","宇"],["沿",8,"沿岸","えんがん","海や湖に沿った陸地","岸"],["岸",8,"海岸","かいがん","海に接する陸地","海"],["異",11,"異常","いじょう","普通と異なる状態","常"],["遺",15,"遺産","いさん","残された財産","産"],["域",11,"地域","ちいき","一定の範囲の土地","地"],["映",9,"映画","えいが","映像で物語などを見せる作品","画"],["延",8,"延期","えんき","予定を後に延ばすこと","期"],["我",7,"我慢","がまん","つらさなどをこらえること","慢"],["革",9,"改革","かいかく","制度などを改めること","改"],["閣",14,"内閣","ないかく","国の行政を担当する組織","内"],["割",12,"割合","わりあい","全体に対する部分の比率","合"],["株",10,"株式","かぶしき","会社の持分を表す証券","式"],["干",3,"干潮","かんちょう","潮が引いて海面が低くなること","潮"],["巻",9,"巻物","まきもの","巻いて保管する文書","物"],["看",9,"看護","かんご","病人などの世話をすること","護"],["簡",18,"簡単","かんたん","難しくないこと","単"],["危",6,"危険","きけん","事故やけがの恐れがあること","険"],["机",6,"机上","きじょう","机の上","上"],["揮",12,"指揮","しき","人々をまとめて動かすこと","指"],["貴",12,"貴重","きちょう","大切で価値が高いこと","重"],["疑",14,"疑問","ぎもん","不思議に思うこと","問"],["吸",6,"呼吸","こきゅう","息を吸ったり吐いたりすること","呼"],["供",8,"提供","ていきょう","役立つものを差し出すこと","提"],["胸",10,"胸中","きょうちゅう","心の中","中"],["郷",11,"故郷","こきょう","生まれ育った土地","故"],["勤",12,"勤務","きんむ","職場で仕事をすること","務"],["筋",12,"筋肉","きんにく","体を動かす組織","肉"],["系",7,"体系","たいけい","まとまりのある仕組み","体"],["敬",12,"尊敬","そんけい","相手を立派だと思うこと","尊"],["警",19,"警察","けいさつ","治安を守る組織","察"],["劇",15,"演劇","えんげき","舞台で物語を演じること","演"],["激",16,"激流","げきりゅう","激しく流れる水","流"],["穴",5,"洞穴","ほらあな","岩や地面にできた穴","洞"],["絹",13,"絹糸","きぬいと","蚕の繭から取る糸","糸"],["権",15,"権利","けんり","法律などで認められた利益","利"],["憲",16,"憲法","けんぽう","国の基本となる法律","法"],["源",13,"水源","すいげん","水が流れ出すもと","水"],["厳",17,"厳重","げんじゅう","非常に厳しいこと","重"],["己",3,"自己","じこ","自分自身","自"],["呼",8,"呼吸","こきゅう","息を吸ったり吐いたりすること","吸"],["誤",14,"誤解","ごかい","間違って理解すること","解"],["后",6,"皇后","こうごう","天皇の配偶者","皇"],["孝",7,"孝行","こうこう","親を大切にすること","行"],["紅",9,"紅葉","こうよう","秋に葉が赤く色づくこと","葉"],["降",10,"降雨","こうう","雨が降ること","雨"],["鋼",16,"鋼鉄","こうてつ","強く硬い鉄","鉄"],["刻",8,"時刻","じこく","ある決まった時","時"],["穀",14,"穀物","こくもつ","米や麦などの作物","物"]];
+K5_POOL.forEach(function(d){reg('k5',0,{kind:'k',advanced:true,id:'k5:'+d[0],k:d[0],n:d[1],w:d[2],r:d[3],m:d[4],a:d[5]})});
+
 var DIST=['島','畑','橋','駅','犬','魚','雨','馬','鳥','草','歌','机','皿','筆'];
 var TL={ア:'同じ意味の漢字を重ねる',イ:'反対の意味の漢字を重ねる',ウ:'上の字が下の字を修飾する',エ:'下の字が上の字の目的になる',オ:'上の字が下の字を打ち消す'};
 var TEX={ア:'岩石',イ:'高低',ウ:'青空',エ:'着席',オ:'非常'};
@@ -655,14 +662,17 @@ var SN=['はじまりの草原','ことばの森','ささやきの谷','きら�
 function makePlan(m){
   var plan=[],i;
   function ids(kind){return shuffle(allCards(kind).map(function(c){return c.id}))}
-  if(m==='e'){
-    var history=lsj('wordarrow-recent-e',{}),e=ids('e');
+  if(m==='e'||m==='e5'){
+    var history=lsj('wordarrow-recent-'+m,{}),e=shuffle(allCards('e').filter(function(c){return c.mode===m}).map(function(c){return c.id}));
     e.sort(function(a,b){return (history[a]||0)-(history[b]||0)});
     var chosen=e.slice(0,40);
     chosen.forEach(function(id){history[id]=(history[id]||0)+1});
-    lsw('wordarrow-recent-e',history);
+    lsw('wordarrow-recent-'+m,history);
     chosen=shuffle(chosen);
     for(i=0;i<10;i++) plan.push(chosen.slice(i*4,i*4+4));
+  }else if(m==='k5'){
+    var k5ids=shuffle(allCards('k').filter(function(c){return c.mode==='k5'}).map(function(c){return c.id}));
+    for(i=0;i<10;i++) plan.push(k5ids.slice(i*4,i*4+4));
   }else{
     var ks=shuffle(allCards('k').filter(function(c){return c.advanced}).map(function(c){return c.id})).slice(0,20),os=ids('o').slice(0,10),cs=[];
     ['ア','イ','ウ','エ','オ'].forEach(function(t){
@@ -683,10 +693,10 @@ var CIRC=['①','②','③','④','⑤'];
 /* ---------- state ---------- */
 var app=document.getElementById('app');
 var S={mode:lsj('wordarrow-mode','e'),stage:0,tot:{ok:0,ng:0},miss:{},score:0,used:{},stat:{}};
-if(S.mode!=='e'&&S.mode!=='k') S.mode='e';
-var NB={e:lsj('wordarrow-nb-e',{}),k:lsj('wordarrow-nb-k',{})};
-var SEEN={e:lsj('wordarrow-seen-e',{}),k:lsj('wordarrow-seen-k',{})};
-var RK={e:lsj('wordarrow-rank-e',[]),k:lsj('wordarrow-rank-k',[])};
+if(!MODE_NAME[S.mode]) S.mode='e';
+var NB={e:lsj('wordarrow-nb-e',{}),k:lsj('wordarrow-nb-k',{}),e5:lsj('wordarrow-nb-e5',{}),k5:lsj('wordarrow-nb-k5',{})};
+var SEEN={e:lsj('wordarrow-seen-e',{}),k:lsj('wordarrow-seen-k',{}),e5:lsj('wordarrow-seen-e5',{}),k5:lsj('wordarrow-seen-k5',{})};
+var RK={e:lsj('wordarrow-rank-e',[]),k:lsj('wordarrow-rank-k',[]),e5:lsj('wordarrow-rank-e5',[]),k5:lsj('wordarrow-rank-k5',[])};
 var board,slot,battle;
 
 function $(s){return document.querySelector(s)}
@@ -907,7 +917,7 @@ function writeUI(q,host,o){
 function allCards(kind){return Object.keys(BYID).map(function(id){return BYID[id]}).filter(function(x){return x.kind===kind})}
 function edistract(c,field){
   var seen={};seen[c[field]]=1;var out=[];
-  shuffle(allCards('e').filter(function(x){return x!==c&&x.pos===c.pos})).forEach(function(x){
+  shuffle(allCards('e').filter(function(x){return x!==c&&x.pos===c.pos&&x.mode===c.mode})).forEach(function(x){
     if(out.length<3&&!seen[x[field]]){seen[x[field]]=1;out.push(x)}
   });
   return out;
@@ -980,7 +990,7 @@ function makeExtra(c,v,q){
     return q;
   }
   if(c.kind==='k'&&(v==='M'||v==='Z')){
-    var oth=shuffle(allCards('k').filter(function(x){return x!==c}));
+    var oth=shuffle(allCards('k').filter(function(x){return x!==c&&x.mode===c.mode}));
     if(v==='M'){
       q.tag='熟語えらび';
       q.stem='<p class="qask">次の意味の熟語は？</p><p class="sent">'+c.m+'</p>';
@@ -1277,12 +1287,14 @@ function showTitle(){
    '<h1>ワード<span class="ringed">アロー<svg viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><ellipse cx="50" cy="20" rx="47" ry="17" pathLength="1"/></svg></span></h1>'+
    '<div><p class="sec">どちらに挑戦する？</p><div class="modes">'+
      '<button type="button" class="modebtn" data-m="e" aria-pressed="'+(m==='e')+'"><b>英検4級</b><span>単語・例文・意味</span></button>'+
-     '<button type="button" class="modebtn" data-m="k" aria-pressed="'+(m==='k')+'"><b>漢検4級</b><span>画数・熟語・筆順</span></button>'+
+     '<button type="button" class="modebtn" data-m="k" aria-pressed="'+(m==='k')+'"><b>漢検4級</b><span>画数・熟語・筆順</span></button>'+ 
+     '<button type="button" class="modebtn" data-m="e5" aria-pressed="'+(m==='e5')+'"><b>英検5級</b><span>基本単語・意味・発音</span></button>'+ 
+     '<button type="button" class="modebtn" data-m="k5" aria-pressed="'+(m==='k5')+'"><b>漢検5級</b><span>小学校6年生程度の漢字・熟語</span></button>'+
    '</div></div>'+
    '<p class="lead">3つそろえてミサイルをつくり、問題に答えて発射します。全10体の敵を倒そう。</p>'+
    '<div class="gemrow" aria-label="ブロックは5種類">'+[0,1,2,3,4].map(function(t){return '<div class="tile">'+gem(t)+'</div>'}).join('')+'</div>'+
    '<ol class="steps">'+
-    '<li><div><b>カードを見ておぼえる</b><span>ステージごとに4枚。'+(m==='e'?'単語と例文、発音も聞けます。':'漢字の画数、熟語、筆順を見ます。')+'</span></div></li>'+
+    '<li><div><b>カードを見ておぼえる</b><span>ステージごとに4枚。'+(m==='e'||m==='e5'?'単語と例文、発音も聞けます。':'漢字の画数、熟語、筆順を見ます。')+'</span></div></li>'+
     '<li><div><b>パズルを3回ためる</b><span>となりのブロックを入れかえて、同じ形を3つ以上そろえます。そろえるたびに問題が出て、3回分のパワーをためます。</span></div></li>'+
     '<li><div><b>3発合体で発射</b><span>3回の合計に、連鎖のボーナスを掛け合わせた大きなミサイルを発射。まちがえた回は威力が4分の1になり、じゃまブロックが出ます。敵はHP半分で怒りモードに変わります。</span></div></li>'+
     '<li><div><b>まちがいを見直す</b><span>まちがえた問題は「まちがいノート」に残ります。</span></div></li>'+
@@ -1323,7 +1335,7 @@ function showNotebook(m,msg){
   var nb=NB[m],ids=Object.keys(nb).filter(function(id){return BYID[id]}).sort(function(a,b){return nb[b].n-nb[a].n||nb[b].t-nb[a].t});
   app.innerHTML=
   '<section><div class="head"><p class="eyebrow">まちがいノート</p><h2>まちがえた問題</h2>'+(msg?'<p class="lead" style="color:var(--ok);font-weight:900">'+msg+'</p>':'<p class="lead">まちがえた問題がここに残ります。テストで正解すると回数が減り、0回で消えます。</p>')+'</div>'+
-  '<div class="tabs"><button type="button" class="tab" data-m="e" aria-pressed="'+(m==='e')+'">英検4級 ('+nbCount('e')+')</button><button type="button" class="tab" data-m="k" aria-pressed="'+(m==='k')+'">漢検4級 ('+nbCount('k')+')</button></div>'+
+  '<div class="tabs">'+Object.keys(MODE_NAME).map(function(key){return '<button type="button" class="tab" data-m="'+key+'" aria-pressed="'+(m===key)+'">'+MODE_NAME[key]+' ('+nbCount(key)+')</button>'}).join('')+'</div>'+
   (ids.length?'<div class="rv">'+ids.map(function(id){return cardHTML(BYID[id],{badge:'<span class="badge ng">まちがい '+nb[id].n+'回</span>',miss:1,del:1})}).join('')+'</div>':'<p class="lead" style="margin-bottom:16px">まちがいはありません。</p>')+
   '<div class="actions" style="max-width:520px">'+(ids.length?'<button type="button" class="btn primary" id="nbt">ノートの問題をテスト（'+Math.min(ids.length,8)+'問）</button>':'')+'<button type="button" class="btn ghost" id="back">もどる</button></div></section>';
   bindSay(app);
@@ -1539,6 +1551,8 @@ var WA_LEARN_E=[
  ['invite','招待する','忘れる','選ぶ'],['arrive','到着する','出発する','眠る'],
  ['practice','練習する','約束する','修理する'],['enough','十分な','珍しい','正確な']
 ];
+var WA_LEARN_E5=[['apple','りんご','みかん','ぶどう'],['book','本','かばん','机'],['school','学校','病院','公園'],['dog','犬','猫','鳥'],['water','水','牛乳','お茶'],['happy','うれしい','悲しい','眠い'],['read','読む','書く','走る'],['teacher','先生','生徒','友達']];
+var WA_LEARN_K5=[['宇','宙','宇宙','柱','宇柱'],['危','険','危険','検','危検'],['異','常','異常','情','異情'],['映','画','映画','書','映書'],['簡','単','簡単','担','簡担'],['疑','問','疑問','門','疑門'],['敬','意','敬意','異','敬異'],['呼','吸','呼吸','級','呼級']];
 var WA_LEARN_K=[
  ['環','境','環境','鏡','鏡環'],['維','持','維持','治','維治'],
  ['支','援','支援','縁','支縁'],['継','続','継続','属','継属'],
@@ -1547,8 +1561,10 @@ var WA_LEARN_K=[
 ];
 function learningTileChallenge(){
  return new Promise(function(resolve){
-  var idx=(S.moves-1)%8,eng=S.mode==='e',d=eng?WA_LEARN_E[idx]:WA_LEARN_K[idx];
-  var answer=eng?d[1]:d[1],options=eng?[d[1],d[2],d[3]]:[d[1],d[3],['観','治','劇','概','縁','属','激','虜'][idx]];
+  var idx=(S.moves-1)%8,eng=S.mode==='e'||S.mode==='e5',d=eng?WA_LEARN_E[idx]:WA_LEARN_K[idx];
+  if(S.mode==='e5')d=WA_LEARN_E5[idx];
+  if(S.mode==='k5')d=WA_LEARN_K5[idx];
+  var answer=d[1],options=eng?[d[1],d[2],d[3]]:[d[1],d[3],['観','治','劇','概','縁','属','激','虜'][idx]];
   options=shuffle(options.slice());
   var pane=document.createElement('div');
   pane.className='wa-learn-panel';
@@ -1783,7 +1799,7 @@ function showFinal(cleared){
   '<div class="actions two" style="max-width:520px"><button type="button" class="btn ghost" id="nbb">まちがいノート</button><button type="button" class="btn primary" id="again">タイトルへ</button></div></section>';
   bindSay(app);
   if(window.WAOnline && window.WAOnline.submitNormalScore){
-    window.WAOnline.submitNormalScore({subject:m==='e'?'eiken4':'kanken4',score:S.score,stages:cleared,correct:S.tot.ok,total:tot}).catch(function(e){console.warn('Online score sync failed:',e)});
+    ((m==='e'||m==='k')?window.WAOnline.submitNormalScore({subject:m==='e'?'eiken4':'kanken4',score:S.score,stages:cleared,correct:S.tot.ok,total:tot}):Promise.resolve()).catch(function(e){console.warn('Online score sync failed:',e)});
   }
   var sv=$('#save');
   if(sv) sv.onclick=function(){
