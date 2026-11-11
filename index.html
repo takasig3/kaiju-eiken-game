@@ -135,6 +135,9 @@ mark{background:linear-gradient(transparent 55%,var(--mark) 55%);color:inherit;f
 .actions{display:grid;gap:12px}
 .actions.two{grid-template-columns:1fr 1fr}
 
+/* Modern game title logo */
+.title-logo{display:block;width:100%;max-width:760px;height:auto;margin:0 auto;border-radius:18px;box-shadow:0 14px 36px rgba(8,20,46,.18);object-fit:contain}
+@media(max-width:600px){.title-logo{border-radius:12px}.title{gap:14px}}
 /* title */
 .title{display:grid;gap:20px;padding-top:12px}
 .eyebrow{font-size:13px;letter-spacing:.12em;font-weight:700;color:var(--ink2)}
@@ -1326,7 +1329,7 @@ function showTitle(){
   app.innerHTML=
   '<section class="title">'+
    '<p class="eyebrow">パズルシューター学習ゲーム</p>'+
-   '<h1>ワード<span class="ringed">アロー<svg viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true"><ellipse cx="50" cy="20" rx="47" ry="17" pathLength="1"/></svg></span></h1>'+
+   '<h1 style="margin:0"><img class="title-logo" src="word-arrow-title.webp" alt="ワードアロー WORD ARROW" width="1336" height="715" decoding="async"></h1>'+
    '<div><p class="sec">どちらに挑戦する？</p><div class="modes">'+
      '<button type="button" class="modebtn" data-m="e" aria-pressed="'+(m==='e')+'"><b>英検4級</b><span>単語・例文・意味</span></button>'+
      '<button type="button" class="modebtn" data-m="k" aria-pressed="'+(m==='k')+'"><b>漢検4級</b><span>画数・熟語・筆順</span></button>'+ 
