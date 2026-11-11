@@ -106,12 +106,25 @@
       const pending=new URLSearchParams(location.search).get('group');
       content.innerHTML=`
       <section class="wa-guild-hero"><p class="eyebrow">WORD ARROW · ADVENTURER GUILD</p><h2>🏹 冒険者ギルド</h2><p>仲間と学んで、モンスターに挑もう！</p><img src="special-ally-portrait.webp" alt="冒険を応援する白いキツネ" onerror="this.style.display='none'"></section>
-      <section class="wa-guild-panel"><h3>🦊 冒険者登録</h3><p class="hint">ランキングに表示する名前を決めよう</p><label for="wa-nick">ニックネーム（20文字まで）</label><input id="wa-nick" maxlength="20" placeholder="例：たろう"><button id="wa-profile" class="wa-register">冒険者として登録・変更</button><p class="hint" style="margin-top:12px">このブラウザに匿名アカウントを保存します。ブラウザデータ削除や端末変更では引き継げません。</p></section>
+      <section class="wa-guild-panel"><h3>🦊 冒険者登録</h3><p class="hint">ランキングに表示する名前を決めよう</p><label for="wa-nick">ニックネーム（20文字まで）</label><input id="wa-nick" maxlength="20" placeholder="例：たろう"><button type="button" id="wa-profile" class="wa-register">冒険者として登録・変更</button><p id="wa-profile-result" role="status" aria-live="polite" class="hint"></p><p class="hint" style="margin-top:12px">このブラウザに匿名アカウントを保存します。ブラウザデータ削除や端末変更では引き継げません。</p></section>
       <section class="wa-guild-panel"><h3>🛡️ 所属ギルド</h3><p class="hint">仲間のいるギルドを選んで冒険を始めよう</p><div class="wa-guild-members" id="wa-groups">${groups.length?groups.map(g=>`<div class="group"><div><b>${esc(g.name)}</b><div class="hint">${Number(g.member_count)}人が参加中</div></div><button class="wa-enter" data-open="${esc(g.id)}">ギルドに入る</button></div>`).join(''):'<p class="hint">まだギルドがありません。下から作成できます。</p>'}</div></section>
       ${pending?'<section class="wa-guild-panel wa-pending"><h3>✉️ 招待状が届いています</h3><p class="hint">招待されたギルドに参加できます。</p><button id="wa-join">このギルドに参加</button></section>':''}
       <section class="wa-guild-panel"><h3>✚ 新しいギルドを作る</h3><label for="wa-group-name">ギルド名</label><input id="wa-group-name" maxlength="40" placeholder="例：5年1組"><button id="wa-create" class="wa-create">ギルドを作成</button></section>
       <button id="wa-play" class="wa-solo">ひとりで冒険する <span style="display:block;font-size:12px;font-weight:400;color:#bdd0e4;margin-top:4px">グループなしで通常ゲームをプレイ</span></button><p class="hint">ギルドを開いて開始した通常ゲームの得点は、終了時にオンライン共有されます。</p>`;
-      $('wa-profile').onclick=async()=>{try{check(await client.rpc('wa_set_profile',{p_nickname:$('wa-nick').value,p_avatar:'🐱'}));status.textContent='名前を登録しました';}catch(e){error(e)}};
+      $('wa-profile').onclick=async()=>{
+        const btn=$('wa-profile'), result=$('wa-profile-result');
+        const nickname=$('wa-nick').value.trim();
+        if(!nickname){result.textContent='冒険者名を入力してください。';result.style.color='#ffb1a6';$('wa-nick').focus();return;}
+        btn.disabled=true;btn.textContent='登録しています…';result.textContent='';
+        try{
+          check(await client.rpc('wa_set_profile',{p_nickname:nickname,p_avatar:'🐱'}));
+          result.textContent='✓ 冒険者名を登録しました！';result.style.color='#a8f3c7';
+          status.textContent='オンライン接続済み';status.className='';
+        }catch(e){
+          result.textContent='登録できませんでした：'+(e?.message||String(e));result.style.color='#ffb1a6';
+          error(e);
+        }finally{btn.disabled=false;btn.textContent='冒険者として登録・変更';}
+      };
       $('wa-create').onclick=async()=>{try{const name=$('wa-group-name').value;const id=check(await client.rpc('wa_create_group',{p_name:name}));await showGroup(id);}catch(e){error(e)}};
       content.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>showGroup(b.dataset.open));
       if(pending)$('wa-join').onclick=async()=>{try{const id=check(await client.rpc('join_group',{p_invite_code:pending}));history.replaceState({},'',location.pathname);await showGroup(id);}catch(e){error(e)}};
