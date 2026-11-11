@@ -39,6 +39,8 @@
 .finish-btn:disabled{opacity:.5;cursor:wait}
 @keyframes boss-aura{from{transform:scale(.95) rotate(-4deg);opacity:.65}to{transform:scale(1.05) rotate(4deg);opacity:1}}
 @media(prefers-reduced-motion:reduce){.battle.final-boss .arena:before{animation:none}}
+.piercing-arrow svg{filter:drop-shadow(0 0 8px #54d7ff) drop-shadow(0 0 4px #54d7ff)}
+.rainbow-arrow svg{filter:drop-shadow(0 0 9px #ff70ef) hue-rotate(105deg) saturate(2)}
 </style><style id="wa-learning-style">
 .wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
 .slot{position:relative}
@@ -1382,6 +1384,25 @@ function findMatches(){
   for(c=0;c<N;c++)for(r=0;r<N-2;r++){t=at(r,c);if(t>=0&&at(r+1,c)===t&&at(r+2,c)===t){s[r+','+c]=1;s[(r+1)+','+c]=1;s[(r+2)+','+c]=1}}
   return Object.keys(s);
 }
+/* Special arrows: 4-in-a-row => piercing; 5+ => rainbow.
+   Count uninterrupted runs before clearing, including cascades.
+   A run of five awards only rainbow, not both rewards. */
+function specialMatches(){
+  var four=0,five=0,b=S.b;
+  function at(r,c){return b[r]&&b[r][c]?b[r][c].t:-9}
+  for(var r=0;r<N;r++)for(var c=0;c<N;c++){
+    var t=at(r,c);if(t<0)continue;
+    if(c===0||at(r,c-1)!==t){
+      var h=1;while(c+h<N&&at(r,c+h)===t)h++;
+      if(h>=5)five++;else if(h===4)four++;
+    }
+    if(r===0||at(r-1,c)!==t){
+      var v=1;while(r+v<N&&at(r+v,c)===t)v++;
+      if(v>=5)five++;else if(v===4)four++;
+    }
+  }
+  return {four:four,five:five};
+}
 function hasMoves(){
   var b=S.b;
   for(var r=0;r<N;r++)for(var c=0;c<N;c++){
@@ -1456,7 +1477,7 @@ function updateInfo(){
   var i=$('#info'); if(!i) return;
   var cs=chargeStat(),pips='';
   for(var k=0;k<3;k++) pips+=k<S.charge.length?'●':'○';
-  i.innerHTML='<span>チャージ '+pips+(S.charge.length?'　合計 '+Math.round(cs.P)+' ×'+cs.M.toFixed(1):'')+'</span><span>れんぞく正解 '+S.streak+'</span><span>じゃま '+jamaCount()+'</span>';
+  i.innerHTML='<span>チャージ '+pips+(S.charge.length?'　合計 '+Math.round(cs.P)+' ×'+cs.M.toFixed(1)+(cs.four?' ➶'+cs.four:'')+(cs.five?' 🌈'+cs.five:''):'')+'</span><span>れんぞく正解 '+S.streak+'</span><span>じゃま '+jamaCount()+'</span>';
   $('#score').textContent=S.score+' pt';
   if(!$('#finish-action'))i.insertAdjacentHTML('beforeend','<div class="finish-row" id="finish-action" hidden><button type="button" class="finish-btn" id="finish-btn">🚀 今すぐ発射！</button></div>');
   var fin=$('#finish-action');
@@ -1533,10 +1554,12 @@ function chargeStat(){
   var P=0,M=1,tn=0;
   S.charge.forEach(function(m){
     P+=m.n*4*(m.ok?1:.25)+(m.bonus||0);
+    // Special arrows are earned by matching; quiz accuracy still scales the damage.
+    P+=((m.special4||0)*16+(m.special5||0)*36)*(m.ok?1:.25);
     M*=1+.2*(m.chain-1)+.04*Math.max(0,m.n-3);
     tn+=m.n;
   });
-  return {P:P,M:Math.min(3,M),tn:tn};
+  return {P:P,M:Math.min(3,M),tn:tn,four:S.charge.reduce(function(a,m){return a+(m.special4||0)},0),five:S.charge.reduce(function(a,m){return a+(m.special5||0)},0)};
 }
 
 async function finishEarly(){
@@ -1618,9 +1641,10 @@ async function swapTry(r1,c1,r2,c2){
   S.moves++;
   var res=await resolve();
   var learningBonus=await learningTileChallenge();
-  var ok=await askQuiz(res.cleared,res.chain);
+  S.pendingSpecial=(res.five?'🌈レインボー×'+res.five+' ':'')+(res.four?'➶貫通×'+res.four:'');
+  var ok=await askQuiz(res.cleared,res.chain);S.pendingSpecial='';
   if(ok) S.streak++; else S.streak=0;
-  S.charge.push({n:res.cleared,chain:res.chain,ok:ok,bonus:learningBonus});
+  S.charge.push({n:res.cleared,chain:res.chain,ok:ok,bonus:learningBonus,special4:res.four,special5:res.five});
   if(S.charge.length<3){
     SFX.charge(S.charge.length);
     var cs=chargeStat();
@@ -1637,9 +1661,12 @@ async function swapTry(r1,c1,r2,c2){
   S.locked=false;updateInfo();
 }
 async function resolve(){
-  var cleared=0,chain=0;
+  var cleared=0,chain=0,four=0,five=0;
   while(true){
     var m=findMatches(); if(!m.length) break;
+    var special=specialMatches();four+=special.four;five+=special.five;
+    if(special.five)flash('🌈 レインボーアロー ×'+special.five+' 獲得！');
+    else if(special.four)flash('➶ 貫通アロー ×'+special.four+' 獲得！');
     chain++; cleared+=m.length;
     var all={};m.forEach(function(k){all[k]=1});
     m.forEach(function(k){
@@ -1654,7 +1681,7 @@ async function resolve(){
     Object.keys(all).forEach(function(k){var p=k.split(',');S.b[+p[0]][+p[1]]=null});
     gravity();render();await sleep(330);
   }
-  return {cleared:cleared,chain:chain};
+  return {cleared:cleared,chain:chain,four:four,five:five};
 }
 async function addJama(n){
   var free=[],r,c;
@@ -1680,7 +1707,7 @@ async function askQuiz(n,chain){
   slot.style.minHeight=slot.offsetHeight+'px';
   board.hidden=true;$('#pv').hidden=true;
   var host=document.createElement('div');slot.appendChild(host);
-  var head='チャージ '+(S.charge.length+1)+'/3　ブロック×'+n+(chain>1?'　'+chain+'連鎖':'');
+  var head='チャージ '+(S.charge.length+1)+'/3　ブロック×'+n+(chain>1?'　'+chain+'連鎖':'')+(S.pendingSpecial?'　'+S.pendingSpecial:'');
   var ok=await quizUI(q,host,{head:head,next:S.charge.length>=2?'3発合体！発射':'チャージ！',old:q.old});
   host.remove();board.hidden=false;$('#pv').hidden=false;slot.style.minHeight='';
   var s=S.stat[q.card.id];
@@ -1711,13 +1738,13 @@ async function fire(){
   var sb=1+Math.min(S.streak,5)*.05;
   var dmg=Math.max(1,Math.round(P*M*sb));
   var sc=Math.min(3.4,1+(M-1)*1.1+Math.max(0,tn-9)*.03);
-  flash('3発合体！ ×'+M.toFixed(1));
+  flash((cs.five?'🌈レインボーアロー！ ':cs.four?'➶貫通アロー！ ':'3発合体！ ')+'×'+M.toFixed(1));
   SFX.shot(allBad?1:sc);
   var fx=$('#fx'),mon=$('#mon'),br=battle.getBoundingClientRect(),mr=mon.getBoundingClientRect(),sr=board.getBoundingClientRect();
   var cnt=Math.min(9,Math.max(3,Math.ceil(tn/2))),anims=[];
   if(sc>2.2) cnt=Math.max(3,Math.ceil(cnt*.6));
   for(var i=0;i<cnt;i++){
-    var a=document.createElement('div');a.className='arrow'+(sc>1.8?' big':'');a.innerHTML=ARROW;fx.appendChild(a);
+    var a=document.createElement('div');a.className='arrow'+(sc>1.8?' big':'')+(cs.five?' rainbow-arrow':cs.four?' piercing-arrow':'');a.innerHTML=ARROW;fx.appendChild(a);
     var sx=(sr.left-br.left)+sr.width*(.12+.76*i/Math.max(cnt-1,1)),sy=(sr.top-br.top)+24;
     a.style.left=sx+'px';a.style.top=sy+'px';
     var tx=(mr.left-br.left+mr.width/2+(Math.random()-.5)*50)-sx,ty=(mr.top-br.top+mr.height/2)-sy;
