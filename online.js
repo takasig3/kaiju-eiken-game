@@ -44,7 +44,7 @@
 .wa-daily-tiles{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:16px 0}
 .wa-online-card .wa-daily-tiles button{min-width:52px;min-height:58px;margin:0;background:#fff;color:#192b45;border:3px solid #91b4ed;font-size:clamp(19px,5vw,28px);font-weight:900;touch-action:manipulation}
 .wa-online-card .wa-daily-tiles button.active{background:#ffe7a0;border-color:#e6a52d;color:#17243b}
-.wa-mini-status{min-height:1.5em;text-align:center;font-weight:800;color:#ffdf87}
+.wa-mini-prompt{text-align:center;color:#fff;font-size:clamp(18px,4vw,24px)}.wa-daily-tiles button{user-select:none;-webkit-user-select:none;touch-action:none;cursor:grab}.wa-daily-tiles button.dragging{opacity:.65;transform:scale(1.08)}.wa-mini-status{min-height:1.5em;text-align:center;font-weight:800;color:#ffdf87}
 .wa-mini-note{font-size:13px;color:#bdd0e4;line-height:1.6}
 @media(max-width:390px){.wa-online-card .wa-daily-tiles button{min-width:42px;min-height:50px;padding:8px}}
 .wa-mini-timer{text-align:center;font-size:clamp(30px,8vw,48px);font-weight:900;color:#ffdb70;margin:12px 0 3px;font-variant-numeric:tabular-nums}.wa-mini-timer.urgent{color:#ff857b}.wa-mini-bonus{text-align:center;font-size:17px;font-weight:800;color:#c9e4ff}.wa-mini-status{font-size:clamp(19px,5vw,27px);color:#ffdf87}
@@ -240,72 +240,67 @@
       };host.append(btn);
     });
   }
-  // Timed mini puzzle. Points are local until a server-verified RPC is deployed. 
+  // Timed local mini-games. Official ranking requires server-side verification.
   function renderDailyMiniPuzzle(){
     const english=dailySubject.startsWith('eiken');
-    const previous=dailyQuestions[dailyIndex-1];
-    const prompt=String(previous?.prompt||'');
-    const quoted=prompt.match(/[「『“"]([^」』”"]{3,8})[」』”"]/);
-    let target=english ? (quoted?.[1]||'').toLowerCase() : (quoted?.[1]||'');
-    if(english && !/^[a-z]{3,8}$/.test(target)) target=['apple','school','friend'][Math.floor(dailyIndex/3)-1]||'apple';
-    if(!english || target.length<3) target=['ことば','まなぶ','かんじ'][Math.floor(dailyIndex/3)-1]||'ことば';
-    const correct=Array.from(target);
-    let tiles=[...correct];
-    // Rotate then reverse; retry deterministically if characters happen to match.
-    tiles=tiles.slice(1).concat(tiles[0]).reverse();
-    if(tiles.join('')===target)tiles=tiles.reverse();
-    if(tiles.join('')===target && tiles.length>1)[tiles[0],tiles[1]]=[tiles[1],tiles[0]];
-    let picked=-1, finished=false;
-    const startAt=performance.now();
-    const limitMs=30000;
+    const round=Math.max(0,Math.min(2,Math.floor(dailyIndex/3)-1));
+    const englishSets=dailySubject==='eiken4'?
+      [{word:'friend',hint:'友だち'},{word:'weather',hint:'天気'},{word:'library',hint:'図書館'}]:
+      [{word:'apple',hint:'りんご'},{word:'school',hint:'学校'},{word:'pencil',hint:'えんぴつ'}];
+    const kanjiSets=dailySubject==='kanken4'?
+      [{left:'言',choices:['寺','青','売'],answer:'売',result:'読',hint:'「読む」の「読」'},
+       {left:'氵',choices:['青','毎','可'],answer:'青',result:'清',hint:'「清い」の「清」'},
+       {left:'木',choices:['目','交','各'],answer:'交',result:'校',hint:'「学校」の「校」'}]:
+      [{left:'氵',choices:['毎','青','可'],answer:'毎',result:'海',hint:'「海」の右側'},
+       {left:'日',choices:['月','青','寺'],answer:'青',result:'晴',hint:'「晴れ」の右側'},
+       {left:'木',choices:['交','目','白'],answer:'交',result:'校',hint:'「学校」の「校」'}];
+    // Fix puzzle data explicitly rather than constructing invalid characters.
+    if(!english && dailySubject==='kanken4' && round===0){kanjiSets[0]={left:'言',choices:['売','青','寺'],answer:'売',result:'読',hint:'「読む」の右側'};}
+    const entry=english?englishSets[round]:kanjiSets[round];
+    const target=english?entry.word:'';
+    let tiles=english?Array.from(target):[];
+    if(english){tiles=tiles.slice(1).concat(tiles[0]).reverse();if(tiles.join('')===target)[tiles[0],tiles[1]]=[tiles[1],tiles[0]];}
+    let picked=-1,finished=false,dragFrom=-1,chosen='';
+    const startAt=performance.now(),limitMs=30000;
     const bonusFor=(elapsed)=>elapsed<=5000?300:elapsed<=10000?250:elapsed<=15000?200:elapsed<=20000?150:elapsed<=30000?100:0;
-    content.innerHTML=`<h2>🧩 ちょこっとパズル！</h2><p>第 ${dailyIndex} 問クリア！ 次の問題の前に文字を並べ替えよう。</p><p class="hint">2つの文字を順番にタップして交換します。</p><div class="wa-mini-timer" id="wa-mini-timer" role="timer">残り 30.0 秒</div><div class="wa-mini-bonus" id="wa-mini-bonus">最速クリアで +300 Point!</div><div class="wa-daily-tiles" id="wa-mini-tiles"></div><p class="wa-mini-status" id="wa-mini-status" aria-live="polite"></p><button id="wa-mini-check">できた！</button><button class="secondary" id="wa-mini-skip">スキップして次へ</button><p class="wa-mini-note">タイムボーナスは画面上の合計に加算します。ランキングへの反映にはサーバー側の更新が必要です。</p>`;
-    const tileHost=$('wa-mini-tiles');
-    const timerHost=$('wa-mini-timer');
-    function remaining(){return Math.max(0,limitMs-(performance.now()-startAt));}
+    content.innerHTML=`<h2>🧩 ${english?'スペル並べ替え':'漢字合体'}チャレンジ！</h2><p>第 ${dailyIndex} 問クリア！ ${english?'1文字ずつ指で動かして正しい順番にしよう。':'正しい漢字のパーツを選ぼう。'}</p><div class="wa-mini-timer" id="wa-mini-timer" role="timer">残り 30.0 秒</div><div class="wa-mini-bonus" id="wa-mini-bonus">最速クリアで +300 Point!</div><h3 class="wa-mini-prompt" id="wa-mini-prompt"></h3><div class="wa-daily-tiles" id="wa-mini-tiles"></div><p class="wa-mini-status" id="wa-mini-status" aria-live="polite"></p><button id="wa-mini-check">できた！</button><button class="secondary" id="wa-mini-skip">スキップして次へ</button><p class="wa-mini-note">ボーナスは画面上の合計に加算。公式ランキングへの反映にはサーバー側の採点変更が必要です。</p>`;
+    const tileHost=$('wa-mini-tiles'),timerHost=$('wa-mini-timer');
+    $('wa-mini-prompt').textContent=english?`「${entry.hint}」を英語で完成！`:`${entry.hint}： ${entry.left} ＋ ？ ＝ ${entry.result}`;
     function finishPuzzle(points,elapsed,reason){
       if(finished)return;
-      finished=true;stopMiniTimer();
-      dailyMiniPoints+=points;
+      finished=true;stopMiniTimer();dailyMiniPoints+=points;
       dailyMiniResults.push({after_question:dailyIndex,elapsed_ms:Math.round(elapsed),points,reason});
-      $('wa-mini-check').disabled=true;
-      $('wa-mini-skip').disabled=true;
+      $('wa-mini-check').disabled=true;$('wa-mini-skip').disabled=true;
       tileHost.querySelectorAll('button').forEach(b=>b.disabled=true);
       timerHost.textContent=reason==='correct'?'クリア！':reason==='timeout'?'時間切れ！':'スキップ';
       $('wa-mini-status').textContent=points?`✨ +${points} Point!  ミニパズル合計 ${dailyMiniPoints} pt`:'ボーナス 0 pt';
-      $('wa-mini-bonus').textContent=reason==='correct'?`解答時間 ${(elapsed/1000).toFixed(1)}秒`:'次の問題へ進もう';
+      $('wa-mini-bonus').textContent=reason==='correct'?`解答時間 ${(elapsed/1000).toFixed(1)}秒`:`正解：${english?target:entry.left+' ＋ '+entry.answer+' ＝ '+entry.result}`;
       const next=document.createElement('button');next.textContent='次の問題へ';next.onclick=renderDailyQuestion;content.append(next);
     }
-    function tick(){
-      if(finished)return;
-      const left=remaining();
-      timerHost.textContent=`残り ${(left/1000).toFixed(1)} 秒`;
-      timerHost.classList.toggle('urgent',left<=10000);
-      if(left<=0)finishPuzzle(0,limitMs,'timeout');
-    }
+    function tick(){if(finished)return;const left=Math.max(0,limitMs-(performance.now()-startAt));timerHost.textContent=`残り ${(left/1000).toFixed(1)} 秒`;timerHost.classList.toggle('urgent',left<=10000);if(left<=0)finishPuzzle(0,limitMs,'timeout');}
     dailyMiniTimer=setInterval(tick,100);tick();
+    function move(from,to){if(finished||from<0||to<0||from===to)return;const v=tiles.splice(from,1)[0];tiles.splice(to,0,v);picked=-1;$('wa-mini-status').textContent='';draw();}
     function draw(){
       tileHost.replaceChildren();
+      if(!english){entry.choices.forEach(part=>{const b=document.createElement('button');b.type='button';b.textContent=part;b.classList.toggle('active',chosen===part);b.onclick=()=>{if(finished)return;chosen=part;draw();};tileHost.append(b);});return;}
       tiles.forEach((letter,i)=>{
-        const b=document.createElement('button');b.type='button';b.textContent=letter;
-        b.setAttribute('aria-label',`${i+1}番目 ${letter}`);
-        if(i===picked)b.classList.add('active');
-        b.onclick=()=>{
-          if(finished)return;
-          if(picked<0){picked=i;draw();return;}
-          [tiles[picked],tiles[i]]=[tiles[i],tiles[picked]];picked=-1;
-          $('wa-mini-status').textContent='';draw();
-        };tileHost.append(b);
+        const b=document.createElement('button');b.type='button';b.textContent=letter;b.dataset.index=String(i);b.setAttribute('aria-label',`${i+1}番目 ${letter}。ドラッグして移動`);b.classList.toggle('active',i===picked);b.draggable=true;
+        b.addEventListener('dragstart',e=>{dragFrom=i;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(i));});
+        b.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';});
+        b.addEventListener('drop',e=>{e.preventDefault();move(dragFrom,i);dragFrom=-1;});
+        b.addEventListener('dragend',()=>{dragFrom=-1;});
+        // Touch devices: pointer capture keeps the dragged letter attached to the finger.
+        let originX=0,originY=0,wasDragged=false;
+        b.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;originX=e.clientX;originY=e.clientY;wasDragged=false;dragFrom=i;b.setPointerCapture(e.pointerId);b.classList.add('dragging');});
+        b.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'||dragFrom!==i)return;if(Math.hypot(e.clientX-originX,e.clientY-originY)>8)wasDragged=true;});
+        b.addEventListener('pointerup',e=>{if(e.pointerType==='mouse')return;b.classList.remove('dragging');if(!wasDragged)return;const el=document.elementFromPoint(e.clientX,e.clientY)?.closest('#wa-mini-tiles button');const to=el?Number(el.dataset.index):-1;dragFrom=-1;if(to>=0)move(i,to);});
+        b.addEventListener('pointercancel',()=>{dragFrom=-1;b.classList.remove('dragging');});
+        b.onclick=()=>{if(finished)return;if(picked<0){picked=i;draw();}else move(picked,i);};
+        tileHost.append(b);
       });
     }
     draw();
-    $('wa-mini-check').onclick=()=>{
-      if(finished)return;
-      const elapsed=performance.now()-startAt;
-      if(elapsed>=limitMs){finishPuzzle(0,limitMs,'timeout');return;}
-      if(tiles.join('')===target)finishPuzzle(bonusFor(elapsed),elapsed,'correct');
-      else $('wa-mini-status').textContent='もう少し！ 文字を入れ替えてみよう';
-    };
+    $('wa-mini-check').onclick=()=>{if(finished)return;const elapsed=performance.now()-startAt;if(elapsed>=limitMs){finishPuzzle(0,limitMs,'timeout');return;}if(english?tiles.join('')===target:chosen===entry.answer)finishPuzzle(bonusFor(elapsed),elapsed,'correct');else $('wa-mini-status').textContent=english?'もう少し！ 文字を動かしてみよう':'ちがうパーツを選んでみよう';};
     $('wa-mini-skip').onclick=()=>finishPuzzle(0,performance.now()-startAt,'skip');
   }
   async function finishDaily(){
