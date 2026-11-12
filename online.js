@@ -264,7 +264,7 @@
       <section class="wa-daily-wrap"><h3>🏆 今日のオンライン対戦</h3><p class="hint">各級・各科目それぞれ1日1回。全員が同じ10問に挑戦（1問100点）。</p>
       <div class="wa-daily-grid"><div class="wa-grade-card grade5"><h4>🌱 5級チャレンジ</h4><p>基礎から挑戦したい人向け</p><button id="wa-daily-e5">英検5級に挑戦</button><button id="wa-daily-k5">漢検5級に挑戦</button></div>
       <div class="wa-grade-card grade4"><h4>⚡ 4級チャレンジ</h4><p>少し難しい問題に挑戦</p><button id="wa-daily-e">英検4級に挑戦</button><button id="wa-daily-k">漢検4級に挑戦</button></div></div></section>
-      <h3>📊 今日のランキング</h3><div id="wa-rankings"></div><button id="wa-back" class="secondary">✏️ ニックネーム・ギルドを変更</button><p class="hint">通常ゲームの最高得点もオンライン共有されます（自己申告スコア・未検証）。</p>`;
+      <p id="wa-daily-feedback" role="alert" aria-live="assertive" style="display:none;padding:12px;border:2px solid #ffbd74;border-radius:12px;background:#402a2a;color:#fff;margin:12px 0"></p><h3>📊 今日のランキング</h3><div id="wa-rankings"></div><button id="wa-back" class="secondary">✏️ ニックネーム・ギルドを変更</button><p class="hint">通常ゲームの最高得点もオンライン共有されます（自己申告スコア・未検証）。</p>`;
       $('wa-choose-companion').onclick=openCompanionPicker;
       $('wa-open-meal').onclick=openMeal;
       $('wa-copy').onclick=async()=>{try{await navigator.clipboard.writeText(invite);status.textContent='招待URLをコピーしました'}catch(e){$('wa-invite').select();status.textContent='URLを選択しました。コピーしてください'}};
@@ -307,12 +307,22 @@
     }catch(e){host.textContent='通常ゲームのランキング取得エラー: '+(e.message||e);}
   }
   async function startDaily(groupId,subject){
+    const feedback=$('wa-daily-feedback');
+    const buttonId={eiken4:'wa-daily-e',eiken5:'wa-daily-e5',kanken4:'wa-daily-k',kanken5:'wa-daily-k5'}[subject];
+    const btn=buttonId?$(buttonId):null;
+    if(btn?.disabled)return;
+    if(feedback){feedback.style.display='block';feedback.textContent='対戦を読み込んでいます…';}
+    if(btn){btn.disabled=true;btn.dataset.originalLabel=btn.textContent;btn.textContent='読み込み中…';}
     try{
       const data=check(await client.rpc('wa_start_daily',{p_group_id:groupId,p_subject:subject}));
-      if(data.finished){status.textContent='今日は回答済みです。明日また挑戦してください。';await showRankings(groupId);return;}
+      if(data.finished){if(feedback)feedback.textContent='今日はこの科目に回答済みです。明日また挑戦してください。';await showRankings(groupId);return;}
       stopMiniTimer();dailyMiniPoints=0;dailyMiniResults=[];dailyRun=data.run_id;dailyQuestions=data.questions;dailyAnswers=[];dailyIndex=0;dailySubject=subject;
       selected=groupId;renderDailyQuestion();
-    }catch(e){error(e)}
+    }catch(e){
+      const message=e?.message||String(e);
+      if(feedback){feedback.style.display='block';feedback.textContent='開始できませんでした（'+subject+'）：'+message;feedback.scrollIntoView({behavior:'smooth',block:'center'});}
+      error(e);
+    }finally{if(btn?.isConnected){btn.disabled=false;btn.textContent=btn.dataset.originalLabel||btn.textContent;}}
   }
   function renderDailyQuestion(){
     const q=dailyQuestions[dailyIndex];
