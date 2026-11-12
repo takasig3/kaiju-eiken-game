@@ -85,6 +85,14 @@
 .wa-online-card #wa-status{font-size:13px;color:#b6d8c9;margin:4px 0 8px}
 @media(max-width:480px){.wa-guild-hero{padding:16px}.wa-guild-hero p{max-width:72%}.wa-guild-panel{padding:14px}.wa-guild-members .group{align-items:flex-start}.wa-guild-members .group b{font-size:16px}}
 `;
+   style.textContent+=`
+/* Finger-following letter tiles and clearly marked insertion position */
+.wa-daily-tiles button[data-index]{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;position:relative;transition:transform .12s,opacity .12s}
+.wa-daily-tiles button[data-index].dragging{opacity:.28;transform:none}
+.wa-daily-tiles button.wa-drop-before::before,.wa-daily-tiles button.wa-drop-after::after{content:"";position:absolute;top:-5px;bottom:-5px;width:6px;border-radius:5px;background:#ffcf53;box-shadow:0 0 0 2px #13233d,0 0 14px #ffcf53;pointer-events:none;z-index:2}
+.wa-daily-tiles button.wa-drop-before::before{left:-8px}.wa-daily-tiles button.wa-drop-after::after{right:-8px}
+.wa-drag-ghost{position:fixed!important;z-index:2147483647!important;transform:translate(-50%,-65%) scale(1.13);pointer-events:none!important;display:flex;align-items:center;justify-content:center;border:3px solid #ffc44f;border-radius:12px;background:#fff0b5;color:#172844;font-size:clamp(19px,5vw,28px);font-weight:900;box-shadow:0 12px 24px #0007;touch-action:none}
+`;
   document.head.append(style);
   const $=id=>document.getElementById(id), status=$('wa-status'),content=$('wa-content');
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -286,18 +294,63 @@
       tileHost.replaceChildren();
       if(!english){entry.choices.forEach(part=>{const b=document.createElement('button');b.type='button';b.textContent=part;b.classList.toggle('active',chosen===part);b.onclick=()=>{if(finished)return;chosen=part;$('wa-kanji-right').textContent=part;$('wa-kanji-right').classList.remove('unknown');draw();};tileHost.append(b);});return;}
       tiles.forEach((letter,i)=>{
-        const b=document.createElement('button');b.type='button';b.textContent=letter;b.dataset.index=String(i);b.setAttribute('aria-label',`${i+1}番目 ${letter}。ドラッグして移動`);b.classList.toggle('active',i===picked);b.draggable=true;
-        b.addEventListener('dragstart',e=>{dragFrom=i;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(i));});
-        b.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='move';});
-        b.addEventListener('drop',e=>{e.preventDefault();move(dragFrom,i);dragFrom=-1;});
-        b.addEventListener('dragend',()=>{dragFrom=-1;});
-        // Touch devices: pointer capture keeps the dragged letter attached to the finger.
-        let originX=0,originY=0,wasDragged=false;
-        b.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;originX=e.clientX;originY=e.clientY;wasDragged=false;dragFrom=i;b.setPointerCapture(e.pointerId);b.classList.add('dragging');});
-        b.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'||dragFrom!==i)return;if(Math.hypot(e.clientX-originX,e.clientY-originY)>8)wasDragged=true;});
-        b.addEventListener('pointerup',e=>{if(e.pointerType==='mouse')return;b.classList.remove('dragging');if(!wasDragged)return;const el=document.elementFromPoint(e.clientX,e.clientY)?.closest('#wa-mini-tiles button');const to=el?Number(el.dataset.index):-1;dragFrom=-1;if(to>=0)move(i,to);});
-        b.addEventListener('pointercancel',()=>{dragFrom=-1;b.classList.remove('dragging');});
-        b.onclick=()=>{if(finished)return;if(picked<0){picked=i;draw();}else move(picked,i);};
+        const b=document.createElement('button');b.type='button';b.textContent=letter;b.dataset.index=String(i);b.setAttribute('aria-label',`${i+1}番目 ${letter}。ドラッグして移動`);b.classList.toggle('active',i===picked);b.draggable=false;
+        // Unified pointer-based drag and drop for touch, pen and mouse.
+        // A floating copy follows the pointer; the insertion marker indicates the destination.
+        b.draggable=false;
+        let gesture=null, suppressClick=false;
+        const clearDrag=()=>{
+          if(!gesture)return;
+          gesture.ghost?.remove();
+          tileHost.querySelectorAll('.wa-drop-before,.wa-drop-after').forEach(el=>el.classList.remove('wa-drop-before','wa-drop-after'));
+          b.classList.remove('dragging');gesture=null;
+        };
+        const destination=(x,y)=>{
+          const buttons=[...tileHost.querySelectorAll('button[data-index]')];
+          if(!buttons.length)return -1;
+          const bounds=tileHost.getBoundingClientRect();
+          // Allow dropping slightly above/below the row, but not far outside the puzzle.
+          if(y<bounds.top-45||y>bounds.bottom+45||x<bounds.left-45||x>bounds.right+45)return -1;
+          const centers=buttons.map(el=>{const r=el.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};});
+          let nearest=0,dist=Infinity;
+          centers.forEach((c,k)=>{const d=Math.hypot(x-c.x,y-c.y);if(d<dist){dist=d;nearest=k;}});
+          return nearest;
+        };
+        b.addEventListener('pointerdown',e=>{
+          if(finished||e.button!==0)return;
+          gesture={id:e.pointerId,x:e.clientX,y:e.clientY,active:false,ghost:null,to:-1};
+          b.setPointerCapture(e.pointerId);
+        });
+        b.addEventListener('pointermove',e=>{
+          if(!gesture||e.pointerId!==gesture.id)return;
+          if(!gesture.active&&Math.hypot(e.clientX-gesture.x,e.clientY-gesture.y)<7)return;
+          if(!gesture.active){
+            gesture.active=true;b.classList.add('dragging');
+            const r=b.getBoundingClientRect();
+            const ghost=b.cloneNode(true);ghost.removeAttribute('id');ghost.className='wa-drag-ghost';
+            ghost.style.width=r.width+'px';ghost.style.height=r.height+'px';
+            document.body.appendChild(ghost);gesture.ghost=ghost;
+          }
+          e.preventDefault();
+          gesture.ghost.style.left=e.clientX+'px';gesture.ghost.style.top=e.clientY+'px';
+          gesture.to=destination(e.clientX,e.clientY);
+          tileHost.querySelectorAll('.wa-drop-before,.wa-drop-after').forEach(el=>el.classList.remove('wa-drop-before','wa-drop-after'));
+          const dest=tileHost.querySelector(`button[data-index="${gesture.to}"]`);
+          if(dest&&gesture.to!==i)dest.classList.add(gesture.to>i?'wa-drop-after':'wa-drop-before');
+        });
+        b.addEventListener('pointerup',e=>{
+          if(!gesture||e.pointerId!==gesture.id)return;
+          const dragged=gesture.active,to=dragged?destination(e.clientX,e.clientY):-1;
+          clearDrag();
+          if(dragged){suppressClick=true;if(to>=0)move(i,to);}
+        });
+        b.addEventListener('pointercancel',clearDrag);
+        b.addEventListener('lostpointercapture',clearDrag);
+        b.onclick=()=>{
+          if(suppressClick){suppressClick=false;return;}
+          if(finished)return;
+          if(picked<0){picked=i;draw();}else move(picked,i);
+        };
         tileHost.append(b);
       });
     }
