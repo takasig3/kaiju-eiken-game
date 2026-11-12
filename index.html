@@ -162,6 +162,16 @@
   .battle .slot .quiz .ch{min-height:38px;}
 }
 
+
+/* Spelling bonus: touch-friendly reorder challenge */
+.wa-spell-panel{max-width:680px;margin:8px auto;padding:clamp(14px,3vw,26px);border:3px solid #203448;border-radius:22px;background:#fff;text-align:center;box-shadow:0 8px 25px #142a3918}
+.wa-spell-panel h2{font-size:clamp(22px,5vw,34px);margin:8px 0}.wa-spell-prompt{font-size:clamp(20px,5vw,30px);font-weight:900;margin:10px 0 16px}
+.wa-spell-letters{display:flex;justify-content:center;gap:clamp(3px,1vw,9px);touch-action:none;user-select:none;margin:14px 0 18px}
+.wa-spell-letter{min-width:0;flex:1 1 0;max-width:68px;aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:#eaf3ff;border:2px solid #6b91c8;border-radius:12px;font-size:clamp(19px,5vw,32px);font-weight:900;color:#18375e;touch-action:none;cursor:grab}
+.wa-spell-letter.wa-selected{background:#ffe8a8;border-color:#d38b1e}.wa-spell-letter.wa-drag{opacity:.6;transform:scale(1.06)}
+.wa-spell-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.wa-spell-actions button{flex:1;min-width:100px;max-width:250px;padding:13px;border-radius:12px;border:2px solid #244766;font-size:17px;font-weight:800;background:#eaf3ff;color:#18375e}
+.wa-spell-actions .wa-spell-check{background:#d73421;color:#fff;border-color:#982919}.wa-spell-result{font-weight:900;font-size:clamp(24px,6vw,44px);color:#e18b00;margin:12px 0}.wa-spell-help{color:#52657a;font-size:13px}
+.wa-qr-invite{padding:14px;text-align:center;border:1px solid #d2dfed;border-radius:14px;margin:12px 0;background:#fff}.wa-qr-invite img{width:200px;max-width:85%;height:auto;image-rendering:pixelated}.wa-qr-invite p{font-size:13px;overflow-wrap:anywhere}
 </style><style id="wa-learning-style">
 .wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
 .slot{position:relative}
@@ -1839,10 +1849,73 @@ async function summonChainAlly(){
   host.remove();board.hidden=false;$('#pv').hidden=false;
   render();updateInfo();
 }
+
+/* Spelling challenge: score only, never attack damage. */
+var waSpellSeen={e:{},e5:{}};
+function waSpellCandidate(){
+  var mode=S.mode;
+  if(mode!=='e'&&mode!=='e5')return null;
+  var min=mode==='e5'?3:5,max=mode==='e5'?6:9;
+  var pool=allCards('e').filter(function(c){return c.mode===mode&&/^[a-z]+$/i.test(c.en||'')&&c.en.length>=min&&c.en.length<=max&&c.ja});
+  if(!pool.length)return null;
+  var seen=waSpellSeen[mode]||(waSpellSeen[mode]={});
+  var fresh=pool.filter(function(c){return !seen[c.en.toLowerCase()]});
+  if(!fresh.length){waSpellSeen[mode]=seen={};fresh=pool}
+  var card=fresh[Math.floor(Math.random()*fresh.length)];seen[card.en.toLowerCase()]=true;
+  return card;
+}
+function waSpellPoints(mode,len){return mode==='e5'?(len<=4?200:300):(len<=6?400:500)}
+function waSpellShuffle(word){
+  var original=word.toLowerCase().split(''),letters=original.slice();
+  for(var attempt=0;attempt<15;attempt++){
+    letters=shuffle(original);
+    if(letters.join('')!==word.toLowerCase())break;
+  }
+  if(letters.join('')===word.toLowerCase()&&letters.length>1){var t=letters[0];letters[0]=letters[1];letters[1]=t}
+  return letters;
+}
+function waSpellingChallenge(){
+  return new Promise(function(done){
+    var card=waSpellCandidate();if(!card){done();return}
+    var word=card.en.toLowerCase(),letters=waSpellShuffle(word),selected=-1,finished=false;
+    board.hidden=true;$('#pv').hidden=true;
+    var host=document.createElement('section');host.className='wa-spell-panel';slot.appendChild(host);
+    var points=waSpellPoints(S.mode,word.length);
+    host.innerHTML='<div style="color:#d34b23;font-weight:900">✨ スペシャル・スペルチャレンジ</div><h2>文字を並べ替えよう！</h2><div class="wa-spell-prompt">'+esc(card.ja)+'</div><p class="wa-spell-help">指で文字を動かして順番を入れ替えよう。タップで2文字を選んでもOK！</p><div class="wa-spell-letters" aria-label="並べ替えるアルファベット"></div><div class="wa-spell-feedback" aria-live="polite"></div><div class="wa-spell-actions"><button type="button" class="wa-spell-reset">やり直す</button><button type="button" class="wa-spell-check">こたえを決定！</button></div>';
+    var row=host.querySelector('.wa-spell-letters'),feedback=host.querySelector('.wa-spell-feedback');
+    function draw(){row.innerHTML='';letters.forEach(function(ch,i){var b=document.createElement('button');b.type='button';b.className='wa-spell-letter'+(selected===i?' wa-selected':'');b.textContent=ch;b.dataset.i=i;b.setAttribute('aria-label',(i+1)+'番目の文字 '+ch);row.appendChild(b)})}
+    function swap(i,j){if(i<0||j<0||i===j)return;var t=letters[i];letters[i]=letters[j];letters[j]=t;selected=-1;feedback.textContent='';draw()}
+    var dragging=-1,moved=false;
+    row.addEventListener('pointerdown',function(e){var b=e.target.closest('.wa-spell-letter');if(!b||finished)return;dragging=Number(b.dataset.i);moved=false;b.classList.add('wa-drag');e.preventDefault()});
+    document.addEventListener('pointermove',function(e){if(dragging<0||finished||!host.isConnected)return;
+      var target=document.elementFromPoint(e.clientX,e.clientY),button=target&&target.closest('.wa-spell-letter');
+      if(!button||!row.contains(button))return;
+      var j=Number(button.dataset.i);
+      if(j!==dragging){var ch=letters.splice(dragging,1)[0];letters.splice(j,0,ch);dragging=j;moved=true;draw()}
+    });
+    document.addEventListener('pointerup',function(e){if(dragging<0||finished||!host.isConnected)return;
+      var i=dragging;dragging=-1;
+      if(moved){selected=-1;draw();return}
+      if(selected<0)selected=i;else if(selected===i)selected=-1;else{swap(selected,i);return}draw();
+    });
+    document.addEventListener('pointercancel',function(){if(dragging>=0){dragging=-1;draw()}});
+    function finish(){if(finished)return;finished=true;host.remove();board.hidden=false;$('#pv').hidden=false;render();updateInfo();done()}
+    host.querySelector('.wa-spell-reset').onclick=function(){if(finished)return;letters=waSpellShuffle(word);selected=-1;feedback.textContent='';draw()};
+    host.querySelector('.wa-spell-check').onclick=function(){if(finished)return;
+      var ok=letters.join('')===word;
+      if(ok){S.score+=points;updateInfo();feedback.innerHTML='<div style="color:#18804a;font-size:24px;font-weight:900">せいかい！</div><div class="wa-spell-result">+'+points+' Point!</div><div>'+esc(word)+'（'+esc(card.ja)+'）</div>';flash('+'+points+' Point!');speak(word,'en-US');}
+      else{feedback.innerHTML='<div style="color:#bf3b29;font-size:23px;font-weight:900">おしい！</div><div>正解：'+esc(word)+'（'+esc(card.ja)+'）</div>';speak(word,'en-US');}
+      host.querySelector('.wa-spell-check').textContent='バトルにもどる';host.querySelector('.wa-spell-reset').hidden=true;
+      host.querySelector('.wa-spell-check').onclick=finish;
+    };
+    draw();
+  });
+}
 async function finishPuzzleTurn(res){
   // Only an actual five-or-more cascade in this move summons the ally.
   // The ally quiz uses cards outside the current stage, and allows exactly one answer.
   if(res.chain>=5)await summonChainAlly();
+  if(res.chain>=3&&(S.mode==='e'||S.mode==='e5')&&Math.random()<0.4)await waSpellingChallenge();
   var learningBonus=await learningTileChallenge();
   S.pendingSpecial=(res.five?'🌈レインボー×'+res.five+' ':'')+(res.four?'➶貫通×'+res.four:'');
   var ok=await askQuiz(res.cleared,res.chain);S.pendingSpecial='';
@@ -2152,4 +2225,30 @@ document.addEventListener('click',function(e){if(e.target && e.target.id==='kanj
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="./supabase-config.js"></script>
 <script src="./online.js"></script>
+
+<script>
+/* Enhance any existing online invite URL input with a scannable QR image. */
+(function(){
+  var timer=0;
+  function refresh(){
+    var input=document.querySelector('#wa-invite');
+    if(!input||!/^https:\/\//.test(input.value))return;
+    var parent=input.parentElement;
+    if(!parent)return;
+    var host=parent.querySelector('.wa-qr-invite');
+    if(!host){host=document.createElement('div');host.className='wa-qr-invite';input.insertAdjacentElement('afterend',host)}
+    if(host.dataset.url===input.value)return;
+    host.dataset.url=input.value;
+    var label=document.createElement('strong');label.textContent='📱 招待QRコード';
+    var img=document.createElement('img');img.alt='ギルドへの招待QRコード';img.loading='lazy';
+    img.src='https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=12&data='+encodeURIComponent(input.value);
+    var p=document.createElement('p');p.textContent='読み取るとギルドの招待ページを開きます。画像を長押しして保存・印刷できます。';
+    var error=document.createElement('p');error.style.color='#a33';error.hidden=true;error.textContent='QRコードを読み込めません。ネットワークの制限を確認してください。';
+    img.onerror=function(){error.hidden=false};
+    host.replaceChildren(label,document.createElement('br'),img,p,error);
+  }
+  new MutationObserver(function(){clearTimeout(timer);timer=setTimeout(refresh,50)}).observe(document.body,{childList:true,subtree:true});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh);else refresh();
+})();
+</script>
 </body></html>
