@@ -209,6 +209,14 @@
 .battle .slot .ally-quiz .ally-heading{color:#543092;text-shadow:0 1px #fff}
 .battle .slot .ally-quiz .ally-hero{background:linear-gradient(110deg,#ffffffb5,#e9dcff55);border-radius:14px;padding:8px}
 @media(max-width:650px){.battle .slot:has(.ally-quiz){width:min(100%,calc(100vw - 22px));padding:6px}.battle .slot .ally-quiz{padding:8px}}
+
+/* Large, non-blocking point feedback for combo, attack and victory. */
+.wa-points-pop{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);z-index:90;pointer-events:none;text-align:center;white-space:nowrap;color:#ffcf44;font-size:clamp(32px,8vw,76px);font-weight:1000;letter-spacing:-.035em;-webkit-text-stroke:2px #493068;text-shadow:0 4px 0 #7e3a14,0 8px 22px #0009;animation:waPointsPop 1.5s ease-out forwards}
+.wa-points-pop small{display:block;font-size:.38em;color:#fff;-webkit-text-stroke:1px #283f63;letter-spacing:0}
+.wa-points-pop.attack{color:#fff08d}.wa-points-pop.victory{color:#ffe879;font-size:clamp(40px,10vw,94px)}
+@keyframes waPointsPop{0%{opacity:0;transform:translate(-50%,-30%) scale(.5)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}70%{opacity:1;transform:translate(-50%,-65%) scale(1)}100%{opacity:0;transform:translate(-50%,-95%) scale(.9)}}
+.wa-present-form{font-size:.67em;font-weight:700;color:#63728a;margin-left:.55em;white-space:nowrap}
+@media(max-width:650px){.wa-points-pop{top:33%;font-size:clamp(34px,9vw,60px);-webkit-text-stroke:1px #493068}}
 </style><style id="wa-learning-style">
 .wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
 .slot{position:relative}
@@ -1285,6 +1293,20 @@ function makeQ(c,v){
   q.opts=opts;
   return q;
 }
+// Show the base form only for known past-tense verb answers.
+var WA_PAST_FORMS={watched:'watch',played:'play',visited:'visit',studied:'study',stopped:'stop',liked:'like',lived:'live',used:'use',wanted:'want',looked:'look',walked:'walk',talked:'talk',helped:'help',called:'call',opened:'open',closed:'close',washed:'wash',cleaned:'clean',cooked:'cook',listened:'listen',learned:'learn',worked:'work',started:'start',finished:'finish',asked:'ask',answered:'answer',enjoyed:'enjoy',tried:'try',cried:'cry',carried:'carry',went:'go',came:'come',saw:'see',ate:'eat',drank:'drink',had:'have',did:'do',made:'make',took:'take',gave:'give',got:'get',bought:'buy',brought:'bring',thought:'think',wrote:'write',spoke:'speak',ran:'run',swam:'swim',sang:'sing',sat:'sit',slept:'sleep',felt:'feel',left:'leave',met:'meet',found:'find',lost:'lose',heard:'hear',said:'say',told:'tell',read:'read',was:'be',were:'be'};
+function waAnswerWithBase(q){
+ var answer=String(q.ans||'');
+ if(S.mode!=='e'&&S.mode!=='e5')return esc(answer);
+ var base=WA_PAST_FORMS[answer.toLowerCase().trim()];
+ return esc(answer)+(base?'<small class="wa-present-form">現在形：'+esc(base)+'</small>':'');
+}
+function waShowPoints(value,label,kind){
+ var fx=document.getElementById('fx');if(!fx||!value)return;
+ var el=document.createElement('div');el.className='wa-points-pop '+(kind||'');
+ var n=Math.round(value);el.innerHTML='<small>'+esc(label)+'</small>+'+n.toLocaleString()+' Point!';
+ fx.appendChild(el);setTimeout(function(){el.remove()},1550);
+}
 function quizUI(q,host,o){
   if(q.write) return writeUI(q,host,o);
   return new Promise(function(resolve){
@@ -1322,7 +1344,7 @@ function quizUI(q,host,o){
       var fb=host.querySelector('#fb');
       fb.innerHTML=
         '<div class="verdict '+(ok?'ok':'ng')+'">'+(ok?'せいかい！':'ざんねん')+'</div>'+
-        '<div class="ans">正解：'+esc(q.ans)+'</div>'+q.expl+
+        '<div class="ans">正解：'+waAnswerWithBase(q)+'</div>'+q.expl+
         '<button type="button" class="btn primary" id="qnext">'+(o.next||'つぎへ')+'</button>';
       fb.hidden=false;bindSay(fb);
       var nx=fb.querySelector('#qnext');nx.focus({preventScroll:true});
@@ -1949,10 +1971,13 @@ function waSpellingChallenge(){
   });
 }
 async function finishPuzzleTurn(res){
+  // A cascade earns visible points once per completed move, not per animation frame.
+  if(res.chain>=2){var chainPts=(res.chain-1)*50;S.score+=chainPts;updateInfo();waShowPoints(chainPts,res.chain+'連鎖ボーナス','combo');}
+
   // Only an actual five-or-more cascade in this move summons the ally.
   // The ally quiz uses cards outside the current stage, and allows exactly one answer.
   if(res.chain>=5)await summonChainAlly();
-  if(res.chain>=3&&(S.mode==='e'||S.mode==='e5')&&Math.random()<0.4)await waSpellingChallenge();
+  if(res.chain>=3&&(S.mode==='e'||S.mode==='e5')&&Math.random()<0.65)await waSpellingChallenge();
   var learningBonus=await learningTileChallenge();
   S.pendingSpecial=(res.five?'🌈レインボー×'+res.five+' ':'')+(res.four?'➶貫通×'+res.four:'');
   var ok=await askQuiz(res.cleared,res.chain);S.pendingSpecial='';
@@ -2120,13 +2145,16 @@ async function fire(){
   if(!allBad){f.textContent=(allyDouble?'✨×2 ':'')+'-'+dmg;if(allyDouble)f.classList.add('ally-boost-float');f.style.fontSize=(30+(sc-1)*10)+'px';mon.classList.add('hit')}
   else{f.textContent='弱い -'+dmg;mon.classList.add('laugh')}
   var dealt=Math.min(S.hp,dmg);
-  S.hp=Math.max(0,S.hp-dmg);S.score+=dealt;setHp();
+  S.hp=Math.max(0,S.hp-dmg);S.score+=dealt;setHp();waShowPoints(dealt,'攻撃ポイント','attack');
   fx.appendChild(f);updateInfo();
   await sleep(650);
   allyAttackNodes.forEach(function(node){node.remove()});
   mon.classList.remove('hit','laugh');monsterPose('idle');f.remove();
 }
 async function victory(){
+  // Fixed clear reward, awarded only when this victory sequence starts.
+  var victoryPts=500;S.score+=victoryPts;updateInfo();waShowPoints(victoryPts,'モンスター撃破！','victory');
+
   var fx=$('#fx'),mon=$('#mon'),br=battle.getBoundingClientRect(),mr=mon.getBoundingClientRect();
   var cx=mr.left-br.left+mr.width/2,cy=mr.top-br.top+mr.height/2,i;
   progSet(S.mode,S.stage+1);
