@@ -106,6 +106,68 @@
   const prefKey = suffix => 'wa-guild-v2:' + user.id + ':' + suffix;
   const getPref = suffix => { try { return localStorage.getItem(prefKey(suffix)) || ''; } catch (_) { return ''; } };
   const setPref = (suffix,value) => { try { localStorage.setItem(prefKey(suffix),value); } catch (_) {} };
+  // Lightweight companion: one feeding opportunity per completed daily run (JST day).
+  const companionNames=['ライボルトン','アクアフィン','アースゴーレム','モンスター4','モンスター5','モンスター6','モンスター7','モンスター8','モンスター9','モンスター10'];
+  const todayJST=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const getCompanion=()=>Math.max(0,Math.min(9,Number(getPref('companion')||0)));
+  const companionImage=i=>'assets/monster-'+String(i+1).padStart(2,'0')+'.webp';
+  const hasMeal=()=>getPref('meal-earned')===todayJST();
+  const hasFed=()=>getPref('meal-fed')===todayJST();
+  const companionCss=document.createElement('style');
+  companionCss.textContent=`
+    #wa-companion{position:fixed;right:10px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100005;width:100px;text-align:center;pointer-events:none;font:700 12px system-ui,sans-serif}
+    #wa-companion button{border:0;background:transparent;padding:0;cursor:pointer;pointer-events:auto;position:relative;filter:drop-shadow(0 4px 5px #0005)}
+    #wa-companion img{width:94px;height:94px;object-fit:contain;animation:wa-bob 2.4s ease-in-out infinite}
+    #wa-companion .wa-comp-bubble{background:#fff;color:#19283c;border:2px solid #e6b85a;border-radius:14px;padding:5px 7px;margin:0 auto 2px;max-width:125px;box-shadow:0 2px 8px #0003}
+    #wa-companion.wa-happy img{animation:wa-cheer .55s ease-in-out 3}
+    #wa-companion.wa-happy .wa-comp-bubble{color:#d33b66}
+    @keyframes wa-bob{50%{transform:translateY(-7px)}}@keyframes wa-cheer{50%{transform:translateY(-17px) rotate(8deg) scale(1.1)}}
+    #wa-companion-modal{position:fixed;inset:0;z-index:100010;background:#071426c9;display:flex;align-items:center;justify-content:center;padding:20px;font:16px system-ui,sans-serif}
+    #wa-companion-modal[hidden]{display:none!important}
+    .wa-comp-dialog{background:#1c304d;color:white;border:1px solid #6385b1;border-radius:20px;padding:22px;width:min(420px,100%);text-align:center;box-shadow:0 18px 60px #0009}
+    .wa-comp-dialog img{width:160px;height:160px;object-fit:contain}
+    .wa-comp-dialog button{background:#e5ac40;color:#14243a;border:0;border-radius:12px;padding:12px 18px;font:800 16px system-ui,sans-serif;margin:6px;cursor:pointer}
+    .wa-comp-dialog button.secondary{background:#344e70;color:white}
+    .wa-comp-picker{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:14px 0}
+    .wa-comp-picker button{background:#273f60;padding:5px;margin:0;border:2px solid transparent;border-radius:12px}
+    .wa-comp-picker button.selected{border-color:#ffd16a}
+    .wa-comp-picker img{width:100%;height:auto;aspect-ratio:1;object-fit:contain}
+    @media(max-width:600px){#wa-companion{width:72px;right:4px;bottom:calc(4px + env(safe-area-inset-bottom,0px))}#wa-companion img{width:68px;height:68px}#wa-companion .wa-comp-bubble{font-size:10px;padding:3px 5px}#wa-online:not([hidden])~#wa-companion{bottom:calc(4px + env(safe-area-inset-bottom,0px))}}
+  `;
+  document.head.append(companionCss);
+  const companionBox=document.createElement('div');companionBox.id='wa-companion';
+  companionBox.innerHTML='<div class="wa-comp-bubble" id="wa-comp-speech">がんばれ！</div><button id="wa-comp-tap" aria-label="相棒をひらく"><img id="wa-comp-img" alt="応援する相棒"></button>';
+  document.body.append(companionBox);
+  const companionModal=document.createElement('div');companionModal.id='wa-companion-modal';companionModal.hidden=true;document.body.append(companionModal);
+  function refreshCompanion(){
+    const n=getCompanion();$('wa-comp-img').src=companionImage(n);
+    $('wa-comp-img').alt=companionNames[n];
+    $('wa-comp-speech').textContent=hasMeal()&&!hasFed()?'🍎 ごはん！':hasFed()?'ありがとう♥':'がんばれ！';
+  }
+  function closeCompanion(){companionModal.hidden=true;companionModal.innerHTML='';}
+  function openCompanionPicker(){
+    const n=getCompanion();
+    companionModal.hidden=false;
+    companionModal.innerHTML=`<div class="wa-comp-dialog" role="dialog" aria-modal="true" aria-label="相棒を選ぶ"><h2>🐾 相棒を選ぼう！</h2><p>好きなモンスターを選んでね</p><div class="wa-comp-picker">${companionNames.map((name,i)=>`<button data-comp="${i}" class="${i===n?'selected':''}" aria-label="${name}" title="${name}"><img src="${companionImage(i)}" alt="${name}"></button>`).join('')}</div><p id="wa-comp-name">${companionNames[n]}</p><button id="wa-comp-close" class="secondary">とじる</button></div>`;
+    companionModal.querySelectorAll('[data-comp]').forEach(b=>b.onclick=()=>{setPref('companion',b.dataset.comp);refreshCompanion();openCompanionPicker();});
+    $('wa-comp-close').onclick=closeCompanion;
+  }
+  function openMeal(){
+    const n=getCompanion(),ready=hasMeal()&&!hasFed();
+    companionModal.hidden=false;
+    companionModal.innerHTML=`<div class="wa-comp-dialog" role="dialog" aria-modal="true" aria-label="相棒のごはん"><h2>🍎 今日のごはん</h2><img src="${companionImage(n)}" alt="${companionNames[n]}"><p id="wa-meal-message">${hasFed()?'おいしかった！ また明日ね♥':ready?'今日のオンライン対戦クリア！ ごはんをあげよう！':'今日のオンライン対戦を10問終えると、ごはんをあげられるよ！'}</p><p>ごはんをあげた回数：<b>${Number(getPref('meal-count')||0)}</b>回</p>${ready?'<button id="wa-feed">🍎 ごはんをあげる</button>':''}<button id="wa-meal-close" class="secondary">とじる</button><button id="wa-pick-from-meal" class="secondary">相棒を変更</button></div>`;
+    $('wa-meal-close').onclick=closeCompanion;
+    $('wa-pick-from-meal').onclick=openCompanionPicker;
+    if(ready)$('wa-feed').onclick=()=>{
+      if(!hasMeal()||hasFed())return;
+      setPref('meal-fed',todayJST());setPref('meal-count',String(Number(getPref('meal-count')||0)+1));
+      companionBox.classList.remove('wa-happy');void companionBox.offsetWidth;companionBox.classList.add('wa-happy');
+      $('wa-meal-message').textContent='もぐもぐ… おいしい！ ありがとう！ 💛✨';
+      $('wa-feed').remove();refreshCompanion();
+    };
+  }
+  $('wa-comp-tap').onclick=openMeal;
+  refreshCompanion();
   let firstHome = true;
   // Normal-game results are client-reported and therefore marked unverified.
   window.WAOnline = {
@@ -144,10 +206,11 @@
       content.innerHTML=`
       <section class="wa-guild-hero"><p class="eyebrow">WORD ARROW · ADVENTURER GUILD</p><h2>🏹 冒険者ギルド</h2><p>仲間と学んで、モンスターに挑もう！</p><img src="special-ally-portrait.webp" alt="冒険を応援する白いキツネ" onerror="this.style.display='none'"></section>
       <section class="wa-guild-panel"><h3>🦊 冒険者登録</h3><p class="hint">ランキングに表示する名前を決めよう</p><label for="wa-nick">ニックネーム（20文字まで）</label><input id="wa-nick" maxlength="20" placeholder="例：たろう"><button type="button" id="wa-profile" class="wa-register">冒険者として登録・変更</button><p id="wa-profile-result" role="status" aria-live="polite" class="hint"></p><p class="hint" style="margin-top:12px">このブラウザの匿名アカウントに名前と所属ギルドを保存します。次回は自動で開きます。ブラウザデータ削除や端末変更では引き継げません。</p></section>
-      <section class="wa-guild-panel"><h3>🛡️ 所属ギルド</h3><p class="hint">仲間のいるギルドを選んで冒険を始めよう</p><div class="wa-guild-members" id="wa-groups">${groups.length?groups.map(g=>`<div class="group"><div><b>${esc(g.name)}</b><div class="hint">${Number(g.member_count)}人が参加中</div></div><button class="wa-enter" data-open="${esc(g.id)}">ギルドに入る</button></div>`).join(''):'<p class="hint">まだギルドがありません。下から作成できます。</p>'}</div></section>
+      <section class="wa-guild-panel"><h3>🐾 マイ相棒</h3><p class="hint">右下でいつも応援してくれるよ！</p><button id="wa-choose-companion">相棒を選ぶ・変更する</button></section><section class="wa-guild-panel"><h3>🛡️ 所属ギルド</h3><p class="hint">仲間のいるギルドを選んで冒険を始めよう</p><div class="wa-guild-members" id="wa-groups">${groups.length?groups.map(g=>`<div class="group"><div><b>${esc(g.name)}</b><div class="hint">${Number(g.member_count)}人が参加中</div></div><button class="wa-enter" data-open="${esc(g.id)}">ギルドに入る</button></div>`).join(''):'<p class="hint">まだギルドがありません。下から作成できます。</p>'}</div></section>
       ${pending?'<section class="wa-guild-panel wa-pending"><h3>✉️ 招待状が届いています</h3><p class="hint">招待されたギルドに参加できます。</p><button id="wa-join">このギルドに参加</button></section>':''}
       <section class="wa-guild-panel"><h3>✚ 新しいギルドを作る</h3><label for="wa-group-name">ギルド名</label><input id="wa-group-name" maxlength="40" placeholder="例：5年1組"><button id="wa-create" class="wa-create">ギルドを作成</button></section>
       <button id="wa-play" class="wa-solo">ひとりで冒険する <span style="display:block;font-size:12px;font-weight:400;color:#bdd0e4;margin-top:4px">グループなしで通常ゲームをプレイ</span></button><p class="hint">ギルドを開いて開始した通常ゲームの得点は、終了時にオンライン共有されます。</p>`;
+      $('wa-choose-companion').onclick=openCompanionPicker;
       $('wa-nick').value=getPref('nickname');
       $('wa-profile').onclick=async()=>{
         const btn=$('wa-profile'), result=$('wa-profile-result');
@@ -181,11 +244,13 @@
       const invite=location.origin+location.pathname+'?group='+encodeURIComponent(g.invite_code);
       content.innerHTML=`<h2>${esc(g.name)}</h2><p>${members.length}人が参加</p><ul>${members.map(m=>`<li>${esc(m.avatar)} ${esc(m.nickname)}</li>`).join('')}</ul>
       <div class="wa-invite-panel"><p class="wa-invite-label">🔗 友達を招待</p><div class="wa-invite-row"><input id="wa-invite" aria-label="招待URL" readonly value="${esc(invite)}"><button id="wa-copy" aria-label="招待URLをコピー">コピー</button></div><p class="hint" style="margin:8px 0 0">リンクを送ると、このグループに参加できます。</p></div>
-      <button id="wa-start" class="wa-primary-play">🎮 通常ゲームを開始</button>
+      <button id="wa-start" class="wa-primary-play">🎮 通常ゲームを開始</button><div class="wa-guild-panel"><h3>🐾 マイ相棒</h3><p class="hint">毎日オンライン対戦を10問終えると、ごはんをあげられるよ！</p><button id="wa-choose-companion">相棒を選ぶ・変更</button><button id="wa-open-meal" class="secondary">🍎 ごはんタイム</button></div>
       <section class="wa-daily-wrap"><h3>🏆 今日のオンライン対戦</h3><p class="hint">各級・各科目それぞれ1日1回。全員が同じ10問に挑戦（1問100点）。</p>
       <div class="wa-daily-grid"><div class="wa-grade-card grade5"><h4>🌱 5級チャレンジ</h4><p>基礎から挑戦したい人向け</p><button id="wa-daily-e5">英検5級に挑戦</button><button id="wa-daily-k5">漢検5級に挑戦</button></div>
       <div class="wa-grade-card grade4"><h4>⚡ 4級チャレンジ</h4><p>少し難しい問題に挑戦</p><button id="wa-daily-e">英検4級に挑戦</button><button id="wa-daily-k">漢検4級に挑戦</button></div></div></section>
       <h3>📊 今日のランキング</h3><div id="wa-rankings"></div><button id="wa-back" class="secondary">✏️ ニックネーム・ギルドを変更</button><p class="hint">通常ゲームの最高得点もオンライン共有されます（自己申告スコア・未検証）。</p>`;
+      $('wa-choose-companion').onclick=openCompanionPicker;
+      $('wa-open-meal').onclick=openMeal;
       $('wa-copy').onclick=async()=>{try{await navigator.clipboard.writeText(invite);status.textContent='招待URLをコピーしました'}catch(e){$('wa-invite').select();status.textContent='URLを選択しました。コピーしてください'}};
       $('wa-start').onclick=()=>{panel.hidden=true};
       $('wa-daily-e').onclick=()=>startDaily(id,'eiken4');
@@ -363,7 +428,10 @@
     content.innerHTML='<h2>採点中…</h2>';
     try{
       const result=check(await client.rpc('wa_finish_daily',{p_run_id:dailyRun,p_answers:dailyAnswers}));
-      content.innerHTML=`<h2>結果発表！</h2><p>通常クイズ：<b>${result.score} pt</b></p><p>ミニパズル：<b>+${dailyMiniPoints} pt</b></p><p style="font-size:32px;font-weight:bold">合計 ${Number(result.score)+dailyMiniPoints} Point!</p><p>${result.correct} / ${result.total} 問正解</p><p class="hint">※現在ランキングに保存されるのは通常クイズの ${result.score} pt のみです。ミニパズル点の公式ランキング反映にはSupabaseの採点関数更新が必要です。</p><button id="wa-return">グループに戻る</button>`;
+      // Award one feeding opportunity only after server-confirmed completion.
+      if(!hasMeal()&&!hasFed()){setPref('meal-earned',todayJST());}refreshCompanion();
+      content.innerHTML=`<h2>結果発表！</h2><p>通常クイズ：<b>${result.score} pt</b></p><p>ミニパズル：<b>+${dailyMiniPoints} pt</b></p><p style="font-size:32px;font-weight:bold">合計 ${Number(result.score)+dailyMiniPoints} Point!</p><p>${result.correct} / ${result.total} 問正解</p><p class="hint">※現在ランキングに保存されるのは通常クイズの ${result.score} pt のみです。ミニパズル点の公式ランキング反映にはSupabaseの採点関数更新が必要です。</p><button id="wa-feed-now">🍎 相棒にごはんをあげる</button><button id="wa-return">グループに戻る</button>`;
+      $('wa-feed-now').onclick=openMeal;
       $('wa-return').onclick=()=>showGroup(selected);
     }catch(e){error(e);content.innerHTML='<button id="wa-retry">再送信</button>';
       $('wa-retry').onclick=finishDaily;}
