@@ -199,6 +199,16 @@
   .battle .slot .ally-quiz .ally-hero{min-height:112px;}
   .battle .slot .ally-quiz .ally-avatar-img{height:112px;}
 }
+
+/* 2026-11-12: finishing shot remains clickable even though its row is outside #info */
+.battle .finish-row{position:relative;z-index:12;pointer-events:auto}
+.battle .finish-btn{pointer-events:auto;touch-action:manipulation;min-height:56px;width:min(100%,420px)}
+/* Distinctive 5-chain ally challenge backdrop, with legible question controls */
+.battle .slot:has(.ally-quiz){background:radial-gradient(circle at 78% 10%,#ffe49b 0%,transparent 34%),linear-gradient(145deg,#30205e,#58379a 55%,#233f86);border:3px solid #d7b768;border-radius:20px;padding:10px;box-shadow:0 0 22px #8066d955}
+.battle .slot .ally-quiz{background:linear-gradient(145deg,#fff3cb,#e6dbff 60%,#c7e9ff);border:3px solid #e2bd55;box-shadow:0 6px 20px #130c4670}
+.battle .slot .ally-quiz .ally-heading{color:#543092;text-shadow:0 1px #fff}
+.battle .slot .ally-quiz .ally-hero{background:linear-gradient(110deg,#ffffffb5,#e9dcff55);border-radius:14px;padding:8px}
+@media(max-width:650px){.battle .slot:has(.ally-quiz){width:min(100%,calc(100vw - 22px));padding:6px}.battle .slot .ally-quiz{padding:8px}}
 </style><style id="wa-learning-style">
 .wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
 .slot{position:relative}
@@ -1687,7 +1697,7 @@ function startBattle(){
   board=$('#board');slot=$('#slot');battle=$('#battle');bindSnd();
   setHp();
   newBoard();render();updateInfo();
-  $('#info').addEventListener('click',function(e){if(e.target.closest('#finish-btn'))finishEarly()});
+  battle.addEventListener('click',function(e){if(e.target.closest('#finish-btn')){e.preventDefault();finishEarly();}});
   board.addEventListener('pointerdown',onDown);
   board.addEventListener('pointermove',onMove);
   S.locked=false;
