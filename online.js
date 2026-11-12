@@ -38,6 +38,17 @@
 `;
 
   style.textContent+=`
+/* Accessible high-contrast primary action */
+.wa-online-card button.wa-primary-play{background:#d83927!important;color:#fff!important;text-shadow:0 1px 1px #842018;font-weight:900}
+.wa-online-card button.wa-primary-play:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.wa-daily-tiles{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:16px 0}
+.wa-online-card .wa-daily-tiles button{min-width:52px;min-height:58px;margin:0;background:#fff;color:#192b45;border:3px solid #91b4ed;font-size:clamp(19px,5vw,28px);font-weight:900;touch-action:manipulation}
+.wa-online-card .wa-daily-tiles button.active{background:#ffe7a0;border-color:#e6a52d;color:#17243b}
+.wa-mini-status{min-height:1.5em;text-align:center;font-weight:800;color:#ffdf87}
+.wa-mini-note{font-size:13px;color:#bdd0e4;line-height:1.6}
+@media(max-width:390px){.wa-online-card .wa-daily-tiles button{min-width:42px;min-height:50px;padding:8px}}
+`;
+  style.textContent+=`
 #wa-online{background:radial-gradient(ellipse at 50% -15%,#30527f 0%,#13233d 45%,#0b1425 100%);color:#edf4ff;padding:clamp(12px,3vw,28px) 12px}
 .wa-online-card{background:linear-gradient(145deg,#182b48,#101d32);color:#eef5ff;border:1px solid #47648a;box-shadow:0 22px 60px #030917a0;max-width:720px;padding:clamp(16px,3vw,28px);border-radius:22px}
 .wa-online-card h1{font-size:clamp(24px,5vw,32px);margin:0 0 5px;color:#fff;letter-spacing:.03em}
@@ -96,7 +107,7 @@
       check(await client.rpc('wa_submit_normal_score',payload));
     }
   };
-  let dailyRun=null, dailyAnswers=[], dailyIndex=0, dailyQuestions=[];
+  let dailyRun=null, dailyAnswers=[], dailyIndex=0, dailyQuestions=[], dailySubject="";
   try{
     let session=check(await client.auth.getSession()).session;
     if(!session)session=check(await client.auth.signInAnonymously()).session;
@@ -207,7 +218,7 @@
     try{
       const data=check(await client.rpc('wa_start_daily',{p_group_id:groupId,p_subject:subject}));
       if(data.finished){status.textContent='今日は回答済みです。明日また挑戦してください。';await showRankings(groupId);return;}
-      dailyRun=data.run_id;dailyQuestions=data.questions;dailyAnswers=[];dailyIndex=0;
+      dailyRun=data.run_id;dailyQuestions=data.questions;dailyAnswers=[];dailyIndex=0;dailySubject=subject;
       selected=groupId;renderDailyQuestion();
     }catch(e){error(e)}
   }
@@ -219,8 +230,53 @@
     q.choices.forEach((choice,i)=>{
       const btn=document.createElement('button');btn.className='secondary';btn.style.cssText='display:block;width:100%;text-align:left';
       btn.textContent=String.fromCharCode(65+i)+'. '+choice;
-      btn.onclick=()=>{dailyAnswers.push(i);dailyIndex++;renderDailyQuestion();};host.append(btn);
+      btn.onclick=()=>{
+        dailyAnswers.push(i);dailyIndex++;
+        if(dailyIndex<dailyQuestions.length && dailyIndex%3===0) renderDailyMiniPuzzle();
+        else renderDailyQuestion();
+      };host.append(btn);
     });
+  }
+  // Short client-side intermission. It never changes the 10 server-scored answers.
+  // No extra ranking points: all players still compete on the same 1000-point scale.
+  function renderDailyMiniPuzzle(){
+    const english=dailySubject.startsWith('eiken');
+    const previous=dailyQuestions[dailyIndex-1];
+    const prompt=String(previous?.prompt||'');
+    const quoted=prompt.match(/[「『“"]([^」』”"]{3,8})[」』”"]/);
+    let target=english ? (quoted?.[1]||'').toLowerCase() : (quoted?.[1]||'');
+    if(english && !/^[a-z]{3,8}$/.test(target)) target=['apple','school','friend'][Math.floor(dailyIndex/3)-1]||'apple';
+    if(!english || target.length<3) target=['ことば','まなぶ','かんじ'][Math.floor(dailyIndex/3)-1]||'ことば';
+    const correct=Array.from(target);
+    let tiles=[...correct];
+    // Rotate then reverse; retry deterministically if characters happen to match.
+    tiles=tiles.slice(1).concat(tiles[0]).reverse();
+    if(tiles.join('')===target)tiles=tiles.reverse();
+    if(tiles.join('')===target && tiles.length>1)[tiles[0],tiles[1]]=[tiles[1],tiles[0]];
+    let picked=-1;
+    content.innerHTML=`<h2>🧩 ちょこっとパズル！</h2><p>第 ${dailyIndex} 問クリア！ 次の問題の前に文字を並べ替えよう。</p><p class="hint">2つの文字を順番にタップして交換します。</p><div class="wa-daily-tiles" id="wa-mini-tiles"></div><p class="wa-mini-status" id="wa-mini-status" aria-live="polite"></p><button id="wa-mini-check">できた！</button><button class="secondary" id="wa-mini-skip">スキップして次へ</button><p class="wa-mini-note">このミニパズルは息抜きです。オンライン対戦の得点・順位には影響しません。</p>`;
+    const tileHost=$('wa-mini-tiles');
+    function draw(){
+      tileHost.replaceChildren();
+      tiles.forEach((letter,i)=>{
+        const b=document.createElement('button');b.type='button';b.textContent=letter;
+        b.setAttribute('aria-label',`${i+1}番目 ${letter}`);
+        if(i===picked)b.classList.add('active');
+        b.onclick=()=>{
+          if(picked<0){picked=i;draw();return;}
+          [tiles[picked],tiles[i]]=[tiles[i],tiles[picked]];picked=-1;
+          $('wa-mini-status').textContent='';draw();
+        };tileHost.append(b);
+      });
+    }
+    draw();
+    $('wa-mini-check').onclick=()=>{
+      if(tiles.join('')===target){$('wa-mini-status').textContent='✨ せいかい！ 次の問題へ！';
+        $('wa-mini-check').disabled=true;
+        const next=document.createElement('button');next.textContent='次の問題へ';next.onclick=renderDailyQuestion;content.append(next);
+      }else $('wa-mini-status').textContent='もう少し！ 文字を入れ替えてみよう';
+    };
+    $('wa-mini-skip').onclick=renderDailyQuestion;
   }
   async function finishDaily(){
     content.innerHTML='<h2>採点中…</h2>';
