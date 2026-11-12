@@ -172,6 +172,33 @@
 .wa-spell-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.wa-spell-actions button{flex:1;min-width:100px;max-width:250px;padding:13px;border-radius:12px;border:2px solid #244766;font-size:17px;font-weight:800;background:#eaf3ff;color:#18375e}
 .wa-spell-actions .wa-spell-check{background:#d73421;color:#fff;border-color:#982919}.wa-spell-result{font-weight:900;font-size:clamp(24px,6vw,44px);color:#e18b00;margin:12px 0}.wa-spell-help{color:#52657a;font-size:13px}
 .wa-qr-invite{padding:14px;text-align:center;border:1px solid #d2dfed;border-radius:14px;margin:12px 0;background:#fff}.wa-qr-invite img{width:200px;max-width:85%;height:auto;image-rendering:pixelated}.wa-qr-invite p{font-size:13px;overflow-wrap:anywhere}
+
+/* 2026-11-12: mobile vertical-space utilization and large five-chain companion */
+@media (max-width:699px){
+  .battle{min-height:calc(100dvh - 130px);align-content:start;grid-template-rows:auto auto auto auto;gap:clamp(6px,1.2dvh,13px);}
+  .battle .arena{gap:3px;}
+  .battle .mon.illustrated-mon{width:min(190px,27dvh,51vw)!important;max-height:27dvh;}
+  .battle.final-boss .illustrated-mon{width:min(210px,29dvh,56vw)!important;max-height:29dvh;}
+  .battle .mname{font-size:clamp(16px,4vw,20px);}
+  .battle .hp{height:19px;}
+  .battle .slot:has(.quiz){width:100%;}
+  .battle .slot:has(.quiz) .quiz{width:100%;box-sizing:border-box;}
+  .battle .foot{margin-top:2px;}
+  .battle .slot .ally-quiz{position:relative;padding:12px;gap:10px;overflow:hidden;}
+  .battle .slot .ally-quiz .ally-hero{position:relative;min-height:142px;align-items:center;justify-content:flex-start;padding-right:42%;}
+  .battle .slot .ally-quiz .ally-avatar-img{position:absolute;right:0;top:50%;transform:translateY(-50%);width:min(43%,170px);height:145px;object-fit:contain;object-position:center;border-radius:0;box-shadow:none;filter:drop-shadow(0 4px 10px #6756a977);z-index:2;}
+  .battle .slot .ally-quiz .ally-heading{font-size:clamp(19px,5vw,24px);line-height:1.25;}
+  .battle .slot .ally-quiz .ally-description{font-size:12px;line-height:1.4;}
+  .battle .ally-attack-overlay{width:clamp(170px,49vw,250px);}
+  .battle .ally-attack-burst{width:clamp(190px,54vw,270px);}
+}
+@media (max-width:699px) and (max-height:740px){
+  .battle{min-height:0;gap:5px;}
+  .battle .mon.illustrated-mon{width:min(155px,22dvh,43vw)!important;max-height:22dvh;}
+  .battle.final-boss .illustrated-mon{width:min(170px,23dvh,46vw)!important;max-height:23dvh;}
+  .battle .slot .ally-quiz .ally-hero{min-height:112px;}
+  .battle .slot .ally-quiz .ally-avatar-img{height:112px;}
+}
 </style><style id="wa-learning-style">
 .wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
 .slot{position:relative}
@@ -1837,7 +1864,7 @@ async function summonChainAlly(){
   board.hidden=true;$('#pv').hidden=true;
   var host=document.createElement('div');host.className='ally-quiz';slot.appendChild(host);
   var hero=document.createElement('div');hero.className='ally-hero';
-  hero.innerHTML='<img class="ally-avatar-img" src="special-ally-portrait.webp" alt="白いキツネの特別な味方" width="108" height="112"><div><div class="ally-heading">5連鎖！ 特別な味方が登場</div><div class="ally-description">今のステージとは別の問題に1回だけ挑戦！ 正解で次の攻撃が2倍</div></div>';
+  hero.innerHTML='<img class="ally-avatar-img" src="special-ally-portrait.webp" alt="白いキツネの特別な味方" width="170" height="170"><div><div class="ally-heading">5連鎖！ 特別な味方が登場</div><div class="ally-description">今のステージとは別の問題に1回だけ挑戦！ 正解で次の攻撃が2倍</div></div>';
   host.appendChild(hero);
   var quizHost=document.createElement('div');host.appendChild(quizHost);
   flash('✨ 5連鎖！ 助っ人が来た！');
