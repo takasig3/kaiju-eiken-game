@@ -110,14 +110,18 @@
   const companionNames=['ライボルトン','アクアフィン','アースゴーレム','モンスター4','モンスター5','モンスター6','モンスター7','モンスター8','モンスター9','モンスター10'];
   const todayJST=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
   const getCompanion=()=>Math.max(0,Math.min(9,Number(getPref('companion')||0)));
+  const companionUnlockDays=[0,0,0,3,7,14,21,30,45,60];
+  const feedingDays=()=>Math.max(0,Number(getPref('meal-count')||0));
+  const companionUnlocked=i=>feedingDays()>=companionUnlockDays[i];
+  const nextCompanionUnlock=()=>companionUnlockDays.find((days,i)=>i>=3&&!companionUnlocked(i));
   const companionImage=i=>'assets/monster-'+String(i+1).padStart(2,'0')+'.webp';
   const hasMeal=()=>getPref('meal-earned')===todayJST();
   const hasFed=()=>getPref('meal-fed')===todayJST();
   const companionCss=document.createElement('style');
   companionCss.textContent=`
-    #wa-companion{position:fixed;right:10px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100005;width:100px;text-align:center;pointer-events:none;font:700 12px system-ui,sans-serif}
+    #wa-companion{position:fixed;right:10px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100005;width:142px;text-align:center;pointer-events:none;font:700 12px system-ui,sans-serif}
     #wa-companion button{border:0;background:transparent;padding:0;cursor:pointer;pointer-events:auto;position:relative;filter:drop-shadow(0 4px 5px #0005)}
-    #wa-companion img{width:94px;height:94px;object-fit:contain;animation:wa-bob 2.4s ease-in-out infinite}
+    #wa-companion img{width:134px;height:134px;object-fit:contain;animation:wa-bob 2.4s ease-in-out infinite}
     #wa-companion .wa-comp-bubble{background:#fff;color:#19283c;border:2px solid #e6b85a;border-radius:14px;padding:5px 7px;margin:0 auto 2px;max-width:125px;box-shadow:0 2px 8px #0003}
     #wa-companion.wa-happy img{animation:wa-cheer .55s ease-in-out 3}
     #wa-companion.wa-happy .wa-comp-bubble{color:#d33b66}
@@ -131,8 +135,11 @@
     .wa-comp-picker{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:14px 0}
     .wa-comp-picker button{background:#273f60;padding:5px;margin:0;border:2px solid transparent;border-radius:12px}
     .wa-comp-picker button.selected{border-color:#ffd16a}
+    .wa-comp-picker button.locked{opacity:.52;filter:grayscale(1);cursor:not-allowed}
+    .wa-comp-picker button.locked img{filter:brightness(.55)}
+    .wa-comp-picker .wa-lock{display:block;color:#fff;font-size:11px;font-weight:800}
     .wa-comp-picker img{width:100%;height:auto;aspect-ratio:1;object-fit:contain}
-    @media(max-width:600px){#wa-companion{width:72px;right:4px;bottom:calc(4px + env(safe-area-inset-bottom,0px))}#wa-companion img{width:68px;height:68px}#wa-companion .wa-comp-bubble{font-size:10px;padding:3px 5px}#wa-online:not([hidden])~#wa-companion{bottom:calc(4px + env(safe-area-inset-bottom,0px))}}
+    @media(max-width:600px){#wa-companion{width:110px;right:4px;bottom:calc(4px + env(safe-area-inset-bottom,0px))}#wa-companion img{width:105px;height:105px}#wa-companion .wa-comp-bubble{font-size:10px;padding:3px 5px}#wa-online:not([hidden])~#wa-companion{bottom:calc(4px + env(safe-area-inset-bottom,0px))}}
   `;
   document.head.append(companionCss);
   const companionBox=document.createElement('div');companionBox.id='wa-companion';
@@ -146,10 +153,17 @@
   }
   function closeCompanion(){companionModal.hidden=true;companionModal.innerHTML='';}
   function openCompanionPicker(){
-    const n=getCompanion();
+    let n=getCompanion();
+    if(!companionUnlocked(n)){n=0;setPref('companion','0');refreshCompanion();}
+    const days=feedingDays();
+    const next=nextCompanionUnlock();
     companionModal.hidden=false;
-    companionModal.innerHTML=`<div class="wa-comp-dialog" role="dialog" aria-modal="true" aria-label="相棒を選ぶ"><h2>🐾 相棒を選ぼう！</h2><p>好きなモンスターを選んでね</p><div class="wa-comp-picker">${companionNames.map((name,i)=>`<button data-comp="${i}" class="${i===n?'selected':''}" aria-label="${name}" title="${name}"><img src="${companionImage(i)}" alt="${name}"></button>`).join('')}</div><p id="wa-comp-name">${companionNames[n]}</p><button id="wa-comp-close" class="secondary">とじる</button></div>`;
-    companionModal.querySelectorAll('[data-comp]').forEach(b=>b.onclick=()=>{setPref('companion',b.dataset.comp);refreshCompanion();openCompanionPicker();});
+    companionModal.innerHTML=`<div class="wa-comp-dialog" role="dialog" aria-modal="true" aria-label="相棒を選ぶ"><h2>🐾 相棒を選ぼう！</h2><p>最初の3体から選べるよ。ごはんをあげて新しい仲間を増やそう！</p><p>🍎 ごはんをあげた日：<b>${days}日</b>${next!==undefined?` ／ 次の相棒まであと${next-days}日`:' ／ 全員解放！'}</p><div class="wa-comp-picker">${companionNames.map((name,i)=>`<button data-comp="${i}" class="${i===n?'selected':''} ${companionUnlocked(i)?'':'locked'}" aria-label="${name}${companionUnlocked(i)?'':` ${companionUnlockDays[i]}日で解放`}" title="${name}${companionUnlocked(i)?'':`：ごはん${companionUnlockDays[i]}日で解放`}" ${companionUnlocked(i)?'':'disabled'}><img src="${companionImage(i)}" alt="${name}">${companionUnlocked(i)?'':`<span class="wa-lock">🔒 ${companionUnlockDays[i]}日</span>`}</button>`).join('')}</div><p id="wa-comp-name">${companionNames[n]}</p><button id="wa-comp-close" class="secondary">とじる</button></div>`;
+    companionModal.querySelectorAll('[data-comp]').forEach(b=>b.onclick=()=>{
+      const i=Number(b.dataset.comp);
+      if(!companionUnlocked(i))return;
+      setPref('companion',String(i));refreshCompanion();openCompanionPicker();
+    });
     $('wa-comp-close').onclick=closeCompanion;
   }
   function openMeal(){
@@ -160,9 +174,11 @@
     $('wa-pick-from-meal').onclick=openCompanionPicker;
     if(ready)$('wa-feed').onclick=()=>{
       if(!hasMeal()||hasFed())return;
-      setPref('meal-fed',todayJST());setPref('meal-count',String(Number(getPref('meal-count')||0)+1));
+      const oldDays=feedingDays();
+      setPref('meal-fed',todayJST());setPref('meal-count',String(oldDays+1));
+      const newFriend=companionUnlockDays.findIndex((d,i)=>i>=3&&d===oldDays+1);
       companionBox.classList.remove('wa-happy');void companionBox.offsetWidth;companionBox.classList.add('wa-happy');
-      $('wa-meal-message').textContent='もぐもぐ… おいしい！ ありがとう！ 💛✨';
+      $('wa-meal-message').textContent='もぐもぐ… おいしい！ ありがとう！ 💛✨'+(newFriend>=0?' 🎉 新しい相棒「'+companionNames[newFriend]+'」が仲間になった！':'');
       $('wa-feed').remove();refreshCompanion();
     };
   }
