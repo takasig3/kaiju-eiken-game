@@ -47,7 +47,7 @@
 .wa-mini-prompt{text-align:center;color:#fff;font-size:clamp(18px,4vw,24px)}.wa-daily-tiles button{user-select:none;-webkit-user-select:none;touch-action:none;cursor:grab}.wa-daily-tiles button.dragging{opacity:.65;transform:scale(1.08)}.wa-mini-status{min-height:1.5em;text-align:center;font-weight:800;color:#ffdf87}
 .wa-mini-note{font-size:13px;color:#bdd0e4;line-height:1.6}
 @media(max-width:390px){.wa-online-card .wa-daily-tiles button{min-width:42px;min-height:50px;padding:8px}}
-.wa-mini-timer{text-align:center;font-size:clamp(30px,8vw,48px);font-weight:900;color:#ffdb70;margin:12px 0 3px;font-variant-numeric:tabular-nums}.wa-mini-timer.urgent{color:#ff857b}.wa-mini-bonus{text-align:center;font-size:17px;font-weight:800;color:#c9e4ff}.wa-mini-status{font-size:clamp(19px,5vw,27px);color:#ffdf87}
+.wa-kanji-combine{display:flex;align-items:center;justify-content:center;gap:12px;margin:18px auto 8px}.wa-kanji-part{display:grid;place-items:center;min-width:76px;min-height:82px;padding:5px 12px;border-radius:15px;background:#fff;color:#17243b;border:3px solid #91b4ed;font-size:clamp(34px,9vw,54px);font-weight:900}.wa-kanji-part.unknown{border-style:dashed;color:#6782a5;background:#213654}.wa-kanji-plus{font-size:30px;font-weight:900;color:#ffd56b}.wa-kanji-result{margin:8px auto;text-align:center;color:#ffdf87;font-size:clamp(23px,6vw,32px);font-weight:900}@media(max-width:390px){.wa-kanji-part{min-width:60px;min-height:70px}}.wa-mini-timer{text-align:center;font-size:clamp(30px,8vw,48px);font-weight:900;color:#ffdb70;margin:12px 0 3px;font-variant-numeric:tabular-nums}.wa-mini-timer.urgent{color:#ff857b}.wa-mini-bonus{text-align:center;font-size:17px;font-weight:800;color:#c9e4ff}.wa-mini-status{font-size:clamp(19px,5vw,27px);color:#ffdf87}
 `;
   style.textContent+=`
 #wa-online{background:radial-gradient(ellipse at 50% -15%,#30527f 0%,#13233d 45%,#0b1425 100%);color:#edf4ff;padding:clamp(12px,3vw,28px) 12px}
@@ -248,14 +248,14 @@
       [{word:'friend',hint:'友だち'},{word:'weather',hint:'天気'},{word:'library',hint:'図書館'}]:
       [{word:'apple',hint:'りんご'},{word:'school',hint:'学校'},{word:'pencil',hint:'えんぴつ'}];
     const kanjiSets=dailySubject==='kanken4'?
-      [{left:'言',choices:['寺','青','売'],answer:'売',result:'読',hint:'「読む」の「読」'},
-       {left:'氵',choices:['青','毎','可'],answer:'青',result:'清',hint:'「清い」の「清」'},
-       {left:'木',choices:['目','交','各'],answer:'交',result:'校',hint:'「学校」の「校」'}]:
-      [{left:'氵',choices:['毎','青','可'],answer:'毎',result:'海',hint:'「海」の右側'},
-       {left:'日',choices:['月','青','寺'],answer:'青',result:'晴',hint:'「晴れ」の右側'},
-       {left:'木',choices:['交','目','白'],answer:'交',result:'校',hint:'「学校」の「校」'}];
+      [{left:'言',choices:['寺','青','売'],answer:'売',result:'読'},
+       {left:'氵',choices:['青','毎','可'],answer:'青',result:'清'},
+       {left:'木',choices:['目','交','各'],answer:'交',result:'校'}]:
+      [{left:'氵',choices:['毎','青','可'],answer:'毎',result:'海'},
+       {left:'日',choices:['月','青','寺'],answer:'青',result:'晴'},
+       {left:'木',choices:['交','目','白'],answer:'交',result:'校'}];
     // Fix puzzle data explicitly rather than constructing invalid characters.
-    if(!english && dailySubject==='kanken4' && round===0){kanjiSets[0]={left:'言',choices:['売','青','寺'],answer:'売',result:'読',hint:'「読む」の右側'};}
+    if(!english && dailySubject==='kanken4' && round===0){kanjiSets[0]={left:'言',choices:['売','青','寺'],answer:'売',result:'読'};}
     const entry=english?englishSets[round]:kanjiSets[round];
     const target=english?entry.word:'';
     let tiles=english?Array.from(target):[];
@@ -263,9 +263,10 @@
     let picked=-1,finished=false,dragFrom=-1,chosen='';
     const startAt=performance.now(),limitMs=30000;
     const bonusFor=(elapsed)=>elapsed<=5000?300:elapsed<=10000?250:elapsed<=15000?200:elapsed<=20000?150:elapsed<=30000?100:0;
-    content.innerHTML=`<h2>🧩 ${english?'スペル並べ替え':'漢字合体'}チャレンジ！</h2><p>第 ${dailyIndex} 問クリア！ ${english?'1文字ずつ指で動かして正しい順番にしよう。':'正しい漢字のパーツを選ぼう。'}</p><div class="wa-mini-timer" id="wa-mini-timer" role="timer">残り 30.0 秒</div><div class="wa-mini-bonus" id="wa-mini-bonus">最速クリアで +300 Point!</div><h3 class="wa-mini-prompt" id="wa-mini-prompt"></h3><div class="wa-daily-tiles" id="wa-mini-tiles"></div><p class="wa-mini-status" id="wa-mini-status" aria-live="polite"></p><button id="wa-mini-check">できた！</button><button class="secondary" id="wa-mini-skip">スキップして次へ</button><p class="wa-mini-note">ボーナスは画面上の合計に加算。公式ランキングへの反映にはサーバー側の採点変更が必要です。</p>`;
+    content.innerHTML=`<h2>🧩 ${english?'スペル並べ替え':'漢字合体'}チャレンジ！</h2><p>第 ${dailyIndex} 問クリア！ ${english?'1文字ずつ指で動かして正しい順番にしよう。':'正しい漢字のパーツを選ぼう。'}</p><div class="wa-mini-timer" id="wa-mini-timer" role="timer">残り 30.0 秒</div><div class="wa-mini-bonus" id="wa-mini-bonus">最速クリアで +300 Point!</div><h3 class="wa-mini-prompt" id="wa-mini-prompt"></h3><div id="wa-kanji-combine" class="wa-kanji-combine" hidden><span class="wa-kanji-part" id="wa-kanji-left"></span><span class="wa-kanji-plus">＋</span><span class="wa-kanji-part unknown" id="wa-kanji-right">？</span></div><div class="wa-daily-tiles" id="wa-mini-tiles"></div><p class="wa-mini-status" id="wa-mini-status" aria-live="polite"></p><button id="wa-mini-check">できた！</button><button class="secondary" id="wa-mini-skip">スキップして次へ</button><p class="wa-mini-note">ボーナスは画面上の合計に加算。公式ランキングへの反映にはサーバー側の採点変更が必要です。</p>`;
     const tileHost=$('wa-mini-tiles'),timerHost=$('wa-mini-timer');
-    $('wa-mini-prompt').textContent=english?`「${entry.hint}」を英語で完成！`:`${entry.hint}： ${entry.left} ＋ ？ ＝ ${entry.result}`;
+    $('wa-mini-prompt').textContent=english?`「${entry.hint}」を英語で完成！`:'どのパーツを合わせると、漢字が完成するかな？';
+    if(!english){$('wa-kanji-combine').hidden=false;$('wa-kanji-left').textContent=entry.left;}
     function finishPuzzle(points,elapsed,reason){
       if(finished)return;
       finished=true;stopMiniTimer();dailyMiniPoints+=points;
@@ -275,6 +276,7 @@
       timerHost.textContent=reason==='correct'?'クリア！':reason==='timeout'?'時間切れ！':'スキップ';
       $('wa-mini-status').textContent=points?`✨ +${points} Point!  ミニパズル合計 ${dailyMiniPoints} pt`:'ボーナス 0 pt';
       $('wa-mini-bonus').textContent=reason==='correct'?`解答時間 ${(elapsed/1000).toFixed(1)}秒`:`正解：${english?target:entry.left+' ＋ '+entry.answer+' ＝ '+entry.result}`;
+      if(!english){$('wa-kanji-right').textContent=entry.answer;$('wa-kanji-right').classList.remove('unknown');$('wa-mini-prompt').textContent=`完成した漢字：${entry.result}`;}
       const next=document.createElement('button');next.textContent='次の問題へ';next.onclick=renderDailyQuestion;content.append(next);
     }
     function tick(){if(finished)return;const left=Math.max(0,limitMs-(performance.now()-startAt));timerHost.textContent=`残り ${(left/1000).toFixed(1)} 秒`;timerHost.classList.toggle('urgent',left<=10000);if(left<=0)finishPuzzle(0,limitMs,'timeout');}
@@ -282,7 +284,7 @@
     function move(from,to){if(finished||from<0||to<0||from===to)return;const v=tiles.splice(from,1)[0];tiles.splice(to,0,v);picked=-1;$('wa-mini-status').textContent='';draw();}
     function draw(){
       tileHost.replaceChildren();
-      if(!english){entry.choices.forEach(part=>{const b=document.createElement('button');b.type='button';b.textContent=part;b.classList.toggle('active',chosen===part);b.onclick=()=>{if(finished)return;chosen=part;draw();};tileHost.append(b);});return;}
+      if(!english){entry.choices.forEach(part=>{const b=document.createElement('button');b.type='button';b.textContent=part;b.classList.toggle('active',chosen===part);b.onclick=()=>{if(finished)return;chosen=part;$('wa-kanji-right').textContent=part;$('wa-kanji-right').classList.remove('unknown');draw();};tileHost.append(b);});return;}
       tiles.forEach((letter,i)=>{
         const b=document.createElement('button');b.type='button';b.textContent=letter;b.dataset.index=String(i);b.setAttribute('aria-label',`${i+1}番目 ${letter}。ドラッグして移動`);b.classList.toggle('active',i===picked);b.draggable=true;
         b.addEventListener('dragstart',e=>{dragFrom=i;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',String(i));});
