@@ -82,6 +82,11 @@
   if(!window.supabase){error('supabase-jsの読み込みに失敗しました。ネット接続を確認してください。');return;}
   const client=window.supabase.createClient(config.url,config.publishableKey);
   let user,selected=null;
+  // Browser-local preferences are scoped to the Supabase anonymous user.
+  const prefKey = suffix => 'wa-guild-v2:' + user.id + ':' + suffix;
+  const getPref = suffix => { try { return localStorage.getItem(prefKey(suffix)) || ''; } catch (_) { return ''; } };
+  const setPref = (suffix,value) => { try { localStorage.setItem(prefKey(suffix),value); } catch (_) {} };
+  let firstHome = true;
   // Normal-game results are client-reported and therefore marked unverified.
   window.WAOnline = {
     submitNormalScore: async function(result){
@@ -104,13 +109,24 @@
     try{
       const groups=check(await client.rpc('wa_my_groups'))||[];
       const pending=new URLSearchParams(location.search).get('group');
+      // Do not bypass an incoming invitation. Auto-enter only a confirmed membership.
+      if (firstHome && !pending) {
+        firstHome=false;
+        const savedGroup=getPref('group');
+        if (savedGroup && groups.some(g=>String(g.id)===savedGroup)) {
+          await showGroup(savedGroup);
+          return;
+        }
+      }
+      firstHome=false;
       content.innerHTML=`
       <section class="wa-guild-hero"><p class="eyebrow">WORD ARROW · ADVENTURER GUILD</p><h2>🏹 冒険者ギルド</h2><p>仲間と学んで、モンスターに挑もう！</p><img src="special-ally-portrait.webp" alt="冒険を応援する白いキツネ" onerror="this.style.display='none'"></section>
-      <section class="wa-guild-panel"><h3>🦊 冒険者登録</h3><p class="hint">ランキングに表示する名前を決めよう</p><label for="wa-nick">ニックネーム（20文字まで）</label><input id="wa-nick" maxlength="20" placeholder="例：たろう"><button type="button" id="wa-profile" class="wa-register">冒険者として登録・変更</button><p id="wa-profile-result" role="status" aria-live="polite" class="hint"></p><p class="hint" style="margin-top:12px">このブラウザに匿名アカウントを保存します。ブラウザデータ削除や端末変更では引き継げません。</p></section>
+      <section class="wa-guild-panel"><h3>🦊 冒険者登録</h3><p class="hint">ランキングに表示する名前を決めよう</p><label for="wa-nick">ニックネーム（20文字まで）</label><input id="wa-nick" maxlength="20" placeholder="例：たろう"><button type="button" id="wa-profile" class="wa-register">冒険者として登録・変更</button><p id="wa-profile-result" role="status" aria-live="polite" class="hint"></p><p class="hint" style="margin-top:12px">このブラウザの匿名アカウントに名前と所属ギルドを保存します。次回は自動で開きます。ブラウザデータ削除や端末変更では引き継げません。</p></section>
       <section class="wa-guild-panel"><h3>🛡️ 所属ギルド</h3><p class="hint">仲間のいるギルドを選んで冒険を始めよう</p><div class="wa-guild-members" id="wa-groups">${groups.length?groups.map(g=>`<div class="group"><div><b>${esc(g.name)}</b><div class="hint">${Number(g.member_count)}人が参加中</div></div><button class="wa-enter" data-open="${esc(g.id)}">ギルドに入る</button></div>`).join(''):'<p class="hint">まだギルドがありません。下から作成できます。</p>'}</div></section>
       ${pending?'<section class="wa-guild-panel wa-pending"><h3>✉️ 招待状が届いています</h3><p class="hint">招待されたギルドに参加できます。</p><button id="wa-join">このギルドに参加</button></section>':''}
       <section class="wa-guild-panel"><h3>✚ 新しいギルドを作る</h3><label for="wa-group-name">ギルド名</label><input id="wa-group-name" maxlength="40" placeholder="例：5年1組"><button id="wa-create" class="wa-create">ギルドを作成</button></section>
       <button id="wa-play" class="wa-solo">ひとりで冒険する <span style="display:block;font-size:12px;font-weight:400;color:#bdd0e4;margin-top:4px">グループなしで通常ゲームをプレイ</span></button><p class="hint">ギルドを開いて開始した通常ゲームの得点は、終了時にオンライン共有されます。</p>`;
+      $('wa-nick').value=getPref('nickname');
       $('wa-profile').onclick=async()=>{
         const btn=$('wa-profile'), result=$('wa-profile-result');
         const nickname=$('wa-nick').value.trim();
@@ -118,6 +134,7 @@
         btn.disabled=true;btn.textContent='登録しています…';result.textContent='';
         try{
           check(await client.rpc('wa_set_profile',{p_nickname:nickname,p_avatar:'🐱'}));
+          setPref('nickname',nickname);
           result.textContent='✓ 冒険者名を登録しました！';result.style.color='#a8f3c7';
           status.textContent='オンライン接続済み';status.className='';
         }catch(e){
@@ -128,7 +145,7 @@
       $('wa-create').onclick=async()=>{try{const name=$('wa-group-name').value;const id=check(await client.rpc('wa_create_group',{p_name:name}));await showGroup(id);}catch(e){error(e)}};
       content.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>showGroup(b.dataset.open));
       if(pending)$('wa-join').onclick=async()=>{try{const id=check(await client.rpc('join_group',{p_invite_code:pending}));history.replaceState({},'',location.pathname);await showGroup(id);}catch(e){error(e)}};
-      $('wa-play').onclick=()=>{panel.hidden=true};
+      $('wa-play').onclick=()=>{selected=null;panel.hidden=true};
     }catch(e){error(e)}
   }
   async function showGroup(id){
@@ -138,6 +155,7 @@
       if(!g)throw Error('グループが見つかりません');
       const members=check(await client.rpc('wa_group_members',{p_group_id:id}))||[];
       selected=id;
+      setPref('group',String(id));
       const invite=location.origin+location.pathname+'?group='+encodeURIComponent(g.invite_code);
       content.innerHTML=`<h2>${esc(g.name)}</h2><p>${members.length}人が参加</p><ul>${members.map(m=>`<li>${esc(m.avatar)} ${esc(m.nickname)}</li>`).join('')}</ul>
       <div class="wa-invite-panel"><p class="wa-invite-label">🔗 友達を招待</p><div class="wa-invite-row"><input id="wa-invite" aria-label="招待URL" readonly value="${esc(invite)}"><button id="wa-copy" aria-label="招待URLをコピー">コピー</button></div><p class="hint" style="margin:8px 0 0">リンクを送ると、このグループに参加できます。</p></div>
@@ -145,7 +163,7 @@
       <section class="wa-daily-wrap"><h3>🏆 今日のオンライン対戦</h3><p class="hint">各級・各科目それぞれ1日1回。全員が同じ10問に挑戦（1問100点）。</p>
       <div class="wa-daily-grid"><div class="wa-grade-card grade5"><h4>🌱 5級チャレンジ</h4><p>基礎から挑戦したい人向け</p><button id="wa-daily-e5">英検5級に挑戦</button><button id="wa-daily-k5">漢検5級に挑戦</button></div>
       <div class="wa-grade-card grade4"><h4>⚡ 4級チャレンジ</h4><p>少し難しい問題に挑戦</p><button id="wa-daily-e">英検4級に挑戦</button><button id="wa-daily-k">漢検4級に挑戦</button></div></div></section>
-      <h3>📊 今日のランキング</h3><div id="wa-rankings"></div><button id="wa-back" class="secondary">← グループ一覧へ</button><p class="hint">通常ゲームの最高得点もオンライン共有されます（自己申告スコア・未検証）。</p>`;
+      <h3>📊 今日のランキング</h3><div id="wa-rankings"></div><button id="wa-back" class="secondary">✏️ ニックネーム・ギルドを変更</button><p class="hint">通常ゲームの最高得点もオンライン共有されます（自己申告スコア・未検証）。</p>`;
       $('wa-copy').onclick=async()=>{try{await navigator.clipboard.writeText(invite);status.textContent='招待URLをコピーしました'}catch(e){$('wa-invite').select();status.textContent='URLを選択しました。コピーしてください'}};
       $('wa-start').onclick=()=>{panel.hidden=true};
       $('wa-daily-e').onclick=()=>startDaily(id,'eiken4');
@@ -154,7 +172,7 @@
       $('wa-daily-k5').onclick=()=>startDaily(id,'kanken5');
       await showRankings(id);
       await showNormalRankings(id);
-      $('wa-back').onclick=showHome;
+      $('wa-back').onclick=()=>{firstHome=false;showHome();};
     }catch(e){error(e)}
   }
   async function showRankings(groupId){
