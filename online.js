@@ -47,6 +47,7 @@
 .wa-mini-status{min-height:1.5em;text-align:center;font-weight:800;color:#ffdf87}
 .wa-mini-note{font-size:13px;color:#bdd0e4;line-height:1.6}
 @media(max-width:390px){.wa-online-card .wa-daily-tiles button{min-width:42px;min-height:50px;padding:8px}}
+.wa-mini-timer{text-align:center;font-size:clamp(30px,8vw,48px);font-weight:900;color:#ffdb70;margin:12px 0 3px;font-variant-numeric:tabular-nums}.wa-mini-timer.urgent{color:#ff857b}.wa-mini-bonus{text-align:center;font-size:17px;font-weight:800;color:#c9e4ff}.wa-mini-status{font-size:clamp(19px,5vw,27px);color:#ffdf87}
 `;
   style.textContent+=`
 #wa-online{background:radial-gradient(ellipse at 50% -15%,#30527f 0%,#13233d 45%,#0b1425 100%);color:#edf4ff;padding:clamp(12px,3vw,28px) 12px}
@@ -108,6 +109,8 @@
     }
   };
   let dailyRun=null, dailyAnswers=[], dailyIndex=0, dailyQuestions=[], dailySubject="";
+  let dailyMiniPoints=0, dailyMiniResults=[], dailyMiniTimer=null;
+  function stopMiniTimer(){if(dailyMiniTimer!==null){clearInterval(dailyMiniTimer);dailyMiniTimer=null;}}
   try{
     let session=check(await client.auth.getSession()).session;
     if(!session)session=check(await client.auth.signInAnonymously()).session;
@@ -218,7 +221,7 @@
     try{
       const data=check(await client.rpc('wa_start_daily',{p_group_id:groupId,p_subject:subject}));
       if(data.finished){status.textContent='今日は回答済みです。明日また挑戦してください。';await showRankings(groupId);return;}
-      dailyRun=data.run_id;dailyQuestions=data.questions;dailyAnswers=[];dailyIndex=0;dailySubject=subject;
+      stopMiniTimer();dailyMiniPoints=0;dailyMiniResults=[];dailyRun=data.run_id;dailyQuestions=data.questions;dailyAnswers=[];dailyIndex=0;dailySubject=subject;
       selected=groupId;renderDailyQuestion();
     }catch(e){error(e)}
   }
@@ -237,8 +240,7 @@
       };host.append(btn);
     });
   }
-  // Short client-side intermission. It never changes the 10 server-scored answers.
-  // No extra ranking points: all players still compete on the same 1000-point scale.
+  // Timed mini puzzle. Points are local until a server-verified RPC is deployed. 
   function renderDailyMiniPuzzle(){
     const english=dailySubject.startsWith('eiken');
     const previous=dailyQuestions[dailyIndex-1];
@@ -253,9 +255,35 @@
     tiles=tiles.slice(1).concat(tiles[0]).reverse();
     if(tiles.join('')===target)tiles=tiles.reverse();
     if(tiles.join('')===target && tiles.length>1)[tiles[0],tiles[1]]=[tiles[1],tiles[0]];
-    let picked=-1;
-    content.innerHTML=`<h2>🧩 ちょこっとパズル！</h2><p>第 ${dailyIndex} 問クリア！ 次の問題の前に文字を並べ替えよう。</p><p class="hint">2つの文字を順番にタップして交換します。</p><div class="wa-daily-tiles" id="wa-mini-tiles"></div><p class="wa-mini-status" id="wa-mini-status" aria-live="polite"></p><button id="wa-mini-check">できた！</button><button class="secondary" id="wa-mini-skip">スキップして次へ</button><p class="wa-mini-note">このミニパズルは息抜きです。オンライン対戦の得点・順位には影響しません。</p>`;
+    let picked=-1, finished=false;
+    const startAt=performance.now();
+    const limitMs=30000;
+    const bonusFor=(elapsed)=>elapsed<=5000?300:elapsed<=10000?250:elapsed<=15000?200:elapsed<=20000?150:elapsed<=30000?100:0;
+    content.innerHTML=`<h2>🧩 ちょこっとパズル！</h2><p>第 ${dailyIndex} 問クリア！ 次の問題の前に文字を並べ替えよう。</p><p class="hint">2つの文字を順番にタップして交換します。</p><div class="wa-mini-timer" id="wa-mini-timer" role="timer">残り 30.0 秒</div><div class="wa-mini-bonus" id="wa-mini-bonus">最速クリアで +300 Point!</div><div class="wa-daily-tiles" id="wa-mini-tiles"></div><p class="wa-mini-status" id="wa-mini-status" aria-live="polite"></p><button id="wa-mini-check">できた！</button><button class="secondary" id="wa-mini-skip">スキップして次へ</button><p class="wa-mini-note">タイムボーナスは画面上の合計に加算します。ランキングへの反映にはサーバー側の更新が必要です。</p>`;
     const tileHost=$('wa-mini-tiles');
+    const timerHost=$('wa-mini-timer');
+    function remaining(){return Math.max(0,limitMs-(performance.now()-startAt));}
+    function finishPuzzle(points,elapsed,reason){
+      if(finished)return;
+      finished=true;stopMiniTimer();
+      dailyMiniPoints+=points;
+      dailyMiniResults.push({after_question:dailyIndex,elapsed_ms:Math.round(elapsed),points,reason});
+      $('wa-mini-check').disabled=true;
+      $('wa-mini-skip').disabled=true;
+      tileHost.querySelectorAll('button').forEach(b=>b.disabled=true);
+      timerHost.textContent=reason==='correct'?'クリア！':reason==='timeout'?'時間切れ！':'スキップ';
+      $('wa-mini-status').textContent=points?`✨ +${points} Point!  ミニパズル合計 ${dailyMiniPoints} pt`:'ボーナス 0 pt';
+      $('wa-mini-bonus').textContent=reason==='correct'?`解答時間 ${(elapsed/1000).toFixed(1)}秒`:'次の問題へ進もう';
+      const next=document.createElement('button');next.textContent='次の問題へ';next.onclick=renderDailyQuestion;content.append(next);
+    }
+    function tick(){
+      if(finished)return;
+      const left=remaining();
+      timerHost.textContent=`残り ${(left/1000).toFixed(1)} 秒`;
+      timerHost.classList.toggle('urgent',left<=10000);
+      if(left<=0)finishPuzzle(0,limitMs,'timeout');
+    }
+    dailyMiniTimer=setInterval(tick,100);tick();
     function draw(){
       tileHost.replaceChildren();
       tiles.forEach((letter,i)=>{
@@ -263,6 +291,7 @@
         b.setAttribute('aria-label',`${i+1}番目 ${letter}`);
         if(i===picked)b.classList.add('active');
         b.onclick=()=>{
+          if(finished)return;
           if(picked<0){picked=i;draw();return;}
           [tiles[picked],tiles[i]]=[tiles[i],tiles[picked]];picked=-1;
           $('wa-mini-status').textContent='';draw();
@@ -271,18 +300,20 @@
     }
     draw();
     $('wa-mini-check').onclick=()=>{
-      if(tiles.join('')===target){$('wa-mini-status').textContent='✨ せいかい！ 次の問題へ！';
-        $('wa-mini-check').disabled=true;
-        const next=document.createElement('button');next.textContent='次の問題へ';next.onclick=renderDailyQuestion;content.append(next);
-      }else $('wa-mini-status').textContent='もう少し！ 文字を入れ替えてみよう';
+      if(finished)return;
+      const elapsed=performance.now()-startAt;
+      if(elapsed>=limitMs){finishPuzzle(0,limitMs,'timeout');return;}
+      if(tiles.join('')===target)finishPuzzle(bonusFor(elapsed),elapsed,'correct');
+      else $('wa-mini-status').textContent='もう少し！ 文字を入れ替えてみよう';
     };
-    $('wa-mini-skip').onclick=renderDailyQuestion;
+    $('wa-mini-skip').onclick=()=>finishPuzzle(0,performance.now()-startAt,'skip');
   }
   async function finishDaily(){
+    stopMiniTimer();
     content.innerHTML='<h2>採点中…</h2>';
     try{
       const result=check(await client.rpc('wa_finish_daily',{p_run_id:dailyRun,p_answers:dailyAnswers}));
-      content.innerHTML=`<h2>結果発表！</h2><p style="font-size:32px;font-weight:bold">${result.score}点</p><p>${result.correct} / ${result.total} 問正解</p><button id="wa-return">グループに戻る</button>`;
+      content.innerHTML=`<h2>結果発表！</h2><p>通常クイズ：<b>${result.score} pt</b></p><p>ミニパズル：<b>+${dailyMiniPoints} pt</b></p><p style="font-size:32px;font-weight:bold">合計 ${Number(result.score)+dailyMiniPoints} Point!</p><p>${result.correct} / ${result.total} 問正解</p><p class="hint">※現在ランキングに保存されるのは通常クイズの ${result.score} pt のみです。ミニパズル点の公式ランキング反映にはSupabaseの採点関数更新が必要です。</p><button id="wa-return">グループに戻る</button>`;
       $('wa-return').onclick=()=>showGroup(selected);
     }catch(e){error(e);content.innerHTML='<button id="wa-retry">再送信</button>';
       $('wa-retry').onclick=finishDaily;}
