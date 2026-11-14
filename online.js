@@ -107,14 +107,30 @@
   const getPref = suffix => { try { return localStorage.getItem(prefKey(suffix)) || ''; } catch (_) { return ''; } };
   const setPref = (suffix,value) => { try { localStorage.setItem(prefKey(suffix),value); } catch (_) {} };
   // Lightweight companion: one feeding opportunity per completed daily run (JST day).
-  const companionNames=['ライボルトン','アクアフィン','アースゴーレム','モンスター4','モンスター5','モンスター6','モンスター7','モンスター8','モンスター9','モンスター10'];
+  const companionNames=['ライボルトン','アクアフィン','アースゴーレム','モンスター4','モンスター5','モンスター6','モンスター7','モンスター8','モンスター9','モンスター10','？？？ お助けキャラ'];
   const todayJST=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-  const getCompanion=()=>Math.max(0,Math.min(9,Number(getPref('companion')||0)));
-  const companionUnlockDays=[0,0,0,3,7,14,21,30,45,60];
-  const feedingDays=()=>Math.max(0,Number(getPref('meal-count')||0));
-  const companionUnlocked=i=>feedingDays()>=companionUnlockDays[i];
-  const nextCompanionUnlock=()=>companionUnlockDays.find((days,i)=>i>=3&&!companionUnlocked(i));
-  const companionImage=i=>'assets/monster-'+String(i+1).padStart(2,'0')+'.webp';
+  const getCompanion=()=>Math.max(0,Math.min(10,Number(getPref('companion')||0)));
+  // Cumulative earned points, separate from the competitive leaderboard.
+  // Existing feeding counts remain saved but no longer gate character unlocks.
+  const companionUnlockPoints=[0,0,0,1000,2500,4500,7000,10000,14000,18000,25000];
+  const earnedPoints=()=>Math.max(0,Math.floor(Number(getPref('companion-total-points')||0)));
+  function grantCompanionPoints(amount,receipt){
+    const points=Math.max(0,Math.floor(Number(amount)||0));
+    if(!points||!receipt)return 0;
+    const key='companion-receipt:'+receipt;
+    if(getPref(key))return 0;
+    setPref(key,'1');
+    const before=earnedPoints();setPref('companion-total-points',String(before+points));
+    const unlocked=companionUnlockPoints.findIndex((need,i)=>i>=3&&before<need&&before+points>=need);
+    if(unlocked>=0 && document.getElementById('wa-comp-speech')){
+      document.getElementById('wa-comp-speech').textContent='🎉 新しい相棒が解放！';
+    }
+    return points;
+  }
+  const companionUnlocked=i=>earnedPoints()>=companionUnlockPoints[i];
+  const nextCompanionUnlock=()=>companionUnlockPoints.find((points,i)=>i>=3&&!companionUnlocked(i));
+  const companionImage=i=>i===10?'special-ally.webp':'assets/monster-'+String(i+1).padStart(2,'0')+'.webp';
+  const companionPicture=i=>i===10?'<span class="wa-ally-fallback" aria-label="お助けキャラ">🦊</span>':'';
   const hasMeal=()=>getPref('meal-earned')===todayJST();
   const hasFed=()=>getPref('meal-fed')===todayJST();
   const companionCss=document.createElement('style');
@@ -139,6 +155,7 @@
     .wa-comp-picker button.locked img{filter:brightness(.55)}
     .wa-comp-picker .wa-lock{display:block;color:#fff;font-size:11px;font-weight:800}
     .wa-comp-picker img{width:100%;height:auto;aspect-ratio:1;object-fit:contain}
+    .wa-comp-picker .wa-mystery{display:grid;place-items:center;aspect-ratio:1;font-size:38px;font-weight:900;color:#ffd46d}.wa-comp-picker .wa-ally-fallback{font-size:32px}
     @media(max-width:600px){#wa-companion{width:110px;right:4px;bottom:calc(4px + env(safe-area-inset-bottom,0px))}#wa-companion img{width:105px;height:105px}#wa-companion .wa-comp-bubble{font-size:10px;padding:3px 5px}#wa-online:not([hidden])~#wa-companion{bottom:calc(4px + env(safe-area-inset-bottom,0px))}}
   `;
   document.head.append(companionCss);
@@ -149,16 +166,18 @@
   function refreshCompanion(){
     const n=getCompanion();$('wa-comp-img').src=companionImage(n);
     $('wa-comp-img').alt=companionNames[n];
+    $('wa-comp-img').onerror=()=>{if(n===10){$('wa-comp-img').style.display='none';$('wa-comp-tap').textContent='🦊';}};
+    $('wa-comp-img').style.display='';
     $('wa-comp-speech').textContent=hasMeal()&&!hasFed()?'🍎 ごはん！':hasFed()?'ありがとう♥':'がんばれ！';
   }
   function closeCompanion(){companionModal.hidden=true;companionModal.innerHTML='';}
   function openCompanionPicker(){
     let n=getCompanion();
     if(!companionUnlocked(n)){n=0;setPref('companion','0');refreshCompanion();}
-    const days=feedingDays();
+    const points=earnedPoints();
     const next=nextCompanionUnlock();
     companionModal.hidden=false;
-    companionModal.innerHTML=`<div class="wa-comp-dialog" role="dialog" aria-modal="true" aria-label="相棒を選ぶ"><h2>🐾 相棒を選ぼう！</h2><p>最初の3体から選べるよ。ごはんをあげて新しい仲間を増やそう！</p><p>🍎 ごはんをあげた日：<b>${days}日</b>${next!==undefined?` ／ 次の相棒まであと${next-days}日`:' ／ 全員解放！'}</p><div class="wa-comp-picker">${companionNames.map((name,i)=>`<button data-comp="${i}" class="${i===n?'selected':''} ${companionUnlocked(i)?'':'locked'}" aria-label="${name}${companionUnlocked(i)?'':` ${companionUnlockDays[i]}日で解放`}" title="${name}${companionUnlocked(i)?'':`：ごはん${companionUnlockDays[i]}日で解放`}" ${companionUnlocked(i)?'':'disabled'}><img src="${companionImage(i)}" alt="${name}">${companionUnlocked(i)?'':`<span class="wa-lock">🔒 ${companionUnlockDays[i]}日</span>`}</button>`).join('')}</div><p id="wa-comp-name">${companionNames[n]}</p><button id="wa-comp-close" class="secondary">とじる</button></div>`;
+    companionModal.innerHTML=`<div class="wa-comp-dialog" role="dialog" aria-modal="true" aria-label="相棒を選ぶ"><h2>🐾 相棒を選ぼう！</h2><p>最初の3体から選べるよ。ゲームでポイントを集めると仲間が増える！</p><p>⭐ 累計獲得ポイント：<b>${points.toLocaleString()} pt</b>${next!==undefined?` ／ 次の相棒まであと${(next-points).toLocaleString()} pt`:' ／ 全員解放！'}</p><div class="wa-comp-picker">${companionNames.map((name,i)=>`<button data-comp="${i}" class="${i===n?'selected':''} ${companionUnlocked(i)?'':'locked'}" aria-label="${name}${companionUnlocked(i)?'':` ${companionUnlockPoints[i]}ポイントで解放`}" title="${name}${companionUnlocked(i)?'':`：累計${companionUnlockPoints[i].toLocaleString()}ptで解放`}" ${companionUnlocked(i)?'':'disabled'}>${i===10&&!companionUnlocked(i)?'<span class="wa-mystery">？</span>':`<img src="${companionImage(i)}" alt="${name}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="wa-ally-fallback" style="display:none">🦊</span>`}${companionUnlocked(i)?'':`<span class="wa-lock">🔒 ${companionUnlockPoints[i].toLocaleString()}pt</span>`}</button>`).join('')}</div><p id="wa-comp-name">${companionUnlocked(n)?companionNames[n]:'？？？'}</p><button id="wa-comp-close" class="secondary">とじる</button></div>`;
     companionModal.querySelectorAll('[data-comp]').forEach(b=>b.onclick=()=>{
       const i=Number(b.dataset.comp);
       if(!companionUnlocked(i))return;
@@ -176,7 +195,7 @@
       if(!hasMeal()||hasFed())return;
       const oldDays=feedingDays();
       setPref('meal-fed',todayJST());setPref('meal-count',String(oldDays+1));
-      const newFriend=companionUnlockDays.findIndex((d,i)=>i>=3&&d===oldDays+1);
+      const newFriend=-1; // Unlocking is based on earned points, not meals.
       companionBox.classList.remove('wa-happy');void companionBox.offsetWidth;companionBox.classList.add('wa-happy');
       $('wa-meal-message').textContent='もぐもぐ… おいしい！ ありがとう！ 💛✨'+(newFriend>=0?' 🎉 新しい相棒「'+companionNames[newFriend]+'」が仲間になった！':'');
       $('wa-feed').remove();refreshCompanion();
@@ -188,7 +207,9 @@
   // Normal-game results are client-reported and therefore marked unverified.
   window.WAOnline = {
     submitNormalScore: async function(result){
-      if(!selected || !user) return;
+      if(!user) return;
+      grantCompanionPoints(result.score,'normal:'+Date.now()+':'+Math.random().toString(36).slice(2));
+      if(!selected)return;
       const payload={p_group_id:selected,p_subject:result.subject,p_score:result.score,
         p_stages:result.stages,p_correct:result.correct,p_total:result.total};
       check(await client.rpc('wa_submit_normal_score',payload));
@@ -454,6 +475,8 @@
     content.innerHTML='<h2>採点中…</h2>';
     try{
       const result=check(await client.rpc('wa_finish_daily',{p_run_id:dailyRun,p_answers:dailyAnswers}));
+      // One award per server run ID; replaying the results cannot double-count.
+      grantCompanionPoints(Number(result.score)+dailyMiniPoints,'daily:'+dailyRun);
       // Award one feeding opportunity only after server-confirmed completion.
       if(!hasMeal()&&!hasFed()){setPref('meal-earned',todayJST());}refreshCompanion();
       content.innerHTML=`<h2>結果発表！</h2><p>通常クイズ：<b>${result.score} pt</b></p><p>ミニパズル：<b>+${dailyMiniPoints} pt</b></p><p style="font-size:32px;font-weight:bold">合計 ${Number(result.score)+dailyMiniPoints} Point!</p><p>${result.correct} / ${result.total} 問正解</p><p class="hint">※現在ランキングに保存されるのは通常クイズの ${result.score} pt のみです。ミニパズル点の公式ランキング反映にはSupabaseの採点関数更新が必要です。</p><button id="wa-feed-now">🍎 相棒にごはんをあげる</button><button id="wa-return">グループに戻る</button>`;
