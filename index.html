@@ -349,11 +349,11 @@ mark{background:linear-gradient(transparent 55%,var(--mark) 55%);color:inherit;f
 .hp i{position:absolute;inset:0 auto 0 0;width:100%;background:var(--accent);transition:width .5s}
 .hp b{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--ink);text-shadow:0 0 3px var(--surface),0 0 3px var(--surface)}
 .slot{grid-area:slot;position:relative;width:100%;justify-self:center}
-.pv{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;padding:0 6px;overflow:hidden;aspect-ratio:8/1.45;align-content:end;margin-bottom:-2px;-webkit-mask-image:linear-gradient(to top,#000 35%,transparent 100%);mask-image:linear-gradient(to top,#000 35%,transparent 100%)}
+.pv{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:0 6px;overflow:hidden;aspect-ratio:7/1.45;align-content:end;margin-bottom:-2px;-webkit-mask-image:linear-gradient(to top,#000 35%,transparent 100%);mask-image:linear-gradient(to top,#000 35%,transparent 100%)}
 .pcell{aspect-ratio:1;padding:3px;border:1.5px dashed var(--line);border-radius:10px;display:grid;place-items:center;min-width:0;opacity:.8}
 .pcell.far{opacity:.45}
 .pcell svg{width:100%;height:100%;stroke:var(--ink);stroke-width:2.2;stroke-linejoin:round}
-.board{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;touch-action:none;user-select:none;-webkit-user-select:none;padding:4px;border:2px solid var(--ink);border-radius:14px;background:var(--bg);overflow:hidden}
+.board{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;touch-action:none;user-select:none;-webkit-user-select:none;padding:4px;border:2px solid var(--ink);border-radius:14px;background:var(--bg);overflow:hidden}
 .cell{aspect-ratio:1;padding:3px;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;display:grid;place-items:center;min-width:0}
 .cell svg{width:100%;height:100%;stroke:var(--ink);stroke-width:2.2;stroke-linejoin:round;pointer-events:none}
 .g0{fill:var(--g0)}.g1{fill:var(--g1)}.g2{fill:var(--g2)}.g3{fill:var(--g3)}.g4{fill:var(--g4)}
@@ -504,7 +504,7 @@ mark{background:linear-gradient(transparent 55%,var(--mark) 55%);color:inherit;f
 <script>
 (function(){
 'use strict';
-var N=8;
+var N=7;
 
 /* ---------- storage ---------- */
 function lsj(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
