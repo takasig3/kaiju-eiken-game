@@ -42,7 +42,7 @@
 .piercing-arrow svg{filter:drop-shadow(0 0 8px #54d7ff) drop-shadow(0 0 4px #54d7ff)}
 .rainbow-arrow svg{filter:drop-shadow(0 0 9px #ff70ef) hue-rotate(105deg) saturate(2)}
 .cell.bonus-item{outline:3px solid #ffd166;outline-offset:-4px;background:radial-gradient(circle,#fff3ad,#ffd76b 65%,#a87924)!important;animation:itemPulse 1.4s ease-in-out infinite}
-.cell.bonus-item{font-size:26px;cursor:pointer}
+.cell.bonus-item{font-size:clamp(15px,3.5vw,26px);cursor:grab}
 @keyframes itemPulse{50%{filter:brightness(1.23);transform:scale(1.045)}}
 
 /* Quiz viewport-fit: desktop landscape and short laptop screens. */
@@ -349,11 +349,11 @@ mark{background:linear-gradient(transparent 55%,var(--mark) 55%);color:inherit;f
 .hp i{position:absolute;inset:0 auto 0 0;width:100%;background:var(--accent);transition:width .5s}
 .hp b{position:absolute;inset:0;display:grid;place-items:center;font-size:11px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--ink);text-shadow:0 0 3px var(--surface),0 0 3px var(--surface)}
 .slot{grid-area:slot;position:relative;width:100%;justify-self:center}
-.pv{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:0 6px;overflow:hidden;aspect-ratio:6/1.45;align-content:end;margin-bottom:-2px;-webkit-mask-image:linear-gradient(to top,#000 35%,transparent 100%);mask-image:linear-gradient(to top,#000 35%,transparent 100%)}
+.pv{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;padding:0 6px;overflow:hidden;aspect-ratio:8/1.45;align-content:end;margin-bottom:-2px;-webkit-mask-image:linear-gradient(to top,#000 35%,transparent 100%);mask-image:linear-gradient(to top,#000 35%,transparent 100%)}
 .pcell{aspect-ratio:1;padding:3px;border:1.5px dashed var(--line);border-radius:10px;display:grid;place-items:center;min-width:0;opacity:.8}
 .pcell.far{opacity:.45}
 .pcell svg{width:100%;height:100%;stroke:var(--ink);stroke-width:2.2;stroke-linejoin:round}
-.board{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;touch-action:none;user-select:none;-webkit-user-select:none;padding:4px;border:2px solid var(--ink);border-radius:14px;background:var(--bg);overflow:hidden}
+.board{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;touch-action:none;user-select:none;-webkit-user-select:none;padding:4px;border:2px solid var(--ink);border-radius:14px;background:var(--bg);overflow:hidden}
 .cell{aspect-ratio:1;padding:3px;border:1.5px solid var(--line);background:var(--surface);border-radius:10px;display:grid;place-items:center;min-width:0}
 .cell svg{width:100%;height:100%;stroke:var(--ink);stroke-width:2.2;stroke-linejoin:round;pointer-events:none}
 .g0{fill:var(--g0)}.g1{fill:var(--g1)}.g2{fill:var(--g2)}.g3{fill:var(--g3)}.g4{fill:var(--g4)}
@@ -504,7 +504,7 @@ mark{background:linear-gradient(transparent 55%,var(--mark) 55%);color:inherit;f
 <script>
 (function(){
 'use strict';
-var N=6;
+var N=8;
 
 /* ---------- storage ---------- */
 function lsj(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
@@ -1631,7 +1631,7 @@ function jamaCount(){var n=0;for(var r=0;r<N;r++)for(var c=0;c<N;c++)if(S.b[r][c
 // Standard assist: in 40% of refill events, try to place ONE color
 // which completes a real 3-match. If no legal candidate exists, refill normally.
 function assistRefill(holes){
- if(!holes.length||Math.random()>=.40)return false;
+ if(!holes.length||Math.random()>=.55)return false;
  var choices=[],b=S.b;
  function at(r,c){return r>=0&&r<N&&c>=0&&c<N&&b[r][c]?b[r][c].t:-9}
  holes.forEach(function(p){var r=p[0],c=p[1],cell=b[r][c];
@@ -1671,8 +1671,8 @@ function render(clr){
     el.className='cell'+(cell.item?' bonus-item':'')+(cell.t<0?' jama':'')+(cell.f?' fall':'')+(clr&&clr[r+','+c]?' pop':'');
     el.dataset.r=r;el.dataset.c=c;
     if(cell.f) el.style.setProperty('--f',cell.f);
-    el.setAttribute('aria-label',cell.item?(cell.item==='row'?'一列消去アイテム':'周辺消去アイテム'):cell.t<0?'じゃまブロック':GEMNAME[cell.t]);
-    el.innerHTML=cell.item?(cell.item==='row'?'↔️':'💥'):(cell.t<0?'':gem(cell.t));
+    el.setAttribute('aria-label',cell.item?(({row:'横一列消去',col:'縦一列消去',burst:'周辺3×3消去',color:'同じ色を全消去'}[cell.item]||'特殊アイテム')):cell.t<0?'じゃまブロック':GEMNAME[cell.t]);
+    el.innerHTML=cell.item?(({row:'↔️',col:'↕️',burst:'💥',color:'🌈'}[cell.item]||'✨')):(cell.t<0?'':gem(cell.t));
     board.appendChild(el); cell.f=0;
   }
   renderPv();renderSel();
@@ -1727,7 +1727,7 @@ function startBattle(){
 function onDown(e){
   var el=e.target.closest('.cell'); if(!el||S.locked) return;
   var r=+el.dataset.r,c=+el.dataset.c;
-  if(S.b[r][c].item){S.sel=null;S.drag=null;activateItem(r,c);return}
+  if(S.b[r][c].item&&!S.sel){S.sel={r:r,c:c};S.drag={x:e.clientX,y:e.clientY,r:r,c:c};renderSel();return}
   if(S.sel){
     if(S.sel.r===r&&S.sel.c===c){S.sel=null;S.drag=null;renderSel();return}
     if(Math.abs(S.sel.r-r)+Math.abs(S.sel.c-c)===1){var a=S.sel;S.sel=null;S.drag=null;swapTry(a.r,a.c,r,c);return}
@@ -1876,6 +1876,7 @@ async function swapTry(r1,c1,r2,c2){
   if(S.locked) return;
   var A=S.b[r1][c1],B=S.b[r2][c2];
   if(A.t<0||B.t<0){flash('じゃまブロックは動かせません');S.sel=null;renderSel();return}
+  if(A.item||B.item){S.sel=null;S.drag=null;await activateItemSwap(r1,c1,r2,c2);return;}
   S.locked=true;S.sel=null;
   S.b[r1][c1]=B;S.b[r2][c2]=A;render();
   if(!findMatches().length){
@@ -2024,29 +2025,42 @@ async function resolve(){
     for(var ir=0;ir<N;ir++)for(var ic=0;ic<N;ic++)if(S.b[ir][ic].t>=0&&!S.b[ir][ic].item)candidates.push([ir,ic]);
     if(candidates.length){
       var pos=candidates[Math.floor(Math.random()*candidates.length)];
-      S.b[pos[0]][pos[1]].item=Math.random()<.5?'row':'burst';
+      S.b[pos[0]][pos[1]].item=['row','col','burst','color'][Math.floor(Math.random()*4)];
       flash('🎁 3連鎖ボーナス！ アイテム出現');render();
     }
   }
   return {cleared:cleared,chain:chain,four:four,five:five};
 }
-async function activateItem(r,c){
- if(S.locked||!S.b[r][c]||!S.b[r][c].item)return;
+// All special tiles trigger by swapping with an adjacent ordinary color tile.
+async function activateItemSwap(r1,c1,r2,c2){
+ if(S.locked)return;
+ var a=S.b[r1][c1],b=S.b[r2][c2];
+ if(!a||!b||a.t<0||b.t<0)return;
+ var specials=[];
+ if(a.item)specials.push({kind:a.item,r:r2,c:c2,color:b.t});
+ if(b.item)specials.push({kind:b.item,r:r1,c:c1,color:a.t});
+ if(!specials.length)return;
  S.locked=true;S.moves++;
- var kind=S.b[r][c].item,affected={};
- if(kind==='row'){
-  for(var cc=0;cc<N;cc++)affected[r+','+cc]=1;
- }else{
-  for(var rr=Math.max(0,r-1);rr<=Math.min(N-1,r+1);rr++)
-   for(var cc=Math.max(0,c-1);cc<=Math.min(N-1,c+1);cc++)affected[rr+','+cc]=1;
- }
+ S.b[r1][c1]=b;S.b[r2][c2]=a;
+ var affected={};
+ specials.forEach(function(sp){
+   affected[sp.r+','+sp.c]=1;
+   if(sp.kind==='row')for(var c=0;c<N;c++)affected[sp.r+','+c]=1;
+   if(sp.kind==='col')for(var r=0;r<N;r++)affected[r+','+sp.c]=1;
+   if(sp.kind==='burst')for(var r=Math.max(0,sp.r-1);r<=Math.min(N-1,sp.r+1);r++)for(var c=Math.max(0,sp.c-1);c<=Math.min(N-1,sp.c+1);c++)affected[r+','+c]=1;
+   if(sp.kind==='color')for(var r=0;r<N;r++)for(var c=0;c<N;c++)if(S.b[r][c]&&S.b[r][c].t===sp.color)affected[r+','+c]=1;
+ });
  var n=Object.keys(affected).length;
- flash(kind==='row'?'↔️ 一列消去！':'💥 周辺ブロック消去！');
- SFX.match(1);render(affected);await sleep(320);
- Object.keys(affected).forEach(function(key){var p=key.split(',');S.b[+p[0]][+p[1]]=null});
+ flash(specials.map(function(sp){return ({row:'↔️ 横一列',col:'↕️ 縦一列',burst:'💥 周囲3×3',color:'🌈 同色全消し'})[sp.kind]}).join(' ＋ ')+'！');
+ SFX.match(2);render(affected);await sleep(320);
+ Object.keys(affected).forEach(function(k){var p=k.split(',');S.b[+p[0]][+p[1]]=null});
  gravity();render();await sleep(330);
  var cascade=await resolve();
- await finishPuzzleTurn({cleared:n+cascade.cleared,chain:cascade.chain,four:cascade.four,five:cascade.five});
+ await finishPuzzleTurn({cleared:n+cascade.cleared,chain:Math.max(1,cascade.chain),four:cascade.four,five:cascade.five});
+}
+async function activateItem(r,c){
+ // Backward-compatible tap: ask the player to swap the item with a color.
+ S.sel={r:r,c:c};renderSel();flash('特殊アイテムを隣の色と入れ替えよう！');
 }
 async function addJama(n){
   var free=[],r,c;
