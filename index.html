@@ -1980,7 +1980,7 @@ async function finishPuzzleTurn(res){
   // Only an actual five-or-more cascade in this move summons the ally.
   // The ally quiz uses cards outside the current stage, and allows exactly one answer.
   if(res.chain>=5)await summonChainAlly();
-  if(res.chain>=3&&(S.mode==='e'||S.mode==='e5')&&Math.random()<0.65)await waSpellingChallenge();
+  if((S.mode==='e'||S.mode==='e5')&&Math.random()<(res.chain>=2?0.9:0.3))await waSpellingChallenge();
   var learningBonus=await learningTileChallenge();
   S.pendingSpecial=(res.five?'🌈レインボー×'+res.five+' ':'')+(res.four?'➶貫通×'+res.four:'');
   var ok=await askQuiz(res.cleared,res.chain);S.pendingSpecial='';

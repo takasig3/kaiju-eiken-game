@@ -112,7 +112,7 @@
   const getCompanion=()=>Math.max(0,Math.min(10,Number(getPref('companion')||0)));
   // Cumulative earned points, separate from the competitive leaderboard.
   // Existing feeding counts remain saved but no longer gate character unlocks.
-  const companionUnlockPoints=[0,0,0,1000,2500,4500,7000,10000,14000,18000,25000];
+  const companionUnlockPoints=[0,0,0,20000,45000,75000,110000,150000,200000,260000,330000];
   const earnedPoints=()=>Math.max(0,Math.floor(Number(getPref('companion-total-points')||0)));
   function grantCompanionPoints(amount,receipt){
     const points=Math.max(0,Math.floor(Number(amount)||0));
