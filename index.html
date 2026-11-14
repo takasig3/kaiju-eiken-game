@@ -976,6 +976,8 @@ async function speak(t,lang){
   if(!t)return;
   stopAudio();
   var serial=playbackSerial,locale=lang||'en-US';
+  // The pronoun I is pronounced /aɪ/. Avoid ambiguous single-letter dictionary recordings.
+  if(locale==='en-US' && String(t).trim()==='I'){speechFallback('eye',locale);return;}
   var fallback=function(){if(serial===playbackSerial)speechFallback(t,locale)};
   if(locale==='en-US'){
     var clean=String(t).trim();
