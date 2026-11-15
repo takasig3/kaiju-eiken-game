@@ -1295,13 +1295,23 @@ function makeQ(c,v){
   q.opts=opts;
   return q;
 }
-// Show the base form only for known past-tense verb answers.
-var WA_PAST_FORMS={watched:'watch',played:'play',visited:'visit',studied:'study',stopped:'stop',liked:'like',lived:'live',used:'use',wanted:'want',looked:'look',walked:'walk',talked:'talk',helped:'help',called:'call',opened:'open',closed:'close',washed:'wash',cleaned:'clean',cooked:'cook',listened:'listen',learned:'learn',worked:'work',started:'start',finished:'finish',asked:'ask',answered:'answer',enjoyed:'enjoy',tried:'try',cried:'cry',carried:'carry',went:'go',came:'come',saw:'see',ate:'eat',drank:'drink',had:'have',did:'do',made:'make',took:'take',gave:'give',got:'get',bought:'buy',brought:'bring',thought:'think',wrote:'write',spoke:'speak',ran:'run',swam:'swim',sang:'sing',sat:'sit',slept:'sleep',felt:'feel',left:'leave',met:'meet',found:'find',lost:'lose',heard:'hear',said:'say',told:'tell',read:'read',was:'be',were:'be'};
+// English verb learning: show both dictionary (present) and past forms.
+var WA_PAST_FORMS={watched:'watch',played:'play',visited:'visit',studied:'study',stopped:'stop',liked:'like',lived:'live',used:'use',wanted:'want',looked:'look',walked:'walk',talked:'talk',helped:'help',called:'call',opened:'open',closed:'close',washed:'wash',cleaned:'clean',cooked:'cook',listened:'listen',learned:'learn',worked:'work',started:'start',finished:'finish',asked:'ask',answered:'answer',enjoyed:'enjoy',tried:'try',cried:'cry',carried:'carry',went:'go',came:'come',saw:'see',ate:'eat',drank:'drink',had:'have',did:'do',made:'make',took:'take',gave:'give',got:'get',bought:'buy',brought:'bring',thought:'think',wrote:'write',spoke:'speak',ran:'run',swam:'swim',sang:'sing',sat:'sit',slept:'sleep',felt:'feel',left:'leave',met:'meet',found:'find',lost:'lose',heard:'hear',said:'say',told:'tell',read:'read',was:'be',were:'be',stood:'stand',worried:'worry',caught:'catch',taught:'teach',knew:'know',grew:'grow',flew:'fly',drove:'drive',rode:'ride',began:'begin',broke:'break',chose:'choose',fell:'fall',forgot:'forget',kept:'keep',paid:'pay',put:'put',cut:'cut',hit:'hit',set:'set',shut:'shut',sent:'send',spent:'spend',built:'build',won:'win',understood:'understand',wore:'wear'};
+var WA_IRREGULAR_PAST={be:'was / were',go:'went',come:'came',see:'saw',eat:'ate',drink:'drank',have:'had',do:'did',make:'made',take:'took',give:'gave',get:'got',buy:'bought',bring:'brought',think:'thought',write:'wrote',speak:'spoke',run:'ran',swim:'swam',sing:'sang',sit:'sat',sleep:'slept',feel:'felt',leave:'left',meet:'met',find:'found',lose:'lost',hear:'heard',say:'said',tell:'told',read:'read',stand:'stood',catch:'caught',teach:'taught',know:'knew',grow:'grew',fly:'flew',drive:'drove',ride:'rode',begin:'began',break:'broke',choose:'chose',fall:'fell',forget:'forgot',keep:'kept',pay:'paid',put:'put',cut:'cut',hit:'hit',set:'set',shut:'shut',send:'sent',spend:'spent',build:'built',win:'won',understand:'understood',wear:'wore'};
+function waPastTense(base){
+ if(WA_IRREGULAR_PAST[base])return WA_IRREGULAR_PAST[base];
+ if(/[^aeiou]y$/.test(base))return base.slice(0,-1)+'ied';
+ if(/e$/.test(base))return base+'d';
+ if(/(stop|plan|drop|shop|trip|clap|skip|prefer|admit|occur)$/.test(base))return base+base.slice(-1)+'ed';
+ return base+'ed';
+}
 function waAnswerWithBase(q){
  var answer=String(q.ans||'');
- if(S.mode!=='e'&&S.mode!=='e5')return esc(answer);
- var base=WA_PAST_FORMS[answer.toLowerCase().trim()];
- return esc(answer)+(base?'<small class="wa-present-form">現在形：'+esc(base)+'</small>':'');
+ if((S.mode!=='e'&&S.mode!=='e5')||!q.card||q.card.kind!=='e'||q.card.pos!=='v')return esc(answer);
+ var word=String(q.card.en||'').toLowerCase().trim();
+ var base=WA_PAST_FORMS[word]||word;
+ var past=waPastTense(base);
+ return esc(answer)+'<small class="wa-present-form">現在形：'+esc(base)+'　／　過去形：'+esc(past)+'</small>';
 }
 function waShowPoints(value,label,kind){
  var fx=document.getElementById('fx');if(!fx||!value)return;
