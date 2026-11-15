@@ -232,6 +232,7 @@
       <section class="wa-guild-panel"><h3>🦊 プレイヤー名</h3><p class="hint">ランキングに表示する名前（20文字まで）</p><input id="wa-nick" maxlength="20" placeholder="ニックネーム"><button id="wa-profile" class="wa-register">名前を保存</button><p id="wa-profile-result" role="status" aria-live="polite" class="hint"></p></section>
       <button id="wa-play" class="wa-primary-play">🎮 ゲームを始める</button>
       <section class="wa-guild-panel"><h3>🐾 マイ相棒</h3><button id="wa-choose-companion">相棒を選ぶ・変更</button><button id="wa-open-meal" class="secondary">🍎 ごはん</button></section>
+      <section class="wa-daily-wrap"><h3>🎯 今日の10問チャレンジ</h3><p class="hint">ギルド不要。各科目1日1回、全員同じ10問に挑戦！（1問100pt）</p><div class="wa-daily-grid"><div class="wa-grade-card grade5"><h4>🌱 5級</h4><button id="wa-daily-e5">英検5級</button><button id="wa-daily-k5">漢検5級</button></div><div class="wa-grade-card grade4"><h4>⚡ 4級</h4><button id="wa-daily-e">英検4級</button><button id="wa-daily-k">漢検4級</button></div></div><p id="wa-daily-feedback" role="alert" aria-live="polite" class="hint"></p><div id="wa-daily-global-rankings">今日のチャレンジランキングを読み込み中…</div></section>
       <section class="wa-daily-wrap"><h3>🏆 サイト全体の最高得点ランキング</h3><p class="hint">ギルド不要。各プレイヤーの自己ベストを掲載します。ブラウザ送信の参考記録で、プレイ内容のサーバー検証はありません。</p><div id="wa-global-rankings" aria-live="polite">ランキングを読み込んでいます…</div><button id="wa-rank-refresh" class="secondary">ランキング更新</button></section>`;
     $('wa-nick').value=getPref('nickname');
     $('wa-choose-companion').onclick=openCompanionPicker;
@@ -243,8 +244,24 @@
       setPref('nickname',nick.slice(0,20));
       $('wa-profile-result').textContent='✓ 保存しました。次回の得点送信から反映されます。';
     };
+    $('wa-daily-e5').onclick=()=>startDaily(null,'eiken5');
+    $('wa-daily-k5').onclick=()=>startDaily(null,'kanken5');
+    $('wa-daily-e').onclick=()=>startDaily(null,'eiken4');
+    $('wa-daily-k').onclick=()=>startDaily(null,'kanken4');
+    showDailyGlobalRankings();
     $('wa-rank-refresh').onclick=showGlobalRankings;
     await showGlobalRankings();
+  }
+  async function showDailyGlobalRankings(){
+    const host=$('wa-daily-global-rankings');if(!host)return;
+    try{
+      const blocks=[];
+      for(const [subject,label] of [['eiken5','英検5級'],['eiken4','英検4級'],['kanken5','漢検5級'],['kanken4','漢検4級']]){
+        const rows=check(await client.rpc('wa_daily_global_ranking',{p_subject:subject}))||[];
+        blocks.push(`<h4>${label}・今日の得点</h4>${rows.length?'<ol>'+rows.map(r=>`<li>${esc(r.nickname)} — <b>${Number(r.score)} pt</b></li>`).join('')+'</ol>':'<p class="hint">まだ挑戦者がいません</p>'}`);
+      }
+      if(host.isConnected)host.innerHTML=blocks.join('');
+    }catch(e){if(host.isConnected)host.textContent='今日のランキングを取得できません：'+(e?.message||String(e));}
   }
   async function showGlobalRankings(){
     const host=$('wa-global-rankings');if(!host)return;
@@ -323,8 +340,8 @@
     if(feedback){feedback.style.display='block';feedback.textContent='対戦を読み込んでいます…';}
     if(btn){btn.disabled=true;btn.dataset.originalLabel=btn.textContent;btn.textContent='読み込み中…';}
     try{
-      const data=check(await client.rpc('wa_start_daily',{p_group_id:groupId,p_subject:subject}));
-      if(data.finished){if(feedback)feedback.textContent='今日はこの科目に回答済みです。明日また挑戦してください。';await showRankings(groupId);return;}
+      const data=check(await client.rpc('wa_start_daily_global',{p_subject:subject}));
+      if(data.finished){if(feedback)feedback.textContent='今日はこの科目に回答済みです。明日また挑戦してください。';await showDailyGlobalRankings();return;}
       stopMiniTimer();dailyMiniPoints=0;dailyMiniResults=[];dailyRun=data.run_id;dailyQuestions=data.questions;dailyAnswers=[];dailyIndex=0;dailySubject=subject;
       selected=groupId;renderDailyQuestion();
     }catch(e){
@@ -467,9 +484,9 @@
       grantCompanionPoints(Number(result.score)+dailyMiniPoints,'daily:'+dailyRun);
       // Award one feeding opportunity only after server-confirmed completion.
       if(!hasMeal()&&!hasFed()){setPref('meal-earned',todayJST());}refreshCompanion();
-      content.innerHTML=`<h2>結果発表！</h2><p>通常クイズ：<b>${result.score} pt</b></p><p>ミニパズル：<b>+${dailyMiniPoints} pt</b></p><p style="font-size:32px;font-weight:bold">合計 ${Number(result.score)+dailyMiniPoints} Point!</p><p>${result.correct} / ${result.total} 問正解</p><p class="hint">※現在ランキングに保存されるのは通常クイズの ${result.score} pt のみです。ミニパズル点の公式ランキング反映にはSupabaseの採点関数更新が必要です。</p><button id="wa-feed-now">🍎 相棒にごはんをあげる</button><button id="wa-return">グループに戻る</button>`;
+      content.innerHTML=`<h2>結果発表！</h2><p>通常クイズ：<b>${result.score} pt</b></p><p>ミニパズル：<b>+${dailyMiniPoints} pt</b></p><p style="font-size:32px;font-weight:bold">合計 ${Number(result.score)+dailyMiniPoints} Point!</p><p>${result.correct} / ${result.total} 問正解</p><p class="hint">※現在ランキングに保存されるのは通常クイズの ${result.score} pt のみです。ミニパズル点の公式ランキング反映にはSupabaseの採点関数更新が必要です。</p><button id="wa-feed-now">🍎 相棒にごはんをあげる</button><button id="wa-return">ホームに戻る</button>`;
       $('wa-feed-now').onclick=openMeal;
-      $('wa-return').onclick=()=>showGroup(selected);
+      $('wa-return').onclick=showHome;
     }catch(e){error(e);content.innerHTML='<button id="wa-retry">再送信</button>';
       $('wa-retry').onclick=finishDaily;}
   }
