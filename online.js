@@ -204,15 +204,15 @@
   $('wa-comp-tap').onclick=openMeal;
   refreshCompanion();
   let firstHome = true;
-  // Normal-game results are client-reported and therefore marked unverified.
+  // Site-wide personal best. Scores are client-reported (not independently verified).
   window.WAOnline = {
     submitNormalScore: async function(result){
-      if(!user) return;
+      if(!user)return;
       grantCompanionPoints(result.score,'normal:'+Date.now()+':'+Math.random().toString(36).slice(2));
-      if(!selected)return;
-      const payload={p_group_id:selected,p_subject:result.subject,p_score:result.score,
-        p_stages:result.stages,p_correct:result.correct,p_total:result.total};
-      check(await client.rpc('wa_submit_normal_score',payload));
+      const nickname=(getPref('nickname')||'プレイヤー').slice(0,20);
+      const payload={p_subject:result.subject,p_score:Math.max(0,Math.round(Number(result.score)||0)),
+        p_stages:Math.max(0,Math.round(Number(result.stages)||0)),p_nickname:nickname};
+      check(await client.rpc('wa_global_submit_score',payload));
     }
   };
   let dailyRun=null, dailyAnswers=[], dailyIndex=0, dailyQuestions=[], dailySubject="";
@@ -227,48 +227,36 @@
     await showHome();
   }catch(e){error(e);}
   async function showHome(){
+    firstHome=false;selected=null;
+    content.innerHTML=`<section class="wa-guild-hero"><p class="eyebrow">WORD ARROW · WORLD RANKING</p><h2>🏹 ワードアロー</h2><p>みんなと最高得点を競おう！ ギルド登録は不要です。</p></section>
+      <section class="wa-guild-panel"><h3>🦊 プレイヤー名</h3><p class="hint">ランキングに表示する名前（20文字まで）</p><input id="wa-nick" maxlength="20" placeholder="ニックネーム"><button id="wa-profile" class="wa-register">名前を保存</button><p id="wa-profile-result" role="status" aria-live="polite" class="hint"></p></section>
+      <button id="wa-play" class="wa-primary-play">🎮 ゲームを始める</button>
+      <section class="wa-guild-panel"><h3>🐾 マイ相棒</h3><button id="wa-choose-companion">相棒を選ぶ・変更</button><button id="wa-open-meal" class="secondary">🍎 ごはん</button></section>
+      <section class="wa-daily-wrap"><h3>🏆 サイト全体の最高得点ランキング</h3><p class="hint">ギルド不要。各プレイヤーの自己ベストを掲載します。ブラウザ送信の参考記録で、プレイ内容のサーバー検証はありません。</p><div id="wa-global-rankings" aria-live="polite">ランキングを読み込んでいます…</div><button id="wa-rank-refresh" class="secondary">ランキング更新</button></section>`;
+    $('wa-nick').value=getPref('nickname');
+    $('wa-choose-companion').onclick=openCompanionPicker;
+    $('wa-open-meal').onclick=openMeal;
+    $('wa-play').onclick=()=>{panel.hidden=true};
+    $('wa-profile').onclick=()=>{
+      const nick=$('wa-nick').value.trim();
+      if(!nick){$('wa-profile-result').textContent='名前を入力してください';return;}
+      setPref('nickname',nick.slice(0,20));
+      $('wa-profile-result').textContent='✓ 保存しました。次回の得点送信から反映されます。';
+    };
+    $('wa-rank-refresh').onclick=showGlobalRankings;
+    await showGlobalRankings();
+  }
+  async function showGlobalRankings(){
+    const host=$('wa-global-rankings');if(!host)return;
+    host.textContent='読み込み中…';
     try{
-      const groups=check(await client.rpc('wa_my_groups'))||[];
-      const pending=new URLSearchParams(location.search).get('group');
-      // Do not bypass an incoming invitation. Auto-enter only a confirmed membership.
-      if (firstHome && !pending) {
-        firstHome=false;
-        const savedGroup=getPref('group');
-        if (savedGroup && groups.some(g=>String(g.id)===savedGroup)) {
-          await showGroup(savedGroup);
-          return;
-        }
+      const blocks=[];
+      for(const [subject,label] of [['eiken5','英検5級'],['eiken4','英検4級'],['kanken5','漢検5級'],['kanken4','漢検4級']]){
+        const rows=check(await client.rpc('wa_global_ranking',{p_subject:subject}))||[];
+        blocks.push(`<h4>${label}</h4>${rows.length?'<ol>'+rows.map(r=>`<li>🏅 ${esc(r.nickname)} — <b>${Number(r.score).toLocaleString()} pt</b>（STAGE ${Number(r.stages)}）</li>`).join('')+'</ol>':'<p class="hint">まだ記録がありません</p>'}`);
       }
-      firstHome=false;
-      content.innerHTML=`
-      <section class="wa-guild-hero"><p class="eyebrow">WORD ARROW · ADVENTURER GUILD</p><h2>🏹 冒険者ギルド</h2><p>仲間と学んで、モンスターに挑もう！</p><img src="special-ally-portrait.webp" alt="冒険を応援する白いキツネ" onerror="this.style.display='none'"></section>
-      <section class="wa-guild-panel"><h3>🦊 冒険者登録</h3><p class="hint">ランキングに表示する名前を決めよう</p><label for="wa-nick">ニックネーム（20文字まで）</label><input id="wa-nick" maxlength="20" placeholder="例：たろう"><button type="button" id="wa-profile" class="wa-register">冒険者として登録・変更</button><p id="wa-profile-result" role="status" aria-live="polite" class="hint"></p><p class="hint" style="margin-top:12px">このブラウザの匿名アカウントに名前と所属ギルドを保存します。次回は自動で開きます。ブラウザデータ削除や端末変更では引き継げません。</p></section>
-      <section class="wa-guild-panel"><h3>🐾 マイ相棒</h3><p class="hint">右下でいつも応援してくれるよ！</p><button id="wa-choose-companion">相棒を選ぶ・変更する</button></section><section class="wa-guild-panel"><h3>🛡️ 所属ギルド</h3><p class="hint">仲間のいるギルドを選んで冒険を始めよう</p><div class="wa-guild-members" id="wa-groups">${groups.length?groups.map(g=>`<div class="group"><div><b>${esc(g.name)}</b><div class="hint">${Number(g.member_count)}人が参加中</div></div><button class="wa-enter" data-open="${esc(g.id)}">ギルドに入る</button></div>`).join(''):'<p class="hint">まだギルドがありません。下から作成できます。</p>'}</div></section>
-      ${pending?'<section class="wa-guild-panel wa-pending"><h3>✉️ 招待状が届いています</h3><p class="hint">招待されたギルドに参加できます。</p><button id="wa-join">このギルドに参加</button></section>':''}
-      <section class="wa-guild-panel"><h3>✚ 新しいギルドを作る</h3><label for="wa-group-name">ギルド名</label><input id="wa-group-name" maxlength="40" placeholder="例：5年1組"><button id="wa-create" class="wa-create">ギルドを作成</button></section>
-      <button id="wa-play" class="wa-solo">ひとりで冒険する <span style="display:block;font-size:12px;font-weight:400;color:#bdd0e4;margin-top:4px">グループなしで通常ゲームをプレイ</span></button><p class="hint">ギルドを開いて開始した通常ゲームの得点は、終了時にオンライン共有されます。</p>`;
-      $('wa-choose-companion').onclick=openCompanionPicker;
-      $('wa-nick').value=getPref('nickname');
-      $('wa-profile').onclick=async()=>{
-        const btn=$('wa-profile'), result=$('wa-profile-result');
-        const nickname=$('wa-nick').value.trim();
-        if(!nickname){result.textContent='冒険者名を入力してください。';result.style.color='#ffb1a6';$('wa-nick').focus();return;}
-        btn.disabled=true;btn.textContent='登録しています…';result.textContent='';
-        try{
-          check(await client.rpc('wa_set_profile',{p_nickname:nickname,p_avatar:'🐱'}));
-          setPref('nickname',nickname);
-          result.textContent='✓ 冒険者名を登録しました！';result.style.color='#a8f3c7';
-          status.textContent='オンライン接続済み';status.className='';
-        }catch(e){
-          result.textContent='登録できませんでした：'+(e?.message||String(e));result.style.color='#ffb1a6';
-          error(e);
-        }finally{btn.disabled=false;btn.textContent='冒険者として登録・変更';}
-      };
-      $('wa-create').onclick=async()=>{try{const name=$('wa-group-name').value;const id=check(await client.rpc('wa_create_group',{p_name:name}));await showGroup(id);}catch(e){error(e)}};
-      content.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>showGroup(b.dataset.open));
-      if(pending)$('wa-join').onclick=async()=>{try{const id=check(await client.rpc('join_group',{p_invite_code:pending}));history.replaceState({},'',location.pathname);await showGroup(id);}catch(e){error(e)}};
-      $('wa-play').onclick=()=>{selected=null;panel.hidden=true};
-    }catch(e){error(e)}
+      host.innerHTML=blocks.join('');
+    }catch(e){host.innerHTML='<p class="error">ランキングを取得できません。Supabaseで同梱のSQLを実行してください。<br>'+esc(e?.message||String(e))+'</p>';}
   }
   async function showGroup(id){
     try{

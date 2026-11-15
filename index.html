@@ -1327,10 +1327,16 @@ function quizUI(q,host,o){
         // Direct user gesture: start speech immediately, avoiding network delay / autoplay restrictions.
         stopAudio();speechFallback(q.auto,'en-US');
       });
-      if(CAN_SPEAK)setTimeout(function(){
-        // Best effort auto playback; replay button remains available on restricted browsers.
-        stopAudio();speechFallback(q.auto,'en-US');
+      // iOS Safari may block playback without a user gesture. Do not cancel
+      // a manually started replay with a delayed automatic speech request.
+      if(CAN_SPEAK && !/iPad|iPhone|iPod/.test(navigator.userAgent))setTimeout(function(){
+        if(!replay || !replay.isConnected)return;
+        speechFallback(q.auto,'en-US');
       },300);
+      if(replay && /iPad|iPhone|iPod/.test(navigator.userAgent)){
+        replay.textContent='🔊 タップして音声を聞く';
+        replay.style.fontWeight='900';
+      }
     }
     var btns=host.querySelectorAll('.ch'),done=false;
     btns.forEach(function(b){b.addEventListener('click',function(){
