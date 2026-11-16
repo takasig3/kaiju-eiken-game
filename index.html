@@ -1704,12 +1704,12 @@ function updateInfo(){
   var i=$('#info'); if(!i) return;
   var cs=chargeStat(),pips='';
   for(var k=0;k<3;k++) pips+=k<S.charge.length?'●':'○';
-  i.innerHTML='<span>チャージ '+pips+(S.charge.length?'　合計 '+Math.round(cs.P)+' ×'+cs.M.toFixed(1)+(cs.four?' ➶'+cs.four:'')+(cs.five?' 🌈'+cs.five:''):'')+'</span>'+(S.allyBoostPending?'<span class="ally-boost-status">✨ 次の攻撃×2</span>':'')+'<span>れんぞく正解 '+S.streak+'</span><span>じゃま '+jamaCount()+'</span>';
+  i.innerHTML='<span>チャージ '+pips+(S.charge.length?'　合計 '+Math.round(cs.P)+' ×'+cs.M.toFixed(1)+(cs.four?' ➶'+cs.four:'')+(cs.five?' 🌈'+cs.five:''):'')+'</span>'+(S.allyPointMultiplier>1?'<span class="ally-boost-status">✨ 次の攻撃ポイント×'+S.allyPointMultiplier+'</span>':'')+'<span>れんぞく正解 '+S.streak+'</span><span>じゃま '+jamaCount()+'</span>';
   $('#score').textContent=S.score+' pt';
   if(!$('#finish-action'))i.insertAdjacentHTML('beforeend','<div class="finish-row" id="finish-action" hidden><button type="button" class="finish-btn" id="finish-btn">🚀 今すぐ発射！</button></div>');
   var fin=$('#finish-action');
   if(fin){
-    var potential=Math.max(1,Math.round(cs.P*cs.M*(1+Math.min(S.streak,5)*.05)*(S.allyBoostPending?2:1)));
+    var potential=Math.max(1,Math.round(cs.P*cs.M*(1+Math.min(S.streak,5)*.05)));
     var show=S.charge.length>0&&S.charge.length<3&&S.hp>0&&potential>=S.hp;
     fin.hidden=!show;
     if(show){var b=fin.querySelector('button');b.textContent='🚀 今すぐ発射！ （予想 '+potential+' ダメージ）';b.disabled=!!S.locked;}
@@ -1723,7 +1723,7 @@ function flash(msg){
 /* ---------- battle ---------- */
 function startBattle(){
   var st=stages()[S.stage],mon=MONS[S.stage]; window.scrollTo(0,0);
-  S.maxHp=550+S.stage*75;S.hp=S.maxHp;S.allyBoostPending=false;S.moves=0;S.streak=0;S.locked=true;S.sel=null;S.drag=null;S.lastKey=null;S.stat={};S.charge=[];
+  S.maxHp=550+S.stage*75;S.hp=S.maxHp;S.allyPointMultiplier=1;S.allyPointHero=5;S.moves=0;S.streak=0;S.locked=true;S.sel=null;S.drag=null;S.lastKey=null;S.stat={};S.charge=[];
   st.cards.forEach(function(c){S.stat[c.id]={ok:0,ng:0,asked:0}});
   app.innerHTML=
   '<section class="battle'+(S.stage===9?' final-boss':'')+'" id="battle">'+
@@ -1792,7 +1792,7 @@ function chargeStat(){
 
 async function finishEarly(){
   if(S.locked||!S.charge.length||S.charge.length>=3||S.hp<=0)return;
-  var cs=chargeStat(),potential=Math.max(1,Math.round(cs.P*cs.M*(1+Math.min(S.streak,5)*.05)*(S.allyBoostPending?2:1)));
+  var cs=chargeStat(),potential=Math.max(1,Math.round(cs.P*cs.M*(1+Math.min(S.streak,5)*.05)));
   if(potential<S.hp)return;
   S.locked=true;updateInfo();
   await fire();S.charge=[];
@@ -1904,7 +1904,9 @@ async function swapTry(r1,c1,r2,c2){
   var res=await resolve();
   await finishPuzzleTurn(res);
 }
-async function summonChainAlly(){
+async function summonChainAlly(chain){
+  var isTen=chain>=10;
+  var multiplier=isTen?3:2;
   var current=stages()[S.stage].cards;
   var ids={};current.forEach(function(c){ids[c.id]=true});
   var other=allCards(S.mode.charAt(0)==='e'?'e':'k').filter(function(c){return c.mode===S.mode&&!ids[c.id]&&variants(c).length});
@@ -1915,14 +1917,14 @@ async function summonChainAlly(){
   board.hidden=true;$('#pv').hidden=true;
   var host=document.createElement('div');host.className='ally-quiz';slot.appendChild(host);
   var hero=document.createElement('div');hero.className='ally-hero';
-  hero.innerHTML='<img class="ally-avatar-img" src="special-ally-portrait.webp" alt="白いキツネの特別な味方" width="170" height="170"><div><div class="ally-heading">5連鎖！ 特別な味方が登場</div><div class="ally-description">今のステージとは別の問題に1回だけ挑戦！ 正解で次の攻撃が2倍</div></div>';
+  hero.innerHTML='<img class="ally-avatar-img" src="'+(isTen?'special-ally-10.webp':'special-ally-portrait.webp')+'" alt="'+(isTen?'星の守護獣':'白いキツネの特別な味方')+'" width="170" height="170"><div><div class="ally-heading">'+(isTen?'10連鎖以上！ 星の守護獣が登場':'5連鎖！ 特別な味方が登場')+'</div><div class="ally-description">特別問題に1回挑戦！ 正解で次の攻撃の獲得ポイントが'+multiplier+'倍（ダメージは通常どおり）</div></div>';
   host.appendChild(hero);
   var quizHost=document.createElement('div');host.appendChild(quizHost);
-  flash('✨ 5連鎖！ 助っ人が来た！');
+  flash(isTen?'🌟 10連鎖！ 星の守護獣が来た！':'✨ 5連鎖！ 助っ人が来た！');
   var ok=await quizUI(q,quizHost,{head:'特別チャレンジ・回答は1回だけ',next:'バトルに戻る'});
   record(q,ok,false);
   S.lastKey=q.key;
-  if(ok){S.allyBoostPending=true;flash('✨ 助っ人成功！ 次の攻撃×2');}
+  if(ok){if(multiplier>(S.allyPointMultiplier||1)){S.allyPointMultiplier=multiplier;S.allyPointHero=isTen?10:5;}flash('✨ 助っ人成功！ 次の攻撃ポイント×'+S.allyPointMultiplier);}
   else flash('助っ人チャレンジ失敗！ ボーナスなし');
   host.remove();board.hidden=false;$('#pv').hidden=false;
   render();updateInfo();
@@ -1995,7 +1997,7 @@ async function finishPuzzleTurn(res){
 
   // Only an actual five-or-more cascade in this move summons the ally.
   // The ally quiz uses cards outside the current stage, and allows exactly one answer.
-  if(res.chain>=5)await summonChainAlly();
+  if(res.chain>=5)await summonChainAlly(res.chain);
   if((S.mode==='e'||S.mode==='e5')&&Math.random()<(res.chain>=2?0.9:0.3))await waSpellingChallenge();
   var learningBonus=await learningTileChallenge();
   S.pendingSpecial=(res.five?'🌈レインボー×'+res.five+' ':'')+(res.four?'➶貫通×'+res.four:'');
@@ -2133,22 +2135,24 @@ async function fire(){
   var cs=chargeStat(),P=cs.P,M=cs.M,tn=cs.tn;
   var allBad=S.charge.every(function(m){return !m.ok});
   var sb=1+Math.min(S.streak,5)*.05;
-  var allyDouble=!!S.allyBoostPending;
-  var dmg=Math.max(1,Math.round(P*M*sb*(allyDouble?2:1)));
-  S.allyBoostPending=false; // one shot only, regardless of its damage or victory
+  var allyMultiplier=S.allyPointMultiplier||1;
+  var allyHero=S.allyPointHero||5;
+  var allyDouble=allyMultiplier>1;
+  var dmg=Math.max(1,Math.round(P*M*sb)); // Ally changes earned points, never damage.
+  S.allyPointMultiplier=1;S.allyPointHero=5; // consumed by this shot
   var sc=Math.min(3.4,1+(M-1)*1.1+Math.max(0,tn-9)*.03);
-  flash((allyDouble?'✨ 助っ人パワー2倍！ ':'')+(cs.five?'🌈レインボーアロー！ ':cs.four?'➶貫通アロー！ ':'3発合体！ ')+'×'+(M*(allyDouble?2:1)).toFixed(1));
+  flash((allyDouble?'✨ 獲得ポイント×'+allyMultiplier+'！ ':'')+(cs.five?'🌈レインボーアロー！ ':cs.four?'➶貫通アロー！ ':'3発合体！ ')+'×'+M.toFixed(1));
   SFX.shot(allBad?1:sc);
   var fx=$('#fx'),mon=$('#mon'),br=battle.getBoundingClientRect(),mr=mon.getBoundingClientRect(),sr=board.getBoundingClientRect();
   // The ally is shown at the moment of the boosted shot, over the monster.
-  // It is a visual effect only: damage remains the existing one-time x2 bonus.
+  // Ally appears for the shot; only earned points are multiplied.
   var allyAttackNodes=[];
   if(allyDouble){
     var ax=mr.left-br.left+mr.width*.46, ay=mr.top-br.top+mr.height*.48;
     var burst=document.createElement('div');burst.className='ally-attack-burst';
     burst.style.left=ax+'px';burst.style.top=ay+'px';fx.appendChild(burst);
     var allyImg=document.createElement('img');allyImg.className='ally-attack-overlay';
-    allyImg.src='special-ally.webp';allyImg.alt='';allyImg.setAttribute('aria-hidden','true');
+    allyImg.src=allyHero===10?'special-ally-10.webp':'special-ally.webp';allyImg.alt='';allyImg.setAttribute('aria-hidden','true');
     allyImg.style.left=ax+'px';allyImg.style.top=ay+'px';fx.appendChild(allyImg);
     allyAttackNodes.push(burst,allyImg);
     var reduceMotion=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -2174,10 +2178,10 @@ async function fire(){
   fx.querySelectorAll('.arrow').forEach(function(x){x.remove()});
   var f=document.createElement('div');f.className='float';
   f.style.left=(mr.left-br.left+mr.width/2)+'px';f.style.top=(mr.top-br.top+mr.height/3)+'px';
-  if(!allBad){f.textContent=(allyDouble?'✨×2 ':'')+'-'+dmg;if(allyDouble)f.classList.add('ally-boost-float');f.style.fontSize=(30+(sc-1)*10)+'px';mon.classList.add('hit')}
+  if(!allBad){f.textContent='-'+dmg;if(allyDouble)f.classList.add('ally-boost-float');f.style.fontSize=(30+(sc-1)*10)+'px';mon.classList.add('hit')}
   else{f.textContent='弱い -'+dmg;mon.classList.add('laugh')}
   var dealt=Math.min(S.hp,dmg);
-  S.hp=Math.max(0,S.hp-dmg);S.score+=dealt;setHp();waShowPoints(dealt,'攻撃ポイント','attack');
+  S.hp=Math.max(0,S.hp-dmg);var earned=dealt*allyMultiplier;S.score+=earned;setHp();waShowPoints(earned,allyDouble?'攻撃ポイント×'+allyMultiplier:'攻撃ポイント','attack');
   fx.appendChild(f);updateInfo();
   await sleep(650);
   allyAttackNodes.forEach(function(node){node.remove()});

@@ -107,12 +107,12 @@
   const getPref = suffix => { try { return localStorage.getItem(prefKey(suffix)) || ''; } catch (_) { return ''; } };
   const setPref = (suffix,value) => { try { localStorage.setItem(prefKey(suffix),value); } catch (_) {} };
   // Lightweight companion: one feeding opportunity per completed daily run (JST day).
-  const companionNames=['ライボルトン','アクアフィン','アースゴーレム','モンスター4','モンスター5','モンスター6','モンスター7','モンスター8','モンスター9','モンスター10','？？？ お助けキャラ'];
+  const companionNames=['ライボルトン','アクアフィン','アースゴーレム','モンスター4','モンスター5','モンスター6','モンスター7','モンスター8','モンスター9','モンスター10','？？？ お助けキャラ','？？？ 星の守護獣'];
   const todayJST=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-  const getCompanion=()=>Math.max(0,Math.min(10,Number(getPref('companion')||0)));
+  const getCompanion=()=>Math.max(0,Math.min(11,Number(getPref('companion')||0)));
   // Cumulative earned points, separate from the competitive leaderboard.
   // Existing feeding counts remain saved but no longer gate character unlocks.
-  const companionUnlockPoints=[0,0,0,45000,75000,110000,150000,200000,260000,330000,400000];
+  const companionUnlockPoints=[0,0,0,45000,75000,110000,150000,200000,260000,330000,400000,500000];
   const earnedPoints=()=>Math.max(0,Math.floor(Number(getPref('companion-total-points')||0)));
   function grantCompanionPoints(amount,receipt){
     const points=Math.max(0,Math.floor(Number(amount)||0));
@@ -129,7 +129,7 @@
   }
   const companionUnlocked=i=>earnedPoints()>=companionUnlockPoints[i];
   const nextCompanionUnlock=()=>companionUnlockPoints.find((points,i)=>i>=3&&!companionUnlocked(i));
-  const companionImage=i=>i===10?'special-ally.webp':'assets/monster-'+String(i+1).padStart(2,'0')+'.webp';
+  const companionImage=i=>i===11?'special-ally-10.webp':i===10?'special-ally.webp':'assets/monster-'+String(i+1).padStart(2,'0')+'.webp';
   const companionPicture=i=>i===10?'<span class="wa-ally-fallback" aria-label="お助けキャラ">🦊</span>':'';
   const hasMeal=()=>getPref('meal-earned')===todayJST();
   const hasFed=()=>getPref('meal-fed')===todayJST();
@@ -166,7 +166,7 @@
   function refreshCompanion(){
     const n=getCompanion();$('wa-comp-img').src=companionImage(n);
     $('wa-comp-img').alt=companionNames[n];
-    $('wa-comp-img').onerror=()=>{if(n===10){$('wa-comp-img').style.display='none';$('wa-comp-tap').textContent='🦊';}};
+    $('wa-comp-img').onerror=()=>{if(n>=10){$('wa-comp-img').style.display='none';$('wa-comp-tap').textContent='🦊';}};
     $('wa-comp-img').style.display='';
     $('wa-comp-speech').textContent=hasMeal()&&!hasFed()?'🍎 ごはん！':hasFed()?'ありがとう♥':'がんばれ！';
   }
@@ -177,7 +177,7 @@
     const points=earnedPoints();
     const next=nextCompanionUnlock();
     companionModal.hidden=false;
-    companionModal.innerHTML=`<div class="wa-comp-dialog" role="dialog" aria-modal="true" aria-label="相棒を選ぶ"><h2>🐾 相棒を選ぼう！</h2><p>最初の3体から選べるよ。ゲームでポイントを集めると仲間が増える！</p><p>⭐ 累計獲得ポイント：<b>${points.toLocaleString()} pt</b>${next!==undefined?` ／ 次の相棒まであと${(next-points).toLocaleString()} pt`:' ／ 全員解放！'}</p><div class="wa-comp-picker">${companionNames.map((name,i)=>`<button data-comp="${i}" class="${i===n?'selected':''} ${companionUnlocked(i)?'':'locked'}" aria-label="${name}${companionUnlocked(i)?'':` ${companionUnlockPoints[i]}ポイントで解放`}" title="${name}${companionUnlocked(i)?'':`：累計${companionUnlockPoints[i].toLocaleString()}ptで解放`}" ${companionUnlocked(i)?'':'disabled'}>${i===10&&!companionUnlocked(i)?'<span class="wa-mystery">？</span>':`<img src="${companionImage(i)}" alt="${name}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="wa-ally-fallback" style="display:none">🦊</span>`}${companionUnlocked(i)?'':`<span class="wa-lock">🔒 ${companionUnlockPoints[i].toLocaleString()}pt</span>`}</button>`).join('')}</div><p id="wa-comp-name">${companionUnlocked(n)?companionNames[n]:'？？？'}</p><button id="wa-comp-close" class="secondary">とじる</button></div>`;
+    companionModal.innerHTML=`<div class="wa-comp-dialog" role="dialog" aria-modal="true" aria-label="相棒を選ぶ"><h2>🐾 相棒を選ぼう！</h2><p>最初の3体から選べるよ。ゲームでポイントを集めると仲間が増える！</p><p>⭐ 累計獲得ポイント：<b>${points.toLocaleString()} pt</b>${next!==undefined?` ／ 次の相棒まであと${(next-points).toLocaleString()} pt`:' ／ 全員解放！'}</p><div class="wa-comp-picker">${companionNames.map((name,i)=>`<button data-comp="${i}" class="${i===n?'selected':''} ${companionUnlocked(i)?'':'locked'}" aria-label="${name}${companionUnlocked(i)?'':` ${companionUnlockPoints[i]}ポイントで解放`}" title="${name}${companionUnlocked(i)?'':`：累計${companionUnlockPoints[i].toLocaleString()}ptで解放`}" ${companionUnlocked(i)?'':'disabled'}>${i>=10&&!companionUnlocked(i)?'<span class="wa-mystery">？</span>':`<img src="${companionImage(i)}" alt="${name}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="wa-ally-fallback" style="display:none">🦊</span>`}${companionUnlocked(i)?'':`<span class="wa-lock">🔒 ${companionUnlockPoints[i].toLocaleString()}pt</span>`}</button>`).join('')}</div><p id="wa-comp-name">${companionUnlocked(n)?companionNames[n]:'？？？'}</p><button id="wa-comp-close" class="secondary">とじる</button></div>`;
     companionModal.querySelectorAll('[data-comp]').forEach(b=>b.onclick=()=>{
       const i=Number(b.dataset.comp);
       if(!companionUnlocked(i))return;
