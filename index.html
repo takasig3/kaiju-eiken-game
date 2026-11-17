@@ -538,6 +538,12 @@ var MONS=[
  {name:'ストームヴェイル',kind:'robot',c:'#9fb7c9',crown:1},
  {name:'深淵の魔導王',kind:'king',c:'#ff8f8f',eyes:3}
 ];
+/* Stage order follows the left-to-right paired artwork supplied by the user. */
+var STAGE_BG_ORDER=[1, 2, 4, 3, 8, 10, 9, 5, 6, 7];
+var STAGE_MONSTER_ORDER=[1, 3, 2, 4, 7, 6, 5, 10, 8, 9];
+var MONS_ORIGINAL=MONS.slice();
+MONS=STAGE_MONSTER_ORDER.map(function(n){return Object.assign({},MONS_ORIGINAL[n-1])});
+MONS[9].name='深淵の魔導王';
 var MODE_NAME={e:'英検4級',k:'漢検4級',e5:'英検5級',k5:'漢検5級'};
 var DATA={e:[],k:[],e5:[],k5:[]},BYID={};
 function reg(mode,si,card){card.mode=mode;card.si=si;BYID[card.id]=card;return card}
@@ -1742,7 +1748,7 @@ function startBattle(){
   app.innerHTML=
   '<section class="battle'+(S.stage===9?' final-boss':'')+'" id="battle">'+
    '<div class="bar"><span class="stg">STAGE '+(S.stage+1)+'</span><span class="stn">'+MODE_NAME[S.mode]+'　'+st.name+'</span><button type="button" class="snd" id="snd"></button><span class="sc" id="score"></span></div>'+
-   '<div class="arena stage-scenery" style="--stage-bg:url(assets/stage-bg-'+String(S.stage+1).padStart(2,'0')+'.webp)">'+(S.stage===9?'<div class="boss-banner">✦ FINAL BOSS ✦</div>':'')+'<div class="mon'+' illustrated-mon'+'" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+'<img class="monster-portrait" src="assets/monster-'+String(S.stage+1).padStart(2,'0')+'.webp" alt="'+esc(mon.name)+'"><span class="monster-sweat" aria-hidden="true">💦</span><span class="monster-pain" aria-hidden="true">うぅ…</span>'+'</div><div class="mname">'+mon.name+'</div>'+
+   '<div class="arena stage-scenery" style="--stage-bg:url(assets/stage-bg-'+String(STAGE_BG_ORDER[S.stage]).padStart(2,'0')+'.webp)">'+(S.stage===9?'<div class="boss-banner">✦ FINAL BOSS ✦</div>':'')+'<div class="mon'+' illustrated-mon'+'" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+'<img class="monster-portrait" src="assets/monster-'+String(STAGE_MONSTER_ORDER[S.stage]).padStart(2,'0')+'.webp" alt="'+esc(mon.name)+'"><span class="monster-sweat" aria-hidden="true">💦</span><span class="monster-pain" aria-hidden="true">うぅ…</span>'+'</div><div class="mname">'+mon.name+'</div>'+
    '<div class="hp" role="progressbar" aria-label="モンスターの体力"><i id="hpfill"></i><b id="hptxt"></b></div></div>'+
    '<div class="slot" id="slot"><div class="pv" id="pv" aria-hidden="true"></div><div class="board" id="board"></div></div>'+
    '<div class="foot" id="info"></div>'+

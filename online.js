@@ -411,7 +411,48 @@
     });
   }
   // Timed local mini-games. Official ranking requires server-side verification.
+  // Five English microgames; rotate daily so all modes appear across sessions.
+  function renderEnglishVarietyMini(){
+    const round=Math.max(0,Math.min(2,Math.floor(dailyIndex/3)-1));
+    const day=Math.floor((Date.now()+9*3600000)/86400000);
+    const mode=(day+round)%5;
+    const sets=dailySubject==='eiken4' ? [
+      {en:'I visited my friend yesterday.',ja:'私は昨日友達を訪ねました。',word:'visited',meaning:'訪ねた',past:'visit → visited',choices:['訪ねた','泳いだ','買った','書いた']},
+      {en:'She is reading a book.',ja:'彼女は本を読んでいます。',word:'reading',meaning:'読んでいる',past:'read → read',choices:['読んでいる','走っている','眠っている','歌っている']},
+      {en:'We played soccer after school.',ja:'私たちは放課後サッカーをしました。',word:'played',meaning:'した',past:'play → played',choices:['した','食べた','見た','聞いた']}
+    ] : [
+      {en:'I like apples.',ja:'私はりんごが好きです。',word:'like',meaning:'好き',past:'like → liked',choices:['好き','嫌い','走る','飲む']},
+      {en:'This is my school.',ja:'これは私の学校です。',word:'school',meaning:'学校',past:'',choices:['学校','公園','駅','病院']},
+      {en:'He plays tennis.',ja:'彼はテニスをします。',word:'plays',meaning:'する',past:'play → played',choices:['する','寝る','読む','泳ぐ']}
+    ];
+    const q=sets[round];let finished=false,chosen=[],picked=[];
+    const start=performance.now(),limit=30000;
+    const bonusFor=t=>t<=5000?300:t<=10000?250:t<=15000?200:t<=20000?150:t<=30000?100:0;
+    const shuffle=a=>a.map((x,i)=>({x,k:((i*37+day*13+round*17)%101)})).sort((a,b)=>a.k-b.k).map(o=>o.x);
+    const words=q.en.replace(/[.!?]/g,'').split(/\s+/);
+    const japanese=q.ja.replace(/[。！？]/g,'').match(/私は|私たちは|彼女は|彼は|これは|昨日|友達を|訪ねました|本を|読んでいます|放課後|サッカーを|しました|りんごが|好きです|私の|学校です|テニスを|します|./g)||[q.ja];
+    const choices=mode===0?shuffle(words):mode===4?shuffle(japanese):[];
+    const labels=['英文を組み立てよう','意味のペアを探そう','聞こえた英語を選ぼう','正しい意味を選ぼう','日本語訳を組み立てよう'];
+    content.innerHTML='<h2>🧩 英検ミニゲーム</h2><h3>'+labels[mode]+'</h3><div class="wa-mini-timer" id="wa-mini-timer">残り 30.0 秒</div><div class="wa-mini-bonus" id="wa-mini-bonus">最速クリアで +300 Point!</div><p id="wa-variety-prompt" style="font-weight:800"></p><div id="wa-variety-answer" style="min-height:42px;margin:10px 0;padding:10px;border:2px dashed #8ca9cb;border-radius:12px;overflow-wrap:anywhere"></div><div id="wa-variety-choices" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center"></div><p id="wa-mini-status" aria-live="polite"></p><button id="wa-mini-check">こたえを決定！</button><button class="secondary" id="wa-mini-skip">スキップ</button><p class="wa-mini-note">ミニゲームのボーナスは公式ランキングの得点に含まれません。</p>';
+    const $v=id=>document.getElementById(id), host=$v('wa-variety-choices'), answer=$v('wa-variety-answer');
+    const speak=()=>{if(!('speechSynthesis' in window))return;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(q.en);u.lang='en-US';u.rate=.85;window.speechSynthesis.speak(u);};
+    const prompt=$v('wa-variety-prompt');
+    if(mode===0)prompt.textContent=q.ja;
+    if(mode===1)prompt.textContent='「'+q.word+'」と同じ意味を選ぼう';
+    if(mode===2){prompt.textContent='音声を聞いて、聞こえた単語を選ぼう';const b=document.createElement('button');b.textContent='🔊 英語を聞く';b.className='secondary';b.onclick=speak;prompt.append(b);}
+    if(mode===3)prompt.textContent='「'+q.word+'」の意味は？';
+    if(mode===4)prompt.textContent=q.en;
+    const opts=mode===0||mode===4?choices:shuffle(mode===2?[q.word,...(dailySubject==='eiken4'?['played','visited','reading','school']:['like','school','plays','apple']).filter(x=>x!==q.word).slice(0,3)]:q.choices);
+    function draw(){host.replaceChildren();answer.textContent=picked.join(' ');opts.forEach((s,i)=>{const b=document.createElement('button');b.className='secondary';b.textContent=s;b.style.cssText='padding:12px;min-width:70px;min-height:48px;font-size:17px';b.disabled=finished||(mode===0||mode===4)&&chosen.includes(i);b.onclick=()=>{if(finished)return;if(mode===0||mode===4){chosen.push(i);picked.push(s);draw();}else{picked=[s];answer.textContent=s;}};host.append(b);});}
+    if(mode===0||mode===4){const undo=document.createElement('button');undo.className='secondary';undo.textContent='↶ 1つ戻す';undo.onclick=()=>{if(finished)return;chosen.pop();picked.pop();draw();};answer.after(undo);}
+    draw();
+    let timer=setInterval(()=>{if(finished){clearInterval(timer);return;}const left=Math.max(0,limit-(performance.now()-start));$v('wa-mini-timer').textContent='残り '+(left/1000).toFixed(1)+' 秒';if(!left)finish(false,'timeout');},100);
+    function finish(ok,reason){if(finished)return;finished=true;clearInterval(timer);const elapsed=performance.now()-start,points=ok?bonusFor(elapsed):0;dailyMiniPoints+=points;dailyMiniResults.push({after_question:dailyIndex,elapsed_ms:Math.round(elapsed),points,reason,mode:labels[mode]});$v('wa-mini-check').disabled=true;$v('wa-mini-skip').disabled=true;host.querySelectorAll('button').forEach(b=>b.disabled=true);$v('wa-mini-status').textContent=ok?'✨ 正解！ +'+points+' Point!':'正解：'+(mode===4?q.ja:mode===0?q.en:mode===1||mode===3?q.meaning:q.word);$v('wa-mini-bonus').textContent=q.past?'現在形・過去形：'+q.past:'';const next=document.createElement('button');next.textContent='次の問題へ';next.onclick=renderDailyQuestion;content.append(next);}
+    $v('wa-mini-check').onclick=()=>{const actual=picked.join(mode===4?'':' ').replace(/[。.!?\s]/g,'').toLowerCase();const expected=(mode===0?q.en:mode===4?q.ja:mode===1||mode===3?q.meaning:q.word).replace(/[。.!?\s]/g,'').toLowerCase();if(actual===expected)finish(true,'correct');else $v('wa-mini-status').textContent='もう一度考えてみよう！';};
+    $v('wa-mini-skip').onclick=()=>finish(false,'skip');
+  }
   function renderDailyMiniPuzzle(){
+    if(dailySubject.startsWith('eiken')){renderEnglishVarietyMini();return;}
     const english=dailySubject.startsWith('eiken');
     const round=Math.max(0,Math.min(2,Math.floor(dailyIndex/3)-1));
     const englishSets=dailySubject==='eiken4'?
