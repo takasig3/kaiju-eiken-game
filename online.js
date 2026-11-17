@@ -102,10 +102,33 @@
   if(!window.supabase){error('supabase-jsの読み込みに失敗しました。ネット接続を確認してください。');return;}
   const client=window.supabase.createClient(config.url,config.publishableKey);
   let user,selected=null;
-  // Browser-local preferences are scoped to the Supabase anonymous user.
-  const prefKey = suffix => 'wa-guild-v2:' + user.id + ':' + suffix;
-  const getPref = suffix => { try { return localStorage.getItem(prefKey(suffix)) || ''; } catch (_) { return ''; } };
-  const setPref = (suffix,value) => { try { localStorage.setItem(prefKey(suffix),value); } catch (_) {} };
+  // Companion preferences are device/browser-local and survive anonymous auth ID rotation.
+  // Migrate known values from the old user-scoped storage without discarding existing progress.
+  const prefKey = suffix => 'wa-device-companion-v1:' + suffix;
+  const legacyKey = suffix => 'wa-guild-v2:' + (user?.id || '') + ':' + suffix;
+  const stablePrefs = new Set(['companion','companion-total-points','meal-count','meal-earned','meal-fed']);
+  function getPref(suffix){
+    try {
+      if(stablePrefs.has(suffix)){
+        const value=localStorage.getItem(prefKey(suffix));
+        if(value!==null)return value;
+        const legacy=localStorage.getItem(legacyKey(suffix));
+        if(legacy!==null){localStorage.setItem(prefKey(suffix),legacy);return legacy;}
+        // Recover from a previous anonymous session if the browser retained its storage.
+        const suffixMatch=':'+suffix;
+        const oldKeys=[];
+        for(let i=0;i<localStorage.length;i++){
+          const k=localStorage.key(i);
+          if(k?.startsWith('wa-guild-v2:')&&k.endsWith(suffixMatch))oldKeys.push(k);
+        }
+        if(oldKeys.length===1){const old=localStorage.getItem(oldKeys[0]);if(old!==null){localStorage.setItem(prefKey(suffix),old);return old;}}
+      }
+      return localStorage.getItem(legacyKey(suffix)) || '';
+    } catch (_) {return '';}
+  }
+  function setPref(suffix,value){
+    try {localStorage.setItem(stablePrefs.has(suffix)?prefKey(suffix):legacyKey(suffix),String(value));}catch (_) {}
+  }
   // Lightweight companion: one feeding opportunity per completed daily run (JST day).
   const companionNames=['ライボルトン','アクアフィン','アースゴーレム','モンスター4','モンスター5','モンスター6','モンスター7','モンスター8','モンスター9','モンスター10','？？？ お助けキャラ','？？？ 星の守護獣'];
   const todayJST=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
@@ -223,6 +246,7 @@
     if(!session)session=check(await client.auth.signInAnonymously()).session;
     if(!session?.user)throw Error('匿名ログインに失敗しました');
     user=session.user;
+    refreshCompanion();
     status.textContent='オンライン接続済み';
     await showHome();
   }catch(e){error(e);}
