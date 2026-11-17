@@ -106,7 +106,7 @@
   // Migrate known values from the old user-scoped storage without discarding existing progress.
   const prefKey = suffix => 'wa-device-companion-v1:' + suffix;
   const legacyKey = suffix => 'wa-guild-v2:' + (user?.id || '') + ':' + suffix;
-  const stablePrefs = new Set(['companion','companion-total-points','meal-count','meal-earned','meal-fed']);
+  const stablePrefs = new Set(['companion','companion-total-points','meal-count','meal-earned','meal-fed','meal-last-date','meal-streak','meal-best-streak']);
   function getPref(suffix){
     try {
       if(stablePrefs.has(suffix)){
@@ -156,6 +156,20 @@
   const companionPicture=i=>i===10?'<span class="wa-ally-fallback" aria-label="お助けキャラ">🦊</span>':'';
   const hasMeal=()=>getPref('meal-earned')===todayJST();
   const hasFed=()=>getPref('meal-fed')===todayJST();
+  // Bond is tracked independently for every companion. Existing feeding totals are preserved.
+  const bondKey=(i)=>'bond-points-'+i;
+  const bondPoints=(i)=>Math.max(0,Math.floor(Number(getPref(bondKey(i))||0)));
+  const bondLevel=(i)=>Math.min(10,1+Math.floor(bondPoints(i)/50));
+  const bondProgress=(i)=>bondPoints(i)%50;
+  const feedingDays=()=>Math.max(0,Math.floor(Number(getPref('meal-count')||0)));
+  const bondRewards={2:'新しい応援セリフ',3:'ハートの応援',5:'特別な応援',7:'キラキラの応援',10:'絆の達人の称号'};
+  const yesterdayJST=()=>{const d=new Date();d.setUTCDate(d.getUTCDate()-1);return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);};
+  const mealStreak=()=>{const last=getPref('meal-last-date');return (last===todayJST()||last===yesterdayJST())?Math.max(0,Number(getPref('meal-streak')||0)):0;};
+  function awardBond(i){
+    const before=bondLevel(i);setPref(bondKey(i),String(bondPoints(i)+10));
+    const after=bondLevel(i);return after>before?`🎉 なかよしLv.${after}！ ${bondRewards[after]||'もっと仲良しになった！'}`:'';
+  }
+
   const companionCss=document.createElement('style');
   companionCss.textContent=`
     #wa-companion{position:fixed;right:10px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100005;width:142px;text-align:center;pointer-events:none;font:700 12px system-ui,sans-serif}
@@ -171,7 +185,7 @@
     .wa-comp-dialog img{width:160px;height:160px;object-fit:contain}
     .wa-comp-dialog button{background:#e5ac40;color:#14243a;border:0;border-radius:12px;padding:12px 18px;font:800 16px system-ui,sans-serif;margin:6px;cursor:pointer}
     .wa-comp-dialog button.secondary{background:#344e70;color:white}
-    .wa-comp-picker{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:14px 0}
+    .wa-bond-track{height:11px;background:#344a67;border-radius:999px;overflow:hidden;margin:8px 0}.wa-bond-track span{display:block;height:100%;background:linear-gradient(90deg,#ffb54c,#ff67a8);border-radius:999px}.wa-bond-note{font-size:13px;line-height:1.5;color:#f4dfb9}.wa-comp-dialog{max-height:calc(100dvh - 40px);overflow:auto} .wa-comp-picker{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:14px 0}
     .wa-comp-picker button{background:#273f60;padding:5px;margin:0;border:2px solid transparent;border-radius:12px}
     .wa-comp-picker button.selected{border-color:#ffd16a}
     .wa-comp-picker button.locked{opacity:.52;filter:grayscale(1);cursor:not-allowed}
@@ -191,7 +205,7 @@
     $('wa-comp-img').alt=companionNames[n];
     $('wa-comp-img').onerror=()=>{if(n>=10){$('wa-comp-img').style.display='none';$('wa-comp-tap').textContent='🦊';}};
     $('wa-comp-img').style.display='';
-    $('wa-comp-speech').textContent=hasMeal()&&!hasFed()?'🍎 ごはん！':hasFed()?'ありがとう♥':'がんばれ！';
+    const level=bondLevel(n);const messages=level>=5?['ずっと一緒だよ！ ✨','今日もいい調子！','You can do it! 🌟']:level>=2?['がんばれ！ 💛','一緒に挑戦！','Nice job!']:['がんばれ！','You can do it!'];$('wa-comp-speech').textContent=hasMeal()&&!hasFed()?'🍎 ごはん！':hasFed()?'ありがとう♥':messages[Math.floor(Date.now()/12000)%messages.length];
   }
   function closeCompanion(){companionModal.hidden=true;companionModal.innerHTML='';}
   function openCompanionPicker(){
@@ -200,7 +214,7 @@
     const points=earnedPoints();
     const next=nextCompanionUnlock();
     companionModal.hidden=false;
-    companionModal.innerHTML=`<div class="wa-comp-dialog" role="dialog" aria-modal="true" aria-label="相棒を選ぶ"><h2>🐾 相棒を選ぼう！</h2><p>最初の3体から選べるよ。ゲームでポイントを集めると仲間が増える！</p><p>⭐ 累計獲得ポイント：<b>${points.toLocaleString()} pt</b>${next!==undefined?` ／ 次の相棒まであと${(next-points).toLocaleString()} pt`:' ／ 全員解放！'}</p><div class="wa-comp-picker">${companionNames.map((name,i)=>`<button data-comp="${i}" class="${i===n?'selected':''} ${companionUnlocked(i)?'':'locked'}" aria-label="${name}${companionUnlocked(i)?'':` ${companionUnlockPoints[i]}ポイントで解放`}" title="${name}${companionUnlocked(i)?'':`：累計${companionUnlockPoints[i].toLocaleString()}ptで解放`}" ${companionUnlocked(i)?'':'disabled'}>${i>=10&&!companionUnlocked(i)?'<span class="wa-mystery">？</span>':`<img src="${companionImage(i)}" alt="${name}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="wa-ally-fallback" style="display:none">🦊</span>`}${companionUnlocked(i)?'':`<span class="wa-lock">🔒 ${companionUnlockPoints[i].toLocaleString()}pt</span>`}</button>`).join('')}</div><p id="wa-comp-name">${companionUnlocked(n)?companionNames[n]:'？？？'}</p><button id="wa-comp-close" class="secondary">とじる</button></div>`;
+    companionModal.innerHTML=`<div class="wa-comp-dialog" role="dialog" aria-modal="true" aria-label="相棒を選ぶ"><h2>🐾 相棒を選ぼう！</h2><p>最初の3体から選べるよ。ゲームでポイントを集めると仲間が増える！</p><p>⭐ 累計獲得ポイント：<b>${points.toLocaleString()} pt</b>${next!==undefined?` ／ 次の相棒まであと${(next-points).toLocaleString()} pt`:' ／ 全員解放！'}</p><div class="wa-comp-picker">${companionNames.map((name,i)=>`<button data-comp="${i}" class="${i===n?'selected':''} ${companionUnlocked(i)?'':'locked'}" aria-label="${name}${companionUnlocked(i)?'':` ${companionUnlockPoints[i]}ポイントで解放`}" title="${name}${companionUnlocked(i)?'':`：累計${companionUnlockPoints[i].toLocaleString()}ptで解放`}" ${companionUnlocked(i)?'':'disabled'}>${i>=10&&!companionUnlocked(i)?'<span class="wa-mystery">？</span>':`<img src="${companionImage(i)}" alt="${name}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="wa-ally-fallback" style="display:none">🦊</span>`}${companionUnlocked(i)?'':`<span class="wa-lock">🔒 ${companionUnlockPoints[i].toLocaleString()}pt</span>`}</button>`).join('')}</div><p id="wa-comp-name">${companionUnlocked(n)?companionNames[n]:'？？？'}　💛 なかよし Lv.${bondLevel(n)}</p><p class="wa-bond-note">相棒ごとにごはんで仲良くなれるよ。レベルは切り替えても残る！</p><button id="wa-comp-close" class="secondary">とじる</button></div>`;
     companionModal.querySelectorAll('[data-comp]').forEach(b=>b.onclick=()=>{
       const i=Number(b.dataset.comp);
       if(!companionUnlocked(i))return;
@@ -209,19 +223,26 @@
     $('wa-comp-close').onclick=closeCompanion;
   }
   function openMeal(){
-    const n=getCompanion(),ready=hasMeal()&&!hasFed();
+    const n=getCompanion(),ready=hasMeal()&&!hasFed(),level=bondLevel(n),streak=mealStreak();
+    const progress=level>=10?100:bondProgress(n)*2;
     companionModal.hidden=false;
-    companionModal.innerHTML=`<div class="wa-comp-dialog" role="dialog" aria-modal="true" aria-label="相棒のごはん"><h2>🍎 今日のごはん</h2><img src="${companionImage(n)}" alt="${companionNames[n]}"><p id="wa-meal-message">${hasFed()?'おいしかった！ また明日ね♥':ready?'今日のオンライン対戦クリア！ ごはんをあげよう！':'今日のオンライン対戦を10問終えると、ごはんをあげられるよ！'}</p><p>ごはんをあげた回数：<b>${Number(getPref('meal-count')||0)}</b>回</p>${ready?'<button id="wa-feed">🍎 ごはんをあげる</button>':''}<button id="wa-meal-close" class="secondary">とじる</button><button id="wa-pick-from-meal" class="secondary">相棒を変更</button></div>`;
+    companionModal.innerHTML=`<div class="wa-comp-dialog" role="dialog" aria-modal="true" aria-label="相棒のごはん"><h2>🍎 今日のごはん</h2><img src="${companionImage(n)}" alt="${companionNames[n]}"><p><b>${companionNames[n]}</b> 💛 なかよし Lv.${level}</p><div class="wa-bond-track" aria-label="なかよしレベルの進み具合"><span style="width:${progress}%"></span></div><p class="wa-bond-note">${level>=10?'なかよしレベルMAX！':`次のレベルまであと ${50-bondProgress(n)} 💛`}</p><p id="wa-meal-message">${hasFed()?'おいしかった！ また明日ね♥':ready?'10問チャレンジクリア！ ごはんをあげよう！':'10問チャレンジを終えると、1日1回ごはんをあげられるよ！'}</p><p>🍎 あげた回数：<b>${feedingDays()}</b>回　🔥 連続：<b>${streak}</b>日</p><p class="wa-bond-note">ごはん1回でなかよし +10。3・7・14・30日連続で特別なメッセージ！<br>Lv.2 新セリフ / Lv.3 ハート / Lv.5 特別応援 / Lv.7 キラキラ / Lv.10 称号</p>${ready?'<button id="wa-feed">🍎 ごはんをあげる</button>':''}<button id="wa-meal-close" class="secondary">とじる</button><button id="wa-pick-from-meal" class="secondary">相棒を変更</button></div>`;
     $('wa-meal-close').onclick=closeCompanion;
     $('wa-pick-from-meal').onclick=openCompanionPicker;
     if(ready)$('wa-feed').onclick=()=>{
       if(!hasMeal()||hasFed())return;
-      const oldDays=feedingDays();
-      setPref('meal-fed',todayJST());setPref('meal-count',String(oldDays+1));
-      const newFriend=-1; // Unlocking is based on earned points, not meals.
+      const prev=getPref('meal-last-date');const nextStreak=prev===yesterdayJST()?mealStreak()+1:1;
+      setPref('meal-fed',todayJST());setPref('meal-count',String(feedingDays()+1));
+      setPref('meal-last-date',todayJST());setPref('meal-streak',String(nextStreak));
+      setPref('meal-best-streak',String(Math.max(nextStreak,Number(getPref('meal-best-streak')||0))));
+      const reward=awardBond(n);
+      const milestone=[3,7,14,30].includes(nextStreak)?` 🎊 ${nextStreak}日連続！ いつもありがとう！`:'';
       companionBox.classList.remove('wa-happy');void companionBox.offsetWidth;companionBox.classList.add('wa-happy');
-      $('wa-meal-message').textContent='もぐもぐ… おいしい！ ありがとう！ 💛✨'+(newFriend>=0?' 🎉 新しい相棒「'+companionNames[newFriend]+'」が仲間になった！':'');
+      $('wa-meal-message').textContent='もぐもぐ… おいしい！ 💛 +10 '+reward+milestone;
       $('wa-feed').remove();refreshCompanion();
+      // Update the meter and counter without closing the modal.
+      const meter=companionModal.querySelector('.wa-bond-track span');if(meter)meter.style.width=(bondLevel(n)>=10?100:bondProgress(n)*2)+'%';
+      const note=companionModal.querySelector('.wa-bond-track + .wa-bond-note');if(note)note.textContent=bondLevel(n)>=10?'なかよしレベルMAX！':`なかよし Lv.${bondLevel(n)} ／ 次まであと ${50-bondProgress(n)} 💛`;
     };
   }
   $('wa-comp-tap').onclick=openMeal;
