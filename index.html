@@ -282,7 +282,7 @@
 .wa-learn-choices{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;width:100%}
 .wa-learn-choice{font-size:clamp(17px,2vw,26px);font-weight:900;background:#fff;color:#21385d;border:2px solid #7290c7;border-radius:12px;padding:12px 18px;min-width:75px;cursor:pointer}
 .wa-learn-choice:hover,.wa-learn-choice:focus-visible{background:#dbedff;outline:2px solid #3369c9}
-.wa-learn-skip{border:0;background:transparent;color:#50617d;text-decoration:underline;cursor:pointer;font-size:13px;padding:8px}
+.wa-learn-feedback{width:100%;padding:12px;border:2px solid #a8c7e5;border-radius:12px;background:#fff;color:#21385d;text-align:left;line-height:1.5;font-size:clamp(13px,3.6vw,16px)}.wa-learn-feedback strong{display:block;margin-bottom:4px}.wa-learn-next{width:100%;min-height:48px;border:2px solid #244766;border-radius:12px;background:#e7f2ff;color:#17345d;font-size:17px;font-weight:900}.wa-learn-skip{border:0;background:transparent;color:#50617d;text-decoration:underline;cursor:pointer;font-size:13px;padding:8px}
 </style>
 </head><body>
 <title>ワードアロー</title>
@@ -2032,6 +2032,7 @@ var WA_LEARN_K=[
 // Keep a separate, stage-independent history for learning-tile puzzles.
 // Each mode has its own deck; no question repeats until its available deck is exhausted.
 var WA_LEARN_WORLD={"古代":[["ハンムラビ王","ハンムラビ法典"],["アウグストゥス","ローマ帝国初代皇帝"],["クレイステネス","アテネの民主政改革"],["始皇帝","秦の中国統一"],["ダレイオス1世","王の道"],["アレクサンドロス大王","東方遠征"],["ペリクレス","アテネ民主政"],["アショーカ王","仏教の保護"],["孔子","儒家"],["ソクラテス","問答法"],["カエサル","ガリア遠征"],["アクティウムの海戦","紀元前31年"]],"中世":[["ムハンマド","イスラーム教"],["カール大帝","800年の戴冠"],["チンギス・ハン","モンゴル帝国"],["フビライ","元の建国"],["十字軍","聖地エルサレム"],["グレゴリウス7世","叙任権闘争"],["ハインリヒ4世","カノッサの屈辱"],["ウィリアム1世","ノルマン征服"],["アッバース朝","バグダード"],["セルジューク朝","トゥグリル・ベク"],["マグナ・カルタ","ジョン王"],["百年戦争","英仏の戦争"]],"近世":[["ルター","九十五か条の論題"],["カルヴァン","ジュネーヴ"],["コロンブス","1492年の航海"],["ヴァスコ・ダ・ガマ","インド航路"],["レオナルド・ダ・ヴィンチ","モナ・リザ"],["メフメト2世","コンスタンティノープル攻略"],["トルデシリャス条約","スペインとポルトガル"],["ルイ14世","ヴェルサイユ宮殿"],["名誉革命","権利章典"],["三十年戦争","ウェストファリア条約"],["ピョートル1世","ロシアの西欧化"],["清の康熙帝","三藩の乱の平定"]],"近代":[["ナポレオン","ワーテルローの戦い"],["フランス革命","1789年"],["アメリカ独立宣言","1776年"],["メッテルニヒ","ウィーン体制"],["ビスマルク","ドイツ統一"],["産業革命","イギリス"],["リンカン","奴隷解放宣言"],["アヘン戦争","南京条約"],["日清戦争","下関条約"],["ベルリン会議","アフリカ分割"],["ガリバルディ","イタリア統一"],["ハイチ革命","トゥサン・ルーヴェルチュール"]],"現代":[["第一次世界大戦","1914年開戦"],["第二次世界大戦","1939年開戦"],["国際連合","1945年発足"],["マーシャル・プラン","ヨーロッパ復興援助"],["ゴルバチョフ","ペレストロイカ"],["鄧小平","改革開放"],["ガンディー","非暴力・不服従"],["ネルソン・マンデラ","南アフリカ大統領"],["キューバ危機","1962年"],["ベルリンの壁崩壊","1989年"],["ソ連解体","1991年"],["アパルトヘイト","人種隔離政策"]]};
+var WA_LEARN_WORLD_EXPLAIN={"ハンムラビ王":"古バビロニア王国の王。社会の規則をまとめたハンムラビ法典で知られます。","アウグストゥス":"紀元前27年に元首政を始め、ローマ帝国初代皇帝とされます。","クレイステネス":"アテネの部族制度を改革し、民主政の基礎を築きました。","始皇帝":"紀元前221年に中国を統一し、秦の皇帝となりました。","ダレイオス1世":"アケメネス朝の王。道路網と駅伝制を整え、広い領土を統治しました。","アレクサンドロス大王":"マケドニア王。ペルシアを征服し、東方へ遠征しました。","ペリクレス":"前5世紀のアテネで民主政が最盛期を迎えました。","アショーカ王":"マウリヤ朝の王。仏教を保護し、各地に法勅を刻みました。","孔子":"儒家の祖。仁や礼を重視する教えを説きました。","ソクラテス":"対話と問いかけを通して相手に考えさせる問答法で知られます。","カエサル":"ローマ共和政末期の政治家・将軍。ガリアを征服しました。","アクティウムの海戦":"紀元前31年、オクタウィアヌスがアントニウスらを破った戦いです。","ムハンマド":"7世紀にアラビア半島でイスラーム教を説きました。","カール大帝":"800年、ローマ教皇から皇帝の冠を授けられました。","チンギス・ハン":"1206年にモンゴル諸部族を統一し、帝国を築きました。","フビライ":"モンゴル帝国の大ハン。1271年に国号を元としました。","十字軍":"西欧のキリスト教徒が聖地エルサレムの奪回を目指した遠征です。","グレゴリウス7世":"聖職者の任命権をめぐり、神聖ローマ皇帝と争いました。","ハインリヒ4世":"教皇との対立後、1077年にカノッサで赦しを求めました。","ウィリアム1世":"1066年にイングランドを征服したノルマンディー公です。","アッバース朝":"750年に成立したイスラーム王朝。バグダードが学術・交易の中心に。","セルジューク朝":"トゥグリル・ベクが1055年にバグダードへ入りました。","マグナ・カルタ":"1215年、イングランドのジョン王が貴族らの要求を受け入れた文書です。","百年戦争":"14〜15世紀にイングランドとフランスの間で続いた戦争です。","ルター":"1517年、贖宥状を批判する九十五か条の論題を示しました。","カルヴァン":"スイスのジュネーヴを拠点に宗教改革を進めました。","コロンブス":"1492年に大西洋を横断し、カリブ海の島々に到達しました。","ヴァスコ・ダ・ガマ":"1498年、喜望峰を回ってインドのカリカットに到達しました。","レオナルド・ダ・ヴィンチ":"ルネサンスの芸術家。代表作に「モナ・リザ」があります。","メフメト2世":"1453年にコンスタンティノープルを攻略し、東ローマ帝国を滅ぼしました。","トルデシリャス条約":"1494年、スペインとポルトガルが海外の勢力圏を分けました。","ルイ14世":"フランスの絶対王政を象徴する王。ヴェルサイユ宮殿を整備しました。","名誉革命":"1688〜89年の政変。翌年の権利章典で議会の権利が確認されました。","三十年戦争":"1618〜48年の戦争。ウェストファリア条約で終結しました。","ピョートル1世":"ロシアの皇帝。西欧の制度や技術を導入し近代化を進めました。","清の康熙帝":"清の皇帝。三藩の乱を平定し、支配を安定させました。","ナポレオン":"1815年、ワーテルローの戦いで敗れ、再び退位しました。","フランス革命":"1789年に始まり、身分制や絶対王政を大きく揺るがしました。","アメリカ独立宣言":"1776年7月4日、13植民地がイギリスからの独立を宣言しました。","メッテルニヒ":"オーストリアの政治家。ウィーン会議後の保守的な国際秩序を主導しました。","ビスマルク":"プロイセンの宰相。1871年のドイツ帝国成立を主導しました。","産業革命":"18世紀後半のイギリスで始まり、工場制機械工業が発展しました。","リンカン":"南北戦争中の1863年に奴隷解放宣言を発しました。","アヘン戦争":"清とイギリスの戦争。1842年の南京条約で終結しました。","日清戦争":"1894〜95年の戦争。講和条約は下関条約です。","ベルリン会議":"1884〜85年、アフリカ植民地化の原則が話し合われました。","ガリバルディ":"義勇軍を率いて南イタリアを制圧し、統一運動に貢献しました。","ハイチ革命":"トゥサン・ルーヴェルチュールが奴隷解放運動を指導しました。","第一次世界大戦":"1914年、サライェヴォ事件をきっかけに戦争が始まりました。","第二次世界大戦":"1939年のドイツによるポーランド侵攻から欧州で戦争が始まりました。","国際連合":"第二次世界大戦後の1945年に発足した国際機関です。","マーシャル・プラン":"1947年、アメリカが提唱したヨーロッパ経済復興援助計画です。","ゴルバチョフ":"ソ連でペレストロイカ（改革）を進めました。","鄧小平":"1978年以降、中国で改革開放政策を推進しました。","ガンディー":"インド独立運動で非暴力・不服従を掲げました。","ネルソン・マンデラ":"アパルトヘイト撤廃に貢献し、1994年に南アフリカ大統領に就任。","キューバ危機":"1962年、ソ連のミサイル配備をめぐり米ソが核戦争寸前まで対立。","ベルリンの壁崩壊":"1989年、東西ドイツ分断の象徴だった壁が開放されました。","ソ連解体":"1991年、ソビエト連邦が解体しました。","アパルトヘイト":"南アフリカで行われた人種隔離政策です。"};
 var WA_LEARN_DECKS={};
 function nextLearningTile(){
  var mode=S.mode,eng=mode==='e'||mode==='e5';
@@ -2091,6 +2092,8 @@ function learningTileChallenge(){
    '<div class="wa-learn-main">'+esc(d[0])+' <span>'+(world?'⇔':'＋')+'</span> ？</div>'+
    (eng&&CAN_SPEAK?'<button type="button" class="wa-learn-sound" data-say="'+esc(d[0])+'" data-lang="en-US" aria-label="'+esc(d[0])+' の発音を聞く">🔊 もう一度聞く</button>':'')+
    '<div class="wa-learn-choices">'+options.map(function(x){return '<button type="button" class="wa-learn-choice" data-v="'+esc(x)+'">'+esc(x)+'</button>'}).join('')+'</div>'+
+   '<div class="wa-learn-feedback" hidden aria-live="polite"></div>'+
+   '<button type="button" class="wa-learn-next" hidden>パズルに戻る</button>'+
    '<button type="button" class="wa-learn-skip">スキップ（通常チャージのみ）</button>';
   slot.appendChild(pane);
   if(eng&&CAN_SPEAK){
@@ -2099,18 +2102,33 @@ function learningTileChallenge(){
    // automatically, while retaining a replay button for restricted browsers.
    speak(d[0],'en-US');
   }
-  var done=false;
-  function finish(ok){
-   if(done)return;done=true;
-   pane.remove();
-   if(ok){SFX.good();flash('学習コンボ成功！ チャージ＋12');S.score+=15;}
-   else flash('学習コンボなし・通常チャージ');
-   resolve(ok?12:0);
+  var done=false,answered=false,awarded=0;
+  function finish(){
+   if(done)return;done=true;pane.remove();resolve(awarded);
   }
   pane.addEventListener('click',function(e){
+   if(e.target.closest('.wa-learn-next')){if(answered)finish();return;}
+   if(answered)return;
    var b=e.target.closest('.wa-learn-choice');
-   if(b)finish(b.dataset.v===answer);
-   else if(e.target.closest('.wa-learn-skip'))finish(false);
+   if(b){
+    answered=true;
+    var ok=b.dataset.v===answer;
+    if(ok){awarded=12;SFX.good();flash('学習コンボ成功！ チャージ＋12');S.score+=15;}
+    else flash('学習コンボなし・通常チャージ');
+    pane.querySelectorAll('.wa-learn-choice').forEach(function(x){
+     x.disabled=true;
+     if(x.dataset.v===answer){x.style.background='#d9f5e4';x.style.borderColor='#25815a';}
+     else if(x===b){x.style.background='#ffe0dd';x.style.borderColor='#bd5d50';}
+    });
+    var fb=pane.querySelector('.wa-learn-feedback');
+    var explanation=world?(WA_LEARN_WORLD_EXPLAIN[d[0]]||'「'+d[0]+'」と「'+answer+'」は歴史上の関連用語です。'):
+      eng?('「'+d[0]+'」は「'+answer+'」という意味です。'):
+      ('「'+d[0]+'」と「'+answer+'」で「'+(d[2]||d[0]+answer)+'」という熟語になります。');
+    fb.innerHTML='<strong>'+(ok?'⭕ 正解！':'❌ 不正解　正解：'+esc(answer))+'</strong>'+esc(explanation);
+    fb.hidden=false;
+    pane.querySelector('.wa-learn-skip').hidden=true;
+    pane.querySelector('.wa-learn-next').hidden=false;
+   }else if(e.target.closest('.wa-learn-skip'))finish();
   });
  });
 }
