@@ -275,6 +275,8 @@
 .wa-learn-hint{font-size:clamp(13px,1.4vw,18px);color:#35435d}
 .wa-learn-main{font-size:clamp(24px,3vw,42px);font-weight:900;color:#192c52;background:#fff;border:2px solid #c5d5ed;padding:10px 22px;border-radius:12px}
 .wa-learn-main span{color:#d06b19}
+.wa-learn-main{max-width:100%;overflow-wrap:anywhere;font-size:clamp(19px,5vw,32px)}
+.wa-learn-choice{overflow-wrap:anywhere;min-width:0}
 .wa-learn-sound{border:2px solid #7290c7;border-radius:12px;background:#eaf2ff;color:#203d79;font-weight:800;font-size:clamp(18px,2vw,25px);padding:10px 16px;cursor:pointer;touch-action:manipulation}
 .wa-learn-sound:hover,.wa-learn-sound:focus-visible{background:#d4e5ff;outline:2px solid #3369c9}
 .wa-learn-choices{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;width:100%}
@@ -2029,9 +2031,22 @@ var WA_LEARN_K=[
 ];
 // Keep a separate, stage-independent history for learning-tile puzzles.
 // Each mode has its own deck; no question repeats until its available deck is exhausted.
+var WA_LEARN_WORLD={"古代":[["ハンムラビ王","ハンムラビ法典"],["アウグストゥス","ローマ帝国初代皇帝"],["クレイステネス","アテネの民主政改革"],["始皇帝","秦の中国統一"],["ダレイオス1世","王の道"],["アレクサンドロス大王","東方遠征"],["ペリクレス","アテネ民主政"],["アショーカ王","仏教の保護"],["孔子","儒家"],["ソクラテス","問答法"],["カエサル","ガリア遠征"],["アクティウムの海戦","紀元前31年"]],"中世":[["ムハンマド","イスラーム教"],["カール大帝","800年の戴冠"],["チンギス・ハン","モンゴル帝国"],["フビライ","元の建国"],["十字軍","聖地エルサレム"],["グレゴリウス7世","叙任権闘争"],["ハインリヒ4世","カノッサの屈辱"],["ウィリアム1世","ノルマン征服"],["アッバース朝","バグダード"],["セルジューク朝","トゥグリル・ベク"],["マグナ・カルタ","ジョン王"],["百年戦争","英仏の戦争"]],"近世":[["ルター","九十五か条の論題"],["カルヴァン","ジュネーヴ"],["コロンブス","1492年の航海"],["ヴァスコ・ダ・ガマ","インド航路"],["レオナルド・ダ・ヴィンチ","モナ・リザ"],["メフメト2世","コンスタンティノープル攻略"],["トルデシリャス条約","スペインとポルトガル"],["ルイ14世","ヴェルサイユ宮殿"],["名誉革命","権利章典"],["三十年戦争","ウェストファリア条約"],["ピョートル1世","ロシアの西欧化"],["清の康熙帝","三藩の乱の平定"]],"近代":[["ナポレオン","ワーテルローの戦い"],["フランス革命","1789年"],["アメリカ独立宣言","1776年"],["メッテルニヒ","ウィーン体制"],["ビスマルク","ドイツ統一"],["産業革命","イギリス"],["リンカン","奴隷解放宣言"],["アヘン戦争","南京条約"],["日清戦争","下関条約"],["ベルリン会議","アフリカ分割"],["ガリバルディ","イタリア統一"],["ハイチ革命","トゥサン・ルーヴェルチュール"]],"現代":[["第一次世界大戦","1914年開戦"],["第二次世界大戦","1939年開戦"],["国際連合","1945年発足"],["マーシャル・プラン","ヨーロッパ復興援助"],["ゴルバチョフ","ペレストロイカ"],["鄧小平","改革開放"],["ガンディー","非暴力・不服従"],["ネルソン・マンデラ","南アフリカ大統領"],["キューバ危機","1962年"],["ベルリンの壁崩壊","1989年"],["ソ連解体","1991年"],["アパルトヘイト","人種隔離政策"]]};
 var WA_LEARN_DECKS={};
 function nextLearningTile(){
  var mode=S.mode,eng=mode==='e'||mode==='e5';
+ // 世界史では漢字熟語を使わず、同時代の歴史用語どうしを結ぶ。
+ if(mode==='wh'){
+  var era=['古代','中世','近世','近代','現代'][Math.min(4,Math.floor(S.stage/2))];
+  var items=WA_LEARN_WORLD[era],deck=WA_LEARN_DECKS['wh-'+era];
+  if(!deck||deck.cursor>=deck.order.length){
+   deck={order:shuffle(items.map(function(_,i){return i})),cursor:0};
+   WA_LEARN_DECKS['wh-'+era]=deck;
+  }
+  var picked=items[deck.order[deck.cursor++]];
+  var wrong=shuffle(items.filter(function(x){return x[1]!==picked[1]}).map(function(x){return x[1]})).slice(0,2);
+  return [picked[0],picked[1],wrong[0],wrong[1]];
+ }
  var pool=[];
  if(eng){
   pool=allCards('e').filter(function(c){return c.mode===mode&&c.en&&c.ja})
@@ -2066,14 +2081,14 @@ function nextLearningTile(){
 }
 function learningTileChallenge(){
  return new Promise(function(resolve){
-  var eng=S.mode==='e'||S.mode==='e5',d=nextLearningTile();
-  var answer=d[1],options=eng?[d[1],d[2],d[3]]:[d[1],d[3],d[4]||'他'];
+  var eng=S.mode==='e'||S.mode==='e5',world=S.mode==='wh',d=nextLearningTile();
+  var answer=d[1],options=(eng||world)?[d[1],d[2],d[3]]:[d[1],d[3],d[4]||'他'];
   options=shuffle(options.slice());
   var pane=document.createElement('div');
   pane.className='wa-learn-panel';
   pane.innerHTML='<div class="wa-learn-title">✨ 学習タイル出現！</div>'+
-   '<div class="wa-learn-hint">'+(eng?'英単語と意味を組み合わせよう':'漢字を組み合わせて熟語を完成！')+'</div>'+
-   '<div class="wa-learn-main">'+esc(d[0])+' <span>＋</span> ？</div>'+
+   '<div class="wa-learn-hint">'+(world?'左右の歴史用語のつながりを見つけよう！':eng?'英単語と意味を組み合わせよう':'漢字を組み合わせて熟語を完成！')+'</div>'+
+   '<div class="wa-learn-main">'+esc(d[0])+' <span>'+(world?'⇔':'＋')+'</span> ？</div>'+
    (eng&&CAN_SPEAK?'<button type="button" class="wa-learn-sound" data-say="'+esc(d[0])+'" data-lang="en-US" aria-label="'+esc(d[0])+' の発音を聞く">🔊 もう一度聞く</button>':'')+
    '<div class="wa-learn-choices">'+options.map(function(x){return '<button type="button" class="wa-learn-choice" data-v="'+esc(x)+'">'+esc(x)+'</button>'}).join('')+'</div>'+
    '<button type="button" class="wa-learn-skip">スキップ（通常チャージのみ）</button>';
