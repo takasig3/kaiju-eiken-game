@@ -257,6 +257,17 @@
 .wa-energy.wa-energy-full{animation:waEnergyPulse .5s ease-in-out 2}
 @keyframes waEnergyPulse{50%{filter:brightness(1.65)}}
 @media(max-width:420px){.wa-energy{gap:5px;padding:5px 7px;margin-top:5px}.wa-energy-label{font-size:10px}.wa-energy-seg{height:8px;gap:2px}}
+
+/* Cutout companion + fast arcade-style CHANCE entrance */
+.ally-quiz .ally-avatar-img{object-fit:contain!important;object-position:center!important;border-radius:0!important;box-shadow:none!important;filter:drop-shadow(0 5px 8px #513a8c55)}
+.wa-chance-splash{position:fixed;inset:0;z-index:5000;pointer-events:none;display:grid;place-items:center;overflow:hidden}
+.wa-chance-splash-inner{position:relative;width:min(86vw,450px);height:min(48dvh,390px);display:flex;align-items:center;justify-content:center;animation:waChanceZoom 1.15s cubic-bezier(.18,.72,.27,1) both;will-change:transform,opacity}
+.wa-chance-splash img{width:min(72vw,330px);max-height:100%;object-fit:contain;filter:drop-shadow(0 0 20px #ffc65eaa)}
+.wa-chance-splash b{position:absolute;bottom:4%;left:50%;transform:translateX(-50%) rotate(-7deg);white-space:nowrap;font:1000 clamp(46px,12vw,78px)/1 system-ui,sans-serif;letter-spacing:-.045em;color:#ffdf48;-webkit-text-stroke:2px #50308d;text-shadow:3px 5px 0 #e66a43,0 8px 18px #2b1d6377}
+.wa-chance-splash.ten b{color:#fff0a3;-webkit-text-stroke:2px #7440a8;text-shadow:3px 5px 0 #e7a536,0 8px 22px #40358c99}
+@keyframes waChanceZoom{0%{transform:scale(.42) rotate(-9deg);opacity:0}17%{transform:scale(.95) rotate(3deg);opacity:1}48%{transform:scale(1.12) rotate(0deg);opacity:1}100%{transform:scale(1.65) rotate(4deg);opacity:0}}
+@media(prefers-reduced-motion:reduce){.wa-chance-splash-inner{animation:waChanceFade .45s ease-out both}@keyframes waChanceFade{0%{opacity:0}35%{opacity:1}100%{opacity:0}}}
+
 </style><style id="wa-learning-style">
 .wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
 .slot{position:relative}
@@ -2059,6 +2070,17 @@ async function swapTry(r1,c1,r2,c2){
   var res=await resolve();
   await finishPuzzleTurn(res);
 }
+function waShowChanceSplash(isTen){
+  return new Promise(function(resolve){
+    var layer=document.createElement('div');
+    layer.className='wa-chance-splash'+(isTen?' ten':'');
+    var inner=document.createElement('div');inner.className='wa-chance-splash-inner';
+    var img=document.createElement('img');img.src=isTen?'special-ally-10.webp':'special-ally-portrait.webp';img.alt='';
+    var word=document.createElement('b');word.textContent=isTen?'SUPER CHANCE!':'CHANCE!';
+    inner.appendChild(img);inner.appendChild(word);layer.appendChild(inner);document.body.appendChild(layer);
+    setTimeout(function(){layer.remove();resolve()},1150);
+  });
+}
 async function summonChainAlly(chain,energyReward){
   var isTen=chain>=10||!!energyReward;
   var multiplier=isTen?5:2;
@@ -2069,6 +2091,7 @@ async function summonChainAlly(chain,energyReward){
   if(!other.length)other=Object.keys(BYID).map(function(k){return BYID[k]}).filter(function(c){return c.mode===S.mode&&!ids[c.id]&&variants(c).length});
   if(!other.length)return;
   var q=pickQ(other,S.lastKey);
+  await waShowChanceSplash(isTen);
   board.hidden=true;$('#pv').hidden=true;
   var host=document.createElement('div');host.className='ally-quiz';slot.appendChild(host);
   var hero=document.createElement('div');hero.className='ally-hero';
