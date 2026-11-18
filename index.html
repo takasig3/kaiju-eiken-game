@@ -2007,7 +2007,7 @@ async function swapTry(r1,c1,r2,c2){
 }
 async function summonChainAlly(chain){
   var isTen=chain>=10;
-  var multiplier=isTen?3:2;
+  var multiplier=isTen?5:2;
   var current=stages()[S.stage].cards;
   var ids={};current.forEach(function(c){ids[c.id]=true});
   var other=allCards(S.mode.charAt(0)==='e'?'e':'k').filter(function(c){return c.mode===S.mode&&!ids[c.id]&&variants(c).length});
