@@ -1595,6 +1595,24 @@ function monsterSVG(m){
 function cardHTML(c,o){
   o=o||{};
   var badge=o.badge||'',cls='wc'+(o.miss?' miss':''),del=o.del?'<button type="button" class="say" data-del="'+c.id+'">おぼえた（消す）</button>':'';
+  // Extra practice cards need their own study view; the generic stroke-card
+  // fallback accesses c.s.length and crashes when these cards are selected.
+  if(c.kind==='order'){
+    var x=c.item||{};
+    return '<div class="'+cls+'"><div class="row"><span class="pos">語順整序</span>'+badge+'</div>'+
+      '<div class="ja">'+esc(x.jp||'')+'</div><div class="ex">'+esc(x.en||'')+'</div>'+del+'</div>';
+  }
+  if(c.kind==='kanjiexam'){
+    var x=c.item||{};
+    return '<div class="'+cls+'"><div class="row"><span class="pos">'+esc(x.category||'漢検演習')+'</span>'+badge+'</div>'+
+      '<div class="ja">'+esc(x.stem||'')+'</div><div class="ex">答え：'+esc(x.answer||'')+'</div>'+del+'</div>';
+  }
+  if(c.kind==='exam'){
+    var x=c.item||{};
+    return '<div class="'+cls+'"><div class="row"><span class="pos">試験形式</span>'+badge+'</div>'+
+      '<div class="ja">'+esc(x.stem||x.jp||x.question||'演習問題')+'</div>'+
+      '<div class="ex">'+esc(x.answer||x.en||'')+'</div>'+del+'</div>';
+  }
   if(c.kind==='e'){
     return '<div class="'+cls+'"><div class="row">'+(CAN_SPEAK?'<button type="button" class="wa-word-tap" data-say="'+esc(c.en)+'" data-lang="en-US" aria-label="'+esc(c.en)+' を発音">'+esc(c.en)+' <span aria-hidden="true" class="wa-speaker">🔊</span></button>':'<span class="en">'+esc(c.en)+'</span>')+'<span class="pos">'+POS[c.pos]+'</span>'+badge+'</div>'+
       '<div class="ja">'+c.ja+'</div><div class="ex">'+sentHL(c)+'</div><div class="exj">'+esc(c.sj)+'</div>'+sentSay(c)+del+'</div>';
