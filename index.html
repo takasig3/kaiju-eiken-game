@@ -1705,6 +1705,7 @@ function showTitle(){
    '<div class="actions">'+
     '<button type="button" class="btn primary" id="go0">'+MODE_NAME[m]+'をはじめから</button>'+
     (saved>0?'<button type="button" class="btn" id="goc">つづきから（STAGE '+(saved+1)+'）</button>':'')+
+    (m==='wh'?'<button type="button" class="btn" id="wh-rank">🌍 世界史・みんなのポイントを見る</button>':'')+
     '<div class="actions two"><button type="button" class="btn ghost" id="nb">まちがいノート（'+nbCount(m)+'）</button><button type="button" class="btn ghost" id="rk">ランキング</button></div>'+
     (m==='k'?'<button type="button" class="btn" id="kanji-all">全対象漢字・記憶書き取り（1,339字）</button>':'')+
    '</div>'+
@@ -1718,6 +1719,7 @@ function showTitle(){
   if(saved>0) $('#goc').onclick=function(){applyPlan(m,savedPlan);start(saved)};
   $('#nb').onclick=function(){showNotebook(S.mode)};
   $('#rk').onclick=showRanking;
+  var whRank=$('#wh-rank');if(whRank)whRank.onclick=showRanking;
 }
 
 function showStudy(i){
@@ -1764,9 +1766,11 @@ function showRanking(){
   window.scrollTo(0,0);
   app.innerHTML=
   '<section><div class="head"><p class="eyebrow">ランキング</p><h2>ベスト5</h2></div>'+
+  '<div id="wa-world-online-ranking"><p>🌍 世界史・みんなのランキングを読み込み中…</p></div>'+
   '<p class="sec">英検4級</p>'+rkHTML('e',-1)+'<p class="sec">漢検4級</p>'+rkHTML('k',-1)+
   '<div class="actions" style="max-width:520px"><button type="button" class="btn ghost" id="back">もどる</button></div></section>';
   $('#back').onclick=showTitle;
+  if(window.WAWorldOnline)window.WAWorldOnline.render('wa-world-online-ranking');
 }
 
 /* ---------- board logic ---------- */
@@ -2522,7 +2526,7 @@ function showFinal(cleared){
   var m=S.mode,tot=S.tot.ok+S.tot.ng,acc=tot?Math.round(100*S.tot.ok/tot):0,done=cleared>=10;
   var ms=Object.keys(S.miss).filter(function(id){return BYID[id]}).sort(function(a,b){return S.miss[b]-S.miss[a]}).slice(0,6);
   var rk=RK[m],best=rk.length?rk[0].score:0;
-  var qual=S.score>0&&(rk.length<5||S.score>rk[rk.length-1].score),isBest=S.score>best&&S.score>0;
+  var qual=S.score>0&&(m==='wh'||rk.length<5||S.score>rk[rk.length-1].score),isBest=S.score>best&&S.score>0;
   var lastName=lsj('wordarrow-name','');
   var saved=false;
   if(done) SFX.fan();
@@ -2530,11 +2534,13 @@ function showFinal(cleared){
   '<section><div class="head"><p class="eyebrow">'+MODE_NAME[m]+'　STAGE '+cleared+' まで到達</p><h2>'+(done?MONS[9].name+'を倒した！':'ここまでの記録')+'</h2></div>'+
   '<div class="sum"><div class="bignum">'+S.score+'<small style="font-size:.4em"> pt</small></div><p class="lead">'+S.tot.ok+'問正解 / '+tot+'問（正答率 '+acc+'%）</p></div>'+
   (qual?'<div class="namebox" id="nbox"><div class="verdict ok">'+(isBest?'最高記録を更新！':'ランクイン！')+'</div><label for="nm">名前を残そう</label><input id="nm" maxlength="10" autocomplete="off" value="'+esc(lastName)+'" placeholder="10文字まで"><button type="button" class="btn primary" id="save">記録する</button></div>':'')+
-  '<div id="rkbox"><p class="sec">'+MODE_NAME[m]+'のランキング</p>'+rkHTML(m,-1)+'</div>'+
+  '<div id="rkbox"><p class="sec">'+MODE_NAME[m]+'のランキング（この端末）</p>'+rkHTML(m,-1)+'</div>'+
+  (m==='wh'?'<div id="wa-world-ranking-result"></div>':'')+
   (ms.length?'<p class="sec">まちがいが多かった問題</p><div class="rv">'+ms.map(function(id){return cardHTML(BYID[id],{badge:'<span class="badge ng">'+S.miss[id]+'回</span>',miss:1})}).join('')+'</div>':'<p class="lead" style="margin-bottom:16px">1問もまちがえませんでした。</p>')+
   '<div class="actions two" style="max-width:520px"><button type="button" class="btn ghost" id="nbb">まちがいノート</button><button type="button" class="btn primary" id="again">タイトルへ</button></div></section>';
   bindSay(app);
-  if(window.WAOnline && window.WAOnline.submitNormalScore){
+  if(m==='wh' && window.WAWorldOnline)window.WAWorldOnline.render('wa-world-ranking-result');
+  if(m!=='wh' && window.WAOnline && window.WAOnline.submitNormalScore){
     window.WAOnline.submitNormalScore({subject:({e:'eiken4',k:'kanken4',e5:'eiken5',k5:'kanken5'})[m],score:S.score,stages:cleared,correct:S.tot.ok,total:tot}).catch(function(e){console.warn('Online score sync failed:',e)});
   }
   var sv=$('#save');
@@ -2550,6 +2556,11 @@ function showFinal(cleared){
     $('#nbox').innerHTML='<div class="verdict ok">記録しました！</div>';
     $('#rkbox').innerHTML='<p class="sec">'+MODE_NAME[m]+'のランキング</p>'+rkHTML(m,hi);
     SFX.good();
+    if(m==='wh' && window.WAWorldOnline){
+      var box=document.createElement('div');box.id='wa-world-save-status';box.style.cssText='margin:12px 0;font-weight:800';
+      $('#rkbox').prepend(box);box.textContent='🌍 みんなのランキングに送信中…';
+      window.WAWorldOnline.submit({nickname:nm,score:S.score,stages:cleared,correct:S.tot.ok,total:tot}).then(function(){box.textContent='🌍 世界史のポイントを共有しました！';window.WAWorldOnline.render('wa-world-ranking-result')}).catch(function(e){box.textContent='オンライン送信に失敗しました：'+e.message+'（端末内の記録は保存済み）'});
+    }
   };
   $('#nbb').onclick=function(){showNotebook(m)};
   $('#again').onclick=showTitle;
@@ -2595,6 +2606,7 @@ document.addEventListener('click',function(e){if(e.target && e.target.id==='kanj
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="./supabase-config.js"></script>
 <script src="./online.js"></script>
+<script src="./world-online.js"></script>
 
 <script>
 /* Enhance any existing online invite URL input with a scannable QR image. */
