@@ -246,6 +246,17 @@
 .battle .arena.stage-scenery .monster-portrait{filter:drop-shadow(0 6px 6px rgba(0,0,0,.45))}
 .battle.final-boss .arena.stage-scenery{background-image:linear-gradient(180deg,rgba(10,4,26,.06),rgba(10,4,26,.16)),var(--stage-bg)}
 @media(max-width:480px){.battle .arena.stage-scenery{min-height:190px;padding:8px 6px 10px;background-position:center}}
+
+/* Chain energy: compact 10-step meter, retained across stages for each subject. */
+.wa-energy{margin:8px auto 0;max-width:390px;width:94%;display:flex;align-items:center;gap:8px;padding:5px 9px;border-radius:13px;background:#17284bd9;border:1px solid #6a9cdd80;color:#eaf5ff;box-sizing:border-box;font-family:system-ui,sans-serif}
+.wa-energy-label{white-space:nowrap;font-size:11px;font-weight:850;letter-spacing:.02em}
+.wa-energy-track{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px;flex:1;min-width:0}
+.wa-energy-seg{height:9px;border-radius:3px;background:#52607a;box-shadow:inset 0 1px 2px #101b34}
+.wa-energy-seg.on{background:linear-gradient(180deg,#fff5a2,#f6ae31 55%,#e47b31);box-shadow:0 0 5px #ffbf5580}
+.wa-energy-count{white-space:nowrap;font-size:11px;font-weight:900;color:#ffda75;font-variant-numeric:tabular-nums}
+.wa-energy.wa-energy-full{animation:waEnergyPulse .5s ease-in-out 2}
+@keyframes waEnergyPulse{50%{filter:brightness(1.65)}}
+@media(max-width:420px){.wa-energy{gap:5px;padding:5px 7px;margin-top:5px}.wa-energy-label{font-size:10px}.wa-energy-seg{height:8px;gap:2px}}
 </style><style id="wa-learning-style">
 .wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
 .slot{position:relative}
@@ -932,6 +943,18 @@ var NB={e:lsj('wordarrow-nb-e',{}),k:lsj('wordarrow-nb-k',{}),e5:lsj('wordarrow-
 var SEEN={e:lsj('wordarrow-seen-e',{}),k:lsj('wordarrow-seen-k',{}),e5:lsj('wordarrow-seen-e5',{}),k5:lsj('wordarrow-seen-k5',{})};
 var RK={e:lsj('wordarrow-rank-e',[]),k:lsj('wordarrow-rank-k',[]),e5:lsj('wordarrow-rank-e5',[]),k5:lsj('wordarrow-rank-k5',[])};
 var board,slot,battle;
+/* One energy for every real 5+ chain; at 10, one 5x ally quiz is earned. */
+function waEnergyKey(){return 'wordarrow-chain-energy-v1-'+S.mode}
+function waGetEnergy(){return Math.min(9,Math.max(0,Number(lsj(waEnergyKey(),0))||0))}
+function waSetEnergy(n){S.chainEnergy=Math.min(9,Math.max(0,n|0));lsw(waEnergyKey(),S.chainEnergy);waDrawEnergy()}
+function waDrawEnergy(){
+ var meter=document.getElementById('wa-energy');if(!meter)return;
+ var n=S.chainEnergy||0,bar=meter.querySelector('.wa-energy-track'),count=meter.querySelector('.wa-energy-count');
+ if(bar)bar.innerHTML=Array.from({length:10},function(_,i){return '<i class="wa-energy-seg'+(i<n?' on':'')+'"></i>'}).join('');
+ if(count)count.textContent=n+'/10';
+ meter.setAttribute('aria-label','連鎖エナジー '+n+' / 10');
+}
+
 
 function $(s){return document.querySelector(s)}
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms)})}
@@ -1836,18 +1859,19 @@ function clearChainCount(){
 /* ---------- battle ---------- */
 function startBattle(){
   var st=stages()[S.stage],mon=MONS[S.stage]; window.scrollTo(0,0);
+  S.chainEnergy=waGetEnergy();
   S.maxHp=550+S.stage*75;S.hp=S.maxHp;S.allyPointMultiplier=1;S.allyPointHero=5;S.moves=0;S.streak=0;S.locked=true;S.sel=null;S.drag=null;S.lastKey=null;S.stat={};S.charge=[];
   st.cards.forEach(function(c){S.stat[c.id]={ok:0,ng:0,asked:0}});
   app.innerHTML=
   '<section class="battle'+(S.stage===9?' final-boss':'')+'" id="battle">'+
    '<div class="bar"><span class="stg">STAGE '+(S.stage+1)+'</span><span class="stn">'+MODE_NAME[S.mode]+'　'+st.name+'</span><button type="button" class="snd" id="snd"></button><span class="sc" id="score"></span></div>'+
    '<div class="arena stage-scenery" style="--stage-bg:url(assets/stage-bg-'+String(STAGE_BG_ORDER[S.stage]).padStart(2,'0')+'.webp)">'+(S.stage===9?'<div class="boss-banner">✦ FINAL BOSS ✦</div>':'')+'<div class="mon'+' illustrated-mon'+'" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+'<img class="monster-portrait" src="assets/monster-'+String(STAGE_MONSTER_ORDER[S.stage]).padStart(2,'0')+'.webp" alt="'+esc(mon.name)+'"><span class="monster-sweat" aria-hidden="true">💦</span><span class="monster-pain" aria-hidden="true">うぅ…</span>'+'</div><div class="mname">'+mon.name+'</div>'+
-   '<div class="hp" role="progressbar" aria-label="モンスターの体力"><i id="hpfill"></i><b id="hptxt"></b></div></div>'+
+   '<div class="hp" role="progressbar" aria-label="モンスターの体力"><i id="hpfill"></i><b id="hptxt"></b></div><div class="wa-energy" id="wa-energy" role="status" aria-live="polite"><span class="wa-energy-label">⚡連鎖エナジー</span><span class="wa-energy-track"></span><span class="wa-energy-count">0/10</span></div></div>'+
    '<div class="slot" id="slot"><div class="pv" id="pv" aria-hidden="true"></div><div class="board" id="board"></div></div>'+
    '<div class="foot" id="info"></div>'+
    '<div class="fx" id="fx"></div>'+
   '</section>';
-  board=$('#board');slot=$('#slot');battle=$('#battle');bindSnd();
+  board=$('#board');slot=$('#slot');battle=$('#battle');bindSnd();waDrawEnergy();
   setHp();
   newBoard();render();updateInfo();
   battle.addEventListener('click',function(e){if(e.target.closest('#finish-btn')){e.preventDefault();finishEarly();}});
@@ -2017,8 +2041,8 @@ async function swapTry(r1,c1,r2,c2){
   var res=await resolve();
   await finishPuzzleTurn(res);
 }
-async function summonChainAlly(chain){
-  var isTen=chain>=10;
+async function summonChainAlly(chain,energyReward){
+  var isTen=chain>=10||!!energyReward;
   var multiplier=isTen?5:2;
   var current=stages()[S.stage].cards;
   var ids={};current.forEach(function(c){ids[c.id]=true});
@@ -2030,10 +2054,10 @@ async function summonChainAlly(chain){
   board.hidden=true;$('#pv').hidden=true;
   var host=document.createElement('div');host.className='ally-quiz';slot.appendChild(host);
   var hero=document.createElement('div');hero.className='ally-hero';
-  hero.innerHTML='<img class="ally-avatar-img" src="'+(isTen?'special-ally-10.webp':'special-ally-portrait.webp')+'" alt="'+(isTen?'星の守護獣':'白いキツネの特別な味方')+'" width="170" height="170"><div><div class="ally-heading">'+(isTen?'10連鎖以上！ 星の守護獣が登場':'5連鎖！ 特別な味方が登場')+'</div><div class="ally-description">特別問題に1回挑戦！ 正解で次の攻撃の獲得ポイントが'+multiplier+'倍（ダメージは通常どおり）</div></div>';
+  hero.innerHTML='<img class="ally-avatar-img" src="'+(isTen?'special-ally-10.webp':'special-ally-portrait.webp')+'" alt="'+(isTen?'星の守護獣':'白いキツネの特別な味方')+'" width="170" height="170"><div><div class="ally-heading">'+(isTen?(energyReward?'エナジー満タン！ 星の守護獣が登場':'10連鎖以上！ 星の守護獣が登場'):'5連鎖！ 特別な味方が登場')+'</div><div class="ally-description">特別問題に1回挑戦！ 正解で次の攻撃の獲得ポイントが'+multiplier+'倍（ダメージは通常どおり）</div></div>';
   host.appendChild(hero);
   var quizHost=document.createElement('div');host.appendChild(quizHost);
-  flash(isTen?'🌟 10連鎖！ 星の守護獣が来た！':'✨ 5連鎖！ 助っ人が来た！');
+  flash(isTen?(energyReward?'⚡ エナジー10/10！ 星の守護獣が来た！':'🌟 10連鎖！ 星の守護獣が来た！'):'✨ 5連鎖！ 助っ人が来た！');
   var ok=await quizUI(q,quizHost,{head:'特別チャレンジ・回答は1回だけ',next:'バトルに戻る'});
   record(q,ok,false);
   S.lastKey=q.key;
@@ -2148,9 +2172,19 @@ async function finishPuzzleTurn(res){
   // A cascade earns visible points once per completed move, not per animation frame.
   if(res.chain>=2){var chainPts=(res.chain-1)*50;S.score+=chainPts;updateInfo();waShowPoints(chainPts,res.chain+'連鎖ボーナス','combo');}
 
-  // Only an actual five-or-more cascade in this move summons the ally.
-  // The ally quiz uses cards outside the current stage, and allows exactly one answer.
-  if(res.chain>=5)await summonChainAlly(res.chain);
+  // A 5+ chain earns one energy (not one per cascade step). 10/10 is
+  // consumed immediately for a single 5x ally quiz, even without 10 chains.
+  // A real 10+ chain still grants 5x; never present two ally quizzes at once.
+  if(res.chain>=5){
+    var nextEnergy=(S.chainEnergy||0)+1;
+    var energyReward=nextEnergy>=10;
+    waSetEnergy(energyReward?0:nextEnergy);
+    if(energyReward){
+      var meter=document.getElementById('wa-energy');
+      if(meter){meter.classList.add('wa-energy-full');setTimeout(function(){meter.classList.remove('wa-energy-full')},1100)}
+    }
+    await summonChainAlly(res.chain,energyReward);
+  }
   if((S.mode==='e'||S.mode==='e5')&&Math.random()<(res.chain>=2?0.9:0.3))await waBattleEnglishMini();
   var learningBonus=await learningTileChallenge();
   S.pendingSpecial=(res.five?'🌈レインボー×'+res.five+' ':'')+(res.four?'➶貫通×'+res.four:'');
