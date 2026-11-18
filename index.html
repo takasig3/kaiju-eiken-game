@@ -218,6 +218,17 @@
 .wa-present-form{font-size:.67em;font-weight:700;color:#63728a;margin-left:.55em;white-space:nowrap}
 @media(max-width:650px){.wa-points-pop{top:33%;font-size:clamp(34px,9vw,60px);-webkit-text-stroke:1px #493068}}
 
+
+/* Clearly count every cascade over the puzzle board. */
+.wa-chain-counter{position:absolute;z-index:75;left:50%;top:46%;transform:translate(-50%,-50%);pointer-events:none;white-space:nowrap;text-align:center;font-family:var(--f-display);font-size:clamp(34px,9vw,65px);font-weight:900;line-height:1.12;color:#fff9b4;-webkit-text-stroke:2px #6a286e;text-shadow:0 4px 0 #982e6b,0 8px 22px #0009;animation:waChainBounce .62s cubic-bezier(.2,1.4,.4,1) both}
+.wa-chain-counter .wa-chain-number{font-size:1.25em;color:#fff}
+.wa-chain-counter .wa-chain-caption{display:block;font-family:var(--f-body);font-size:.32em;letter-spacing:.04em;color:white;-webkit-text-stroke:0;text-shadow:0 2px 5px #000c}
+.wa-chain-counter.wa-chain-high{color:#ffe26a;-webkit-text-stroke:2px #b44221;text-shadow:0 4px 0 #9d3c14,0 8px 24px #000a}
+.wa-chain-counter.wa-chain-mega{color:#fff;-webkit-text-stroke:2px #b22575;text-shadow:0 4px 0 #a32e71,0 0 25px #ffdd59,0 8px 24px #000a}
+@keyframes waChainBounce{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-9deg)}35%{opacity:1;transform:translate(-50%,-50%) scale(1.2) rotate(3deg)}65%{transform:translate(-50%,-50%) scale(.96)}100%{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@media(max-width:480px){.wa-chain-counter{font-size:clamp(31px,10vw,48px);top:46%}}
+@media(prefers-reduced-motion:reduce){.wa-chain-counter{animation:none}}
+
 /* Stage-specific illustrated battle backgrounds (1-10) */
 .battle .arena.stage-scenery{
  background-image:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.15) 70%,rgba(255,255,255,.30)),var(--stage-bg);
@@ -1798,6 +1809,18 @@ function flash(msg){
   $('#fx').appendChild(t);setTimeout(function(){t.remove()},1300);
 }
 
+function showChainCount(chain){
+  if(!slot)return;
+  var old=slot.querySelector('.wa-chain-counter');if(old)old.remove();
+  var el=document.createElement('div');
+  el.className='wa-chain-counter'+(chain>=10?' wa-chain-mega':chain>=5?' wa-chain-high':'');
+  el.setAttribute('role','status');el.setAttribute('aria-live','polite');
+  el.innerHTML='<span class="wa-chain-number">'+chain+'</span>連鎖！'+
+    '<span class="wa-chain-caption">'+(chain>=10?'🌟 10連鎖達成！':chain>=5?'✨ スペシャル連鎖！':chain>=2?'どんどんつながる！':'コンボスタート！')+'</span>';
+  slot.appendChild(el);
+  // Keep the latest count on screen until the next cascade or the turn ends.
+}
+function clearChainCount(){if(slot){var el=slot.querySelector('.wa-chain-counter');if(el)el.remove();}}
 /* ---------- battle ---------- */
 function startBattle(){
   var st=stages()[S.stage],mon=MONS[S.stage]; window.scrollTo(0,0);
@@ -2153,7 +2176,7 @@ async function resolve(){
         if(rr>=0&&rr<N&&cc>=0&&cc<N&&S.b[rr][cc]&&S.b[rr][cc].t<0) all[rr+','+cc]=1;
       });
     });
-    if(chain>1) flash(chain+'連鎖！');
+    showChainCount(chain);
     SFX.match(chain);render(all);await sleep(280);
     Object.keys(all).forEach(function(k){var p=k.split(',');S.b[+p[0]][+p[1]]=null});
     gravity();render();await sleep(330);
@@ -2167,6 +2190,7 @@ async function resolve(){
       flash('🎁 3連鎖ボーナス！ アイテム出現');render();
     }
   }
+  if(chain>0){await sleep(550);clearChainCount();}
   return {cleared:cleared,chain:chain,four:four,five:five};
 }
 // All special tiles trigger by swapping with an adjacent ordinary color tile.
