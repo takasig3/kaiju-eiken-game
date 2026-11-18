@@ -284,7 +284,38 @@
 .wa-learn-choice:hover,.wa-learn-choice:focus-visible{background:#dbedff;outline:2px solid #3369c9}
 .wa-learn-feedback{width:100%;padding:12px;border:2px solid #a8c7e5;border-radius:12px;background:#fff;color:#21385d;text-align:left;line-height:1.5;font-size:clamp(13px,3.6vw,16px)}.wa-learn-feedback strong{display:block;margin-bottom:4px}.wa-learn-next{width:100%;min-height:48px;border:2px solid #244766;border-radius:12px;background:#e7f2ff;color:#17345d;font-size:17px;font-weight:900}.wa-learn-skip{border:0;background:transparent;color:#50617d;text-decoration:underline;cursor:pointer;font-size:13px;padding:8px}
 </style>
-</head><body>
+<style id="wa-ui-20261118">
+/* 2026-11-18: always-accessible start action on course-selection screen */
+body.wa-on-title{padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))}
+.wa-title-dock{position:fixed;bottom:0;left:0;right:0;z-index:8500;display:flex;justify-content:center;gap:8px;padding:10px max(12px,env(safe-area-inset-left)) calc(12px + env(safe-area-inset-bottom,0px));background:linear-gradient(0deg,var(--bg) 72%,color-mix(in srgb,var(--bg) 88%,transparent));box-shadow:0 -6px 24px #14283c20}
+.wa-title-dock[hidden]{display:none!important}
+.wa-title-dock button{width:min(100%,540px);min-height:54px;box-shadow:0 3px 0 var(--ink);font-size:clamp(15px,4vw,20px)}
+/* Portrait tablets: reserve space for the full board and controls. */
+@media (min-width:700px) and (max-width:1199px) and (orientation:portrait){
+ body:has(.battle){padding:5px 12px 8px;overflow-x:hidden}
+ #app:has(.battle){max-width:100%}
+ .battle{gap:clamp(3px,.5dvh,7px);grid-template-rows:auto auto auto auto;align-content:start}
+ .battle .bar{font-size:clamp(12px,1.7vw,16px);min-height:23px}
+ .battle .arena.stage-scenery{min-height:0!important;height:clamp(130px,22dvh,225px);padding:4px 8px 6px;gap:1px}
+ .battle .mon.illustrated-mon{width:min(125px,14dvh,21vw)!important;max-height:14dvh}
+ .battle.final-boss .mon.illustrated-mon{width:min(140px,15dvh,22vw)!important;max-height:15dvh}
+ .battle .arena .mname{font-size:clamp(13px,1.8vw,18px);line-height:1.2}
+ .battle .arena .hp{height:17px}
+ .battle .arena .wa-energy{margin:3px auto 0;padding:2px 8px}
+ .battle .slot{width:min(96vw,calc(100dvh - 295px),650px)!important;min-width:0;justify-self:center}
+ .battle .pv{display:none}
+ .battle .board{gap:3px;padding:3px}
+ .battle .cell{padding:2px;border-radius:7px}
+ .battle .foot{font-size:12px;line-height:1.25}
+ .battle .slot:has(.quiz){width:min(96vw,650px)!important}
+ .battle .slot .quiz{max-height:calc(100dvh - 255px);overflow-y:auto}
+}
+@media (min-width:700px) and (max-width:1199px) and (orientation:portrait) and (max-height:850px){
+ .battle .arena.stage-scenery{height:clamp(112px,18dvh,155px)}
+ .battle .mon.illustrated-mon{width:min(95px,12dvh,16vw)!important}
+ .battle .slot{width:min(95vw,calc(100dvh - 220px),650px)!important}
+}
+</style></head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2667,4 +2698,20 @@ document.addEventListener('click',function(e){if(e.target && e.target.id==='kanj
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh);else refresh();
 })();
 </script>
-</body></html>
+<script>
+/* Keep the existing start handler intact; the fixed button delegates to it. */
+(function(){
+ var dock=document.createElement('div');dock.className='wa-title-dock';dock.hidden=true;
+ var btn=document.createElement('button');btn.type='button';btn.className='btn primary';btn.textContent='🎮 ゲームを始める';dock.appendChild(btn);document.body.appendChild(dock);
+ function sync(){
+   var title=document.querySelector('#app > section.title');
+   var start=title&&title.querySelector('#go0');
+   var visible=!!start;
+   dock.hidden=!visible;document.body.classList.toggle('wa-on-title',visible);
+   if(visible){var chosen=title.querySelector('.modebtn[aria-pressed="true"] b');btn.textContent='🎮 '+(chosen?chosen.textContent.trim():'ゲーム')+'を始める';}
+ }
+ btn.addEventListener('click',function(){var go=document.querySelector('#app > section.title #go0');if(go)go.click()});
+ var root=document.getElementById('app');if(root)new MutationObserver(sync).observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-pressed']});
+ sync();
+})();
+</script></body></html>
