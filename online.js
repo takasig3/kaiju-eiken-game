@@ -21,11 +21,13 @@ const style=document.createElement('style');style.textContent=`
 #wa-online .wa-hint{font-size:12px;color:#c5d4e7;line-height:1.55}
 #wa-online #wa-share-box[hidden]{display:none!important}
 #wa-online .wa-qr{display:block;width:205px;max-width:85%;margin:16px auto;background:white;padding:10px;border-radius:12px}
-#wa-online .wa-result{font-size:13px;color:#a7e8c8;min-height:18px}
+#wa-online #wa-lobby-ranking{margin-top:0}#wa-online #wa-lobby-world-rank{max-height:280px;overflow:auto}#wa-online #wa-lobby-world-rank li{font-size:14px}#wa-online #wa-lobby-companion{cursor:pointer}#wa-online .wa-result{font-size:13px;color:#a7e8c8;min-height:18px}
 `;document.head.append(style);document.body.append(panel);
 const gameUrl=location.origin+location.pathname;
 panel.innerHTML=`<div class="wa-card"><h1>🏹 ワードアロー</h1><p id="wa-status" class="wa-status">オンライン接続を確認中…</p>
-<div class="wa-banner"><small>WORD ARROW · WORLD RANKING</small><h2 style="margin:12px 0 4px">🏹 ワードアロー</h2><p>みんなと最高得点を競おう！ グループ登録は不要です。</p></div>
+<div class="wa-banner"><small>WORD ARROW · WORLD RANKING</small><h2 style="margin:12px 0 4px">🏹 ワードアロー</h2><p>みんなと最高得点を競おう！</p></div>
+<div class="wa-subcard" id="wa-lobby-ranking"><h2>🏆 ランキング</h2><div id="wa-lobby-world-rank">世界史ランキングを読み込み中…</div></div>
+<div class="wa-subcard" id="wa-lobby-companion" role="button" tabindex="0"><h2>🐾 マイ相棒</h2><p>相棒を選ぶ・ご飯をあげる</p><button type="button" id="wa-lobby-feed">🍚 相棒のお世話</button></div>
 <div class="wa-subcard"><h2>🦊 プレイヤー名</h2><p>ランキングに表示する名前（20文字まで）</p><input id="wa-nick" maxlength="20" autocomplete="nickname" placeholder="例：たろう"><button id="wa-save">名前を保存</button><p id="wa-name-result" class="wa-result"></p></div>
 <button class="start" id="wa-start">🎮 ゲームを始める</button>
 <div class="wa-subcard"><h2>🔗 友達を招待</h2><p>リンクかQRコードを送るだけで、同じゲームに参加できます。</p><button id="wa-share" class="secondary" aria-expanded="false">招待リンク・QRコードを表示</button><div id="wa-share-box" hidden><label for="wa-invite-url">ゲームのURL</label><input id="wa-invite-url" readonly><button id="wa-copy">📋 リンクをコピー</button><button id="wa-native" class="secondary">共有する</button><img class="wa-qr" id="wa-qr" alt="ワードアロー招待QRコード"><p class="wa-hint">QRコードの表示にはインターネット接続が必要です。</p></div></div>
@@ -40,6 +42,10 @@ let client=null;
 try{const cfg=window.WORD_ARROW_SUPABASE;if(!cfg?.url||!cfg?.publishableKey||!window.supabase)throw Error('Supabase設定が読み込まれていません');client=window.supabase.createClient(cfg.url,cfg.publishableKey);let {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){const r=await client.auth.signInAnonymously();if(r.error)throw r.error;}status.textContent='オンライン接続済み';}catch(e){status.textContent='オンライン接続を確認できません（ゲームは利用できます）';}
 $('wa-save').onclick=async()=>{let name=$('wa-nick').value.trim().slice(0,20);if(!name){$('wa-name-result').textContent='名前を入力してください';return}localStorage.setItem(nickKey,name);$('wa-name-result').textContent='この端末に名前を保存しました';if(client){try{const r=await client.rpc('wa_set_profile',{p_nickname:name,p_avatar:'🦊'});if(r.error)throw r.error;$('wa-name-result').textContent='名前を保存しました';}catch(e){$('wa-name-result').textContent='端末に保存しました。オンラインプロフィールの更新は確認できませんでした';}}};
 $('wa-start').onclick=()=>{panel.hidden=true};
+$('wa-lobby-feed').onclick=()=>{if(window.WACompanion)window.WACompanion.open()};
+$('wa-lobby-companion').onkeydown=e=>{if(e.key==='Enter'&&window.WACompanion)window.WACompanion.open()};
+function showLobbyRanking(){if(window.WAWorldOnline)window.WAWorldOnline.render('wa-lobby-world-rank');else setTimeout(showLobbyRanking,300)}
+showLobbyRanking();
 $('wa-share').onclick=()=>{const host=$('wa-share-box');host.hidden=!host.hidden;$('wa-share').setAttribute('aria-expanded',String(!host.hidden));if(!host.hidden){$('wa-invite-url').value=gameUrl;$('wa-qr').src='https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=12&data='+encodeURIComponent(gameUrl)}};
 $('wa-copy').onclick=async()=>{try{await navigator.clipboard.writeText(gameUrl);$('wa-copy').textContent='✓ コピーしました'}catch(e){$('wa-invite-url').select();$('wa-copy').textContent='URLを選択しました'}};
 $('wa-native').onclick=async()=>{if(navigator.share){try{await navigator.share({title:'ワードアロー',url:gameUrl})}catch(e){}}else{$('wa-invite-url').select();}};
