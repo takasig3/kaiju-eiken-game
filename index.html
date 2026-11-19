@@ -370,7 +370,24 @@ body.wa-on-title{padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))}
  .battle .mon.illustrated-mon{width:min(95px,12dvh,16vw)!important}
  .battle .slot{width:min(95vw,calc(100dvh - 220px),650px)!important}
 }
-</style></head><body>
+</style>
+<style id="wa-warning-visibility-fix-20261119">
+/* Keep the enemy warning in normal document flow, never clipped by the stage art. */
+.battle .arena.stage-scenery{height:auto!important;max-height:none!important;overflow:visible!important;display:flex;flex-direction:column;align-items:center;justify-content:flex-start}
+.battle .arena .wa-enemy-warning:not([hidden]){display:block!important;position:relative!important;flex:0 0 auto;box-sizing:border-box;z-index:4;max-width:min(96%,700px);width:96%;margin:8px auto 10px!important;padding:10px 12px!important;line-height:1.5!important;white-space:normal;overflow-wrap:anywhere;visibility:visible!important;opacity:1!important;box-shadow:0 3px 8px #20314a33}
+.battle .arena .wa-enemy-warning[hidden]{display:none!important}
+.battle .slot{position:relative;z-index:1;margin-top:8px}
+@media (min-width:700px) and (orientation:portrait){
+ .battle .arena.stage-scenery{min-height:0!important;padding-bottom:12px!important}
+ .battle .arena .wa-enemy-warning:not([hidden]){font-size:clamp(16px,2vw,21px)!important}
+ .battle .pv{display:grid!important;opacity:.65}
+}
+@media (min-width:900px) and (orientation:landscape){
+ .battle .arena.stage-scenery{min-height:0!important;align-content:start!important}
+ .battle .arena .wa-enemy-warning:not([hidden]){font-size:clamp(16px,1.5vw,20px)!important}
+}
+</style>
+</head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
