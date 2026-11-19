@@ -6,10 +6,11 @@ let mode='e',items=[],idx=0,correct=0,answered=false;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 function makeItems(m){
- const standard=(typeof WA_400_QUESTIONS!=='undefined'?WA_400_QUESTIONS:[]).filter(x=>x.mode===m&&Array.isArray(x.options)&&x.options.length>=2&&x.answer!=null&&x.stem);
+ const data=window.WA_TEN_DATA||{};
+ const standard=(Array.isArray(data.WA_EXAM_ITEMS)?data.WA_EXAM_ITEMS:[]).filter(x=>x.mode===m&&Array.isArray(x.options)&&x.options.length>=2&&x.answer!=null&&x.stem);
  const exam=standard.map(x=>({prompt:x.stem,answer:String(x.answer),choices:x.options.map(String),explanation:x.explanation||''}));
  if(m==='wh'){
-  const pool=(typeof WA_WORLD_QUESTIONS!=='undefined'?WA_WORLD_QUESTIONS:[]).filter(x=>x.q&&Array.isArray(x.options)&&x.options[x.answer]!=null);
+  const pool=(Array.isArray(data.WA_WORLD_QUESTIONS)?data.WA_WORLD_QUESTIONS:[]).filter(x=>x.q&&Array.isArray(x.options)&&x.options[x.answer]!=null);
   const eras=['古代','中世','近世','近代','現代'];let chosen=[];
   let accuracy=[];try{accuracy=JSON.parse(localStorage.getItem('wordarrow-world-accuracy')||'[]')}catch(e){}
   const recent=accuracy.slice(-20),rate=recent.length?recent.filter(Boolean).length/recent.length:0.65;
@@ -19,11 +20,11 @@ function makeItems(m){
   return shuffle(chosen).slice(0,10).map(x=>({prompt:x.q,answer:String(x.options[x.answer]),choices:shuffle(x.options.map(String)),explanation:(x.era||'')+'：'+(x.explain||'')}));
  }
  if(m==='e'||m==='e5'){
-  const raw=m==='e5'?(typeof E5_POOL!=='undefined'?E5_POOL:[]):(typeof EPOOL!=='undefined'?EPOOL.map(x=>({en:x[0],ja:x[1],s:x[3]})):[]);
+  const raw=m==='e5'?(Array.isArray(data.E5_POOL)?data.E5_POOL:[]):(typeof EPOOL!=='undefined'?EPOOL.map(x=>({en:x[0],ja:x[1],s:x[3]})):[]);
   const pool=raw.filter(x=>x.en&&x.ja);const words=shuffle(pool).slice(0,35).map(x=>({prompt:'「'+x.ja+'」を英語で答えよう',answer:x.en,choices:shuffle([x.en,...shuffle([...new Set(pool.filter(y=>y.en!==x.en).map(y=>y.en))]).slice(0,3)]),explanation:x.s||''}));
   return shuffle([...exam,...words]).slice(0,10);
  }
- const raw=m==='k5'?(typeof K5_POOL!=='undefined'?K5_POOL:[]):(typeof KJ!=='undefined'?KJ.map(x=>({k:x[0],r:x[3],w:x[2]})):[]);
+ const raw=m==='k5'?(Array.isArray(data.K5_POOL)?data.K5_POOL:[]):(typeof KJ!=='undefined'?KJ.map(x=>({k:x[0],r:x[3],w:x[2]})):[]);
  const pool=raw.filter(x=>x.k&&x.r);
  const kanji=shuffle(pool).slice(0,35).map(x=>({prompt:'「'+x.k+'」の読みは？',answer:x.r,choices:shuffle([x.r,...shuffle([...new Set(pool.filter(y=>y.r!==x.r).map(y=>y.r))]).slice(0,3)]),explanation:x.w||''}));
  return shuffle([...exam,...kanji]).slice(0,10);

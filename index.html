@@ -2697,6 +2697,11 @@ function showFinal(cleared){
   $('#again').onclick=showTitle;
 }
 
+// Expose read-only question pools to the separate 10-question module.
+window.WA_TEN_DATA={
+  EPOOL:EPOOL, E5_POOL:E5_POOL, KJ:KJ, K5_POOL:K5_POOL,
+  WA_EXAM_ITEMS:WA_EXAM_ITEMS, WA_WORLD_QUESTIONS:WA_WORLD_QUESTIONS
+};
 showTitle();
 })();
 </script>
@@ -2740,7 +2745,7 @@ document.addEventListener('click',function(e){if(e.target && e.target.id==='kanj
 <script src="./world-online.js"></script>
 <script src="./wa-rank-patch.js"></script>
 <script src="./wa-companion-restored.js"></script>
-<script src="./wa-ten-challenge.js?v=20261119b"></script>
+<script src="./wa-ten-challenge.js?v=20261119c"></script>
 
 
 <script>
