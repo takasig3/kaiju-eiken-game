@@ -31,7 +31,20 @@ function makeItems(m){
 }
 function shell(inner){modal.innerHTML='<div class="panel" role="dialog" aria-modal="true" aria-label="10問チャレンジ"><div class="top"><b>📝 10問チャレンジ</b><button type="button" id="wa-ten-close">✕ 閉じる</button></div>'+inner+'</div>';modal.querySelector('#wa-ten-close').onclick=close}
 function close(){modal.hidden=true}
-function render(){answered=false;if(idx>=items.length){shell('<h2>結果発表！</h2><p style="font-size:26px">'+correct+' / '+items.length+' 問正解 🎉</p><p>通常のゲームポイントには加算されません。</p><button id="wa-ten-again">もう一度挑戦</button>');modal.querySelector('#wa-ten-again').onclick=()=>open(mode);return}
+// One reward per Japan calendar day, shared by all five courses.
+const rewardKey='wa-ten-food-reward-jst-v1';
+function japanDay(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
+function grantDailyFood(){
+ const today=japanDay();
+ try{
+  if(localStorage.getItem(rewardKey)===today)return '今日は受け取り済みです。明日また挑戦しよう！';
+  if(!window.WACompanion||typeof window.WACompanion.addFood!=='function')return '相棒のご飯機能を読み込めませんでした。再読み込みしてください。';
+  window.WACompanion.addFood(1);
+  localStorage.setItem(rewardKey,today);
+  return '🍙 今日のごほうび！ ご飯を1個ゲット！';
+ }catch(err){return 'ご飯の保存に失敗しました。ブラウザの保存設定を確認してください。';}
+}
+function render(){answered=false;if(idx>=items.length){const reward=grantDailyFood();shell('<h2>結果発表！</h2><p style="font-size:26px">'+correct+' / '+items.length+' 問正解 🎉</p><p role="status" style="font-weight:800;color:#ffe09a">'+esc(reward)+'</p><p>通常のゲームポイントには加算されません。</p><button id="wa-ten-again">もう一度挑戦</button>');modal.querySelector('#wa-ten-again').onclick=()=>open(mode);return}
  const q=items[idx];shell('<p>第'+(idx+1)+'問 / '+items.length+'　正解 '+correct+'問</p><div class="prompt">'+esc(q.prompt)+'</div><div id="wa-ten-options">'+q.choices.map((o,i)=>'<button type="button" class="option" data-option="'+i+'">'+esc(o)+'</button>').join('')+'</div><div id="wa-ten-feedback" aria-live="polite"></div>');modal.querySelectorAll('[data-option]').forEach(b=>b.onclick=()=>{if(answered)return;answered=true;const picked=q.choices[Number(b.dataset.option)];const ok=picked===q.answer;if(ok)correct++;modal.querySelectorAll('[data-option]').forEach(el=>{el.disabled=true;if(q.choices[Number(el.dataset.option)]===q.answer)el.classList.add('correct');else if(el===b)el.classList.add('incorrect')});const fb=modal.querySelector('#wa-ten-feedback');fb.innerHTML='<div class="feedback">'+(ok?'⭕ 正解！':'❌ 不正解')+'<p>正解：'+esc(q.answer)+'</p><p>'+esc(q.explanation)+'</p></div><button id="wa-ten-next">'+(idx===items.length-1?'結果を見る':'次の問題へ')+'</button>';modal.querySelector('#wa-ten-next').onclick=()=>{idx++;render()}})}
 function open(m){mode=m;items=makeItems(m);idx=0;correct=0;modal.hidden=false;if(!items.length){shell('<p>問題データを取得できませんでした。科目：'+esc(m)+'。index.htmlとwa-ten-challenge.jsのバージョンを確認してください。</p>');return}render()}
 modal.addEventListener('click',e=>{if(e.target===modal)close()});window.WATenChallenge={open};
