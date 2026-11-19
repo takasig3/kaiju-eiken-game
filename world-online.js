@@ -22,13 +22,13 @@ async function submit(r){
  const c=await getClient();
  return check(await c.rpc('wa_world_submit_score',{p_nickname:String(r.nickname||'ななし').slice(0,20),p_score:Math.max(0,Math.floor(r.score||0)),p_stages:Math.max(0,Math.min(10,Math.floor(r.stages||0))),p_correct:Math.max(0,Math.floor(r.correct||0)),p_total:Math.max(0,Math.floor(r.total||0))}));
 }
-async function render(id){
+async function render(id,limit=30){
  const el=document.getElementById(id);if(!el)return;
  el.innerHTML='<p style="font-weight:800">🌍 世界史・みんなのランキングを読み込み中…</p>';
  try{
-  const c=await getClient();const rows=check(await c.rpc('wa_world_ranking',{p_limit:30}))||[];
+  const c=await getClient();const rows=check(await c.rpc('wa_world_ranking',{p_limit:limit}))||[];
   if(!document.getElementById(id))return;
-  el.innerHTML='<h3 style="margin:16px 0 8px">🌍 世界史・みんなのランキング TOP 30</h3>'+
+  el.innerHTML='<h3 style="margin:8px 0">🌍 世界史 TOP '+limit+'</h3>'+
     '<p style="font-size:12px;color:#667">全参加者の自己ベスト。ほかの端末からも閲覧できます。</p>'+
     (rows.length?'<ol style="padding-left:30px">'+rows.map(x=>'<li style="padding:7px 0;border-bottom:1px solid #ddd"><b>'+esc(x.nickname)+'</b>　<strong>'+Number(x.score).toLocaleString()+' pt</strong> <small>STAGE '+Number(x.stages)+'</small></li>').join('')+'</ol>':'<p>まだ記録がありません。最初の挑戦者になろう！</p>')+
     '<button type="button" id="wa-world-refresh-'+id+'" style="padding:9px 14px;border-radius:9px;border:1px solid #aaa;background:white;color:#18242f">↻ 更新</button>';
