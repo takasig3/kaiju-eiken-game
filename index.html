@@ -2259,9 +2259,10 @@ async function summonChainAlly(chain,energyReward){
   var other=allCards(S.mode.charAt(0)==='e'?'e':'k').filter(function(c){return c.mode===S.mode&&!ids[c.id]&&variants(c).length});
   // For mixed kanji modes, also allow any card type from the same mode.
   if(!other.length)other=Object.keys(BYID).map(function(k){return BYID[k]}).filter(function(c){return c.mode===S.mode&&!ids[c.id]&&variants(c).length});
-  if(!other.length)return;
-  var q=pickQ(other,S.lastKey);
+  // Play the ally entrance even if no bonus quiz is available.
   await waShowChanceSplash(isTen);
+  if(!other.length){flash('✨ 助っ人登場！');return;}
+  var q=pickQ(other,S.lastKey);
   board.hidden=true;$('#pv').hidden=true;
   var host=document.createElement('div');host.className='ally-quiz';slot.appendChild(host);
   var hero=document.createElement('div');hero.className='ally-hero';
@@ -2341,6 +2342,7 @@ function waSpellingChallenge(){
 }
 /* English mini-games in regular monster battles.  Five types rotate per session. */
 var waBattleMiniIndex=0;
+var waSpellTurnCounter=0;
 function waBattleEnglishMini(){
   var mode=S.mode,grade4=mode==='e';
   var sets=grade4?[
@@ -2433,7 +2435,13 @@ async function finishPuzzleTurn(res){
     }
     await summonChainAlly(res.chain,energyReward);
   }
-  if((S.mode==='e'||S.mode==='e5')&&Math.random()<(res.chain>=2?0.9:0.3))await waBattleEnglishMini();
+  if(S.mode==='e'||S.mode==='e5'){
+    // Every third completed move offers a word-spelling rearrangement challenge.
+    // Other turns retain the existing English mini-game rotation.
+    waSpellTurnCounter++;
+    if(waSpellTurnCounter%3===0)await waSpellingChallenge();
+    else if(Math.random()<(res.chain>=2?0.9:0.3))await waBattleEnglishMini();
+  }
   var learningBonus=await learningTileChallenge();
   S.pendingSpecial=(res.five?'🌈レインボー×'+res.five+' ':'')+(res.four?'➶貫通×'+res.four:'');
   var ok=await askQuiz(res.cleared,res.chain);S.pendingSpecial='';
