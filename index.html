@@ -337,6 +337,38 @@
   .battle .arena.stage-scenery{height:165px!important;min-height:165px!important}
 }
 
+
+/* Stage-first tablet layout: larger battle art instead of an empty lower half. */
+@media(min-width:700px){
+  .battle .arena.stage-scenery{
+    height:clamp(300px,37dvh,440px)!important;
+    min-height:300px!important;max-height:440px!important;
+    grid-template-columns:minmax(0,1fr) minmax(220px,310px) minmax(0,1fr)!important;
+    padding:20px 28px!important;gap:12px 22px!important;
+    background-size:cover!important;background-position:center 55%!important;
+  }
+  .battle .arena .mon{width:min(250px,27dvh,100%)!important;max-height:300px!important;align-self:center!important}
+  .battle .arena .monster-portrait{max-height:260px!important;width:100%!important;object-fit:contain!important}
+  .battle .arena .mname{font-size:clamp(23px,2.8vw,34px)!important;padding:3px 18px!important}
+  .battle .arena .hp{height:32px!important}
+  .battle .arena .hp b{font-size:18px!important}
+  .battle .arena .wa-enemy-warning:not([hidden]){font-size:clamp(16px,1.75vw,21px)!important;padding:12px!important}
+  .battle .arena .wa-energy{padding:17px 13px!important}
+  .battle .arena .wa-energy-label,.battle .arena .wa-energy-count{font-size:clamp(17px,1.9vw,23px)!important}
+  .battle .slot{width:min(72vw,500px,calc((100dvh - 485px)*.86))!important;max-width:500px!important}
+  .battle .foot{width:min(72vw,500px)!important}
+}
+@media(min-width:700px) and (orientation:landscape){
+  .battle .arena.stage-scenery{height:clamp(250px,34dvh,360px)!important;min-height:250px!important;max-height:360px!important}
+  .battle .arena .mon{width:min(215px,26dvh,100%)!important}
+  .battle .slot{width:min(48vw,470px,calc((100dvh - 385px)*.84))!important;max-width:470px!important}
+  .battle .foot{width:min(48vw,470px)!important}
+}
+@media(min-width:700px) and (max-height:720px){
+  .battle .arena.stage-scenery{height:clamp(215px,33dvh,260px)!important;min-height:215px!important}
+  .battle .slot{width:min(48vw,440px,calc((100dvh - 320px)*.84))!important}
+}
+
 </style><style id="wa-learning-style">
 .wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
 .slot{position:relative}
@@ -2516,7 +2548,21 @@ async function finishPuzzleTurn(res){
     S.relayChain=0;
   }else S.relayChain=res.chain>=2?res.chain:0;
   waFeverAfterMove(res);
-  if(res.chain>=5)await summonChainAlly(res.chain,false);
+  if(res.chain>=5){
+    // Special ally mini-game -> immediate satisfying attack, without waiting for 3 charges.
+    await summonChainAlly(res.chain,false);
+    // Bank this cascade as a successful attack charge. Existing accumulated charges
+    // are included in the shot; do not award their points twice.
+    S.charge.push({n:res.cleared,chain:res.chain,ok:true,bonus:0,special4:res.four,special5:res.five});
+    flash(res.chain>=10?'🌟 10連鎖！ SUPER ATTACK!':'🔥 5連鎖！ BONUS ATTACK!');
+    await fire();
+    S.charge=[];
+    if(S.hp<=0){await victory();return;}
+    await waEnemyAfterTurn(res,true);
+    if(!hasMoves()){reshuffle();render();flash('シャッフル');}
+    S.locked=false;updateInfo();
+    return;
+  }
   if(S.mode==='e'||S.mode==='e5'){
     // Every third completed move offers a word-spelling rearrangement challenge.
     // Other turns retain the existing English mini-game rotation.
