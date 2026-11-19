@@ -6,7 +6,22 @@ let mode='e',items=[],idx=0,correct=0,answered=false;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 function makeItems(m){
- if(m==='wh')return [];
+  if(m==='wh'){
+   const pool=(typeof WA_WORLD_QUESTIONS!=='undefined'?WA_WORLD_QUESTIONS:[]).filter(x=>x&&x.q&&Array.isArray(x.options)&&x.options.length>=2&&Number.isInteger(x.answer)&&x.options[x.answer]!=null);
+   const history=(()=>{try{return JSON.parse(localStorage.getItem('wordarrow-world-accuracy')||'[]')}catch{return []}})();
+   const recent=history.slice(-20),rate=recent.length?recent.filter(Boolean).length/recent.length:0.65;
+   const desired=recent.length<10?2:rate>=0.8?3:rate<0.5?1:2;
+   const eras=['古代','中世','近世','近代','現代'];
+   let selected=[];
+   for(const era of shuffle(eras)){
+    const eraPool=pool.filter(x=>x.era===era);
+    const target=shuffle(eraPool.filter(x=>x.level===desired));
+    const other=shuffle(eraPool.filter(x=>x.level!==desired));
+    selected.push(...[...target,...other].slice(0,2));
+   }
+   if(selected.length<10){const ids=new Set(selected.map(x=>x.id));selected.push(...shuffle(pool.filter(x=>!ids.has(x.id))).slice(0,10-selected.length))}
+   return shuffle(selected).slice(0,10).map(x=>({prompt:x.q,answer:x.options[x.answer],choices:shuffle(x.options),explanation:(x.era+'・'+(['','基礎','標準','発展'][x.level]||'')+'：'+(x.explain||''))}));
+  }
  if(m==='e'||m==='e5'){
   const exam=(typeof WA_EXAM_ITEMS!=='undefined'?WA_EXAM_ITEMS:[]).filter(x=>x.mode===m).map(x=>({prompt:x.stem,answer:x.answer,choices:x.options,explanation:x.explanation}));
   const pool=(m==='e5'?(typeof E5_POOL!=='undefined'?E5_POOL:[]):(typeof EPOOL!=='undefined'?EPOOL.map(w=>({en:w[0],ja:w[1],s:w[3]})):[])).filter(x=>x.en&&x.ja);

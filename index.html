@@ -1756,6 +1756,7 @@ function showTitle(){
    '<div class="actions">'+
     '<button type="button" class="btn primary" id="go0">'+MODE_NAME[m]+'をはじめから</button>'+
     (saved>0?'<button type="button" class="btn" id="goc">つづきから（STAGE '+(saved+1)+'）</button>':'')+
+    '<button type="button" class="btn" id="wa-ten-start">📝 10問チャレンジ</button>'+
     (m==='wh'?'<button type="button" class="btn" id="wh-rank">🌍 世界史・みんなのポイントを見る</button>':'')+
     '<div class="actions two"><button type="button" class="btn ghost" id="nb">まちがいノート（'+nbCount(m)+'）</button><button type="button" class="btn ghost" id="rk">ランキング</button></div>'+
     (m==='k'?'<button type="button" class="btn" id="kanji-all">全対象漢字・記憶書き取り（1,339字）</button>':'')+
@@ -1768,6 +1769,7 @@ function showTitle(){
     var plan=makePlan(m);lsw('wordarrow-plan-'+m,plan);progSet(m,0);applyPlan(m,plan);start(0);
   };
   if(saved>0) $('#goc').onclick=function(){applyPlan(m,savedPlan);start(saved)};
+  $('#wa-ten-start').onclick=function(){if(window.WATenChallenge)window.WATenChallenge.open(S.mode);else alert('10問チャレンジを読み込めませんでした。')};
   $('#nb').onclick=function(){showNotebook(S.mode)};
   $('#rk').onclick=showRanking;
   var whRank=$('#wh-rank');if(whRank)whRank.onclick=showRanking;
@@ -2694,6 +2696,7 @@ document.addEventListener('click',function(e){if(e.target && e.target.id==='kanj
 <script src="./world-online.js"></script>
 <script src="./wa-rank-patch.js"></script>
 <script src="./wa-companion-restored.js"></script>
+<script src="./wa-ten-challenge.js"></script>
 
 
 <script>
