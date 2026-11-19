@@ -25,9 +25,7 @@ const style=document.createElement('style');style.textContent=`
 `;document.head.append(style);document.body.append(panel);
 const gameUrl=location.origin+location.pathname;
 panel.innerHTML=`<div class="wa-card"><h1>🏹 ワードアロー</h1><p id="wa-status" class="wa-status">オンライン接続を確認中…</p>
-<div class="wa-banner"><small>WORD ARROW · WORLD RANKING</small><h2 style="margin:12px 0 4px">🏹 ワードアロー</h2><p>みんなと最高得点を競おう！</p></div>
 <div class="wa-subcard" id="wa-lobby-ranking"><h2>🏆 ランキング</h2><div class="wa-rank-tabs" id="wa-rank-tabs" role="tablist" aria-label="コース別ランキング"></div><div id="wa-lobby-world-rank" aria-live="polite">ランキングを読み込み中…</div></div>
-<div class="wa-subcard" id="wa-lobby-companion" role="button" tabindex="0"><h2>🐾 マイ相棒</h2><p>相棒を選ぶ・ご飯をあげる</p><button type="button" id="wa-lobby-feed">🍚 相棒のお世話</button></div>
 <div class="wa-subcard"><h2>🦊 プレイヤー名</h2><p>ランキングに表示する名前（20文字まで）</p><input id="wa-nick" maxlength="20" autocomplete="nickname" placeholder="例：たろう"><button id="wa-save">名前を保存</button><p id="wa-name-result" class="wa-result"></p></div>
 <button class="start" id="wa-start">🎮 ゲームを始める</button>
 <div class="wa-subcard"><h2>🔗 友達を招待</h2><p>リンクかQRコードを送るだけで、同じゲームに参加できます。</p><button id="wa-share" class="secondary" aria-expanded="false">招待リンク・QRコードを表示</button><div id="wa-share-box" hidden><label for="wa-invite-url">ゲームのURL</label><input id="wa-invite-url" readonly><button id="wa-copy">📋 リンクをコピー</button><button id="wa-native" class="secondary">共有する</button><img class="wa-qr" id="wa-qr" alt="ワードアロー招待QRコード"><p class="wa-hint">QRコードの表示にはインターネット接続が必要です。</p></div></div>
@@ -42,8 +40,6 @@ let client=null;
 try{const cfg=window.WORD_ARROW_SUPABASE;if(!cfg?.url||!cfg?.publishableKey||!window.supabase)throw Error('Supabase設定が読み込まれていません');client=window.supabase.createClient(cfg.url,cfg.publishableKey);let {data,error}=await client.auth.getSession();if(error)throw error;if(!data.session){const r=await client.auth.signInAnonymously();if(r.error)throw r.error;}status.textContent='オンライン接続済み';}catch(e){status.textContent='オンライン接続を確認できません（ゲームは利用できます）';}
 $('wa-save').onclick=async()=>{let name=$('wa-nick').value.trim().slice(0,20);if(!name){$('wa-name-result').textContent='名前を入力してください';return}localStorage.setItem(nickKey,name);$('wa-name-result').textContent='この端末に名前を保存しました';if(client){try{const r=await client.rpc('wa_set_profile',{p_nickname:name,p_avatar:'🦊'});if(r.error)throw r.error;$('wa-name-result').textContent='名前を保存しました';}catch(e){$('wa-name-result').textContent='端末に保存しました。オンラインプロフィールの更新は確認できませんでした';}}};
 $('wa-start').onclick=()=>{panel.hidden=true};
-$('wa-lobby-feed').onclick=()=>{if(window.WACompanion)window.WACompanion.open()};
-$('wa-lobby-companion').onkeydown=e=>{if(e.key==='Enter'&&window.WACompanion)window.WACompanion.open()};
 const courses=[['e','英検4級','eiken4'],['e5','英検5級','eiken5'],['k','漢検4級','kanken4'],['k5','漢検5級','kanken5'],['wh','世界史','world']];
 let activeCourse='e';
 function rankEscape(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}

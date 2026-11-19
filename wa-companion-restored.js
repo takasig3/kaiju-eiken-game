@@ -6,7 +6,17 @@ const names=['ライボルトン','アクアフィン','アースゴーレム','
 const get=(k,d)=>{try{let v=localStorage.getItem(prefix+k);return v===null?d:JSON.parse(v)}catch(e){return d}};
 const set=(k,v)=>{try{localStorage.setItem(prefix+k,JSON.stringify(v))}catch(e){}};
 const legacy=suffix=>{try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('wa-guild-v2:')&&k.endsWith(':'+suffix))return JSON.parse(localStorage.getItem(k))}}catch(e){}return null};
-let points=Math.max(0,Number(get('points',legacy('companion-total-points')||0))||0);
+// Recover older cumulative totals without ever replacing a higher saved total with zero.
+function recoveredPoints(){
+ const candidates=[get('points',0),legacy('companion-total-points'),legacy('companion-points')];
+ try{for(let i=0;i<localStorage.length;i++){
+  const k=localStorage.key(i)||'';
+  if(!/^(wa-guild-v2:.*:(companion-total-points|companion-points)|wa-companion-standalone-v1:points)$/.test(k))continue;
+  try{candidates.push(JSON.parse(localStorage.getItem(k)))}catch(e){}
+ }}catch(e){}
+ return Math.max(0,...candidates.map(x=>Number(x)).filter(x=>Number.isFinite(x)&&x>=0));
+}
+let points=recoveredPoints();
 let selected=Math.max(0,Math.min(12,Number(get('selected',legacy('companion')||0))||0));
 set('points',points);
 const imagePath=i=>i===11?'special-ally.webp':i===12?'special-ally-10.webp':i===10?'special-ally.webp':'assets/monster-'+String(i+1).padStart(2,'0')+'.webp';
