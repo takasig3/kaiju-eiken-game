@@ -1745,7 +1745,7 @@ function showTitle(){
   '</section>';
   bindSnd();
   app.querySelectorAll('.modebtn').forEach(function(b){b.onclick=function(){S.mode=b.dataset.m;lsw('wordarrow-mode',S.mode);showTitle()}});
-  function start(si){S.tot={ok:0,ng:0};S.miss={};S.score=0;S.used={};S.usedCard={};showStudy(si)}
+  function start(si){S.tot={ok:0,ng:0};S.miss={};S.score=0;S.used={};S.usedCard={};if(si===0)waSetEnergy(0);showStudy(si)}
   $('#go0').onclick=function(){
     var plan=makePlan(m);lsw('wordarrow-plan-'+m,plan);progSet(m,0);applyPlan(m,plan);start(0);
   };
@@ -2672,6 +2672,7 @@ document.addEventListener('click',function(e){if(e.target && e.target.id==='kanj
 <script src="./online.js"></script>
 <script src="./world-online.js"></script>
 <script src="./wa-rank-patch.js"></script>
+<script src="./wa-companion-restored.js"></script>
 
 
 <script>
