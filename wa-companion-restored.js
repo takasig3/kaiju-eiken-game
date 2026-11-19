@@ -2,21 +2,11 @@
 (function(){'use strict';
 const prefix='wa-companion-standalone-v1:';
 const thresholds=[0,0,0,40000,80000,120000,160000,200000,250000,300000,400000,500000,700000];
-const names=['ライボルトン','アクアフィン','アースゴーレム','モンスター4','モンスター5','モンスター6','モンスター7','モンスター8','モンスター9','モンスター10','お助けキャラ','5連鎖の隠し相棒','10連鎖の隠し相棒'];
+const names=['ライボルトン','アクアフィン','フレアキトン','アースゴーレム','アイスフェン','ルナミスト','ウィンドルー','ナイトヴェイル','ダークロード','ミコフェリス','お助けキャラ','5連鎖の隠し相棒','10連鎖の隠し相棒'];
 const get=(k,d)=>{try{let v=localStorage.getItem(prefix+k);return v===null?d:JSON.parse(v)}catch(e){return d}};
 const set=(k,v)=>{try{localStorage.setItem(prefix+k,JSON.stringify(v))}catch(e){}};
 const legacy=suffix=>{try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('wa-guild-v2:')&&k.endsWith(':'+suffix))return JSON.parse(localStorage.getItem(k))}}catch(e){}return null};
-// Recover older cumulative totals without ever replacing a higher saved total with zero.
-function recoveredPoints(){
- const candidates=[get('points',0),legacy('companion-total-points'),legacy('companion-points')];
- try{for(let i=0;i<localStorage.length;i++){
-  const k=localStorage.key(i)||'';
-  if(!/^(wa-guild-v2:.*:(companion-total-points|companion-points)|wa-companion-standalone-v1:points)$/.test(k))continue;
-  try{candidates.push(JSON.parse(localStorage.getItem(k)))}catch(e){}
- }}catch(e){}
- return Math.max(0,...candidates.map(x=>Number(x)).filter(x=>Number.isFinite(x)&&x>=0));
-}
-let points=recoveredPoints();
+let points=Math.max(0,Number(get('points',legacy('companion-total-points')||0))||0);
 let selected=Math.max(0,Math.min(12,Number(get('selected',legacy('companion')||0))||0));
 set('points',points);
 const imagePath=i=>i===11?'special-ally.webp':i===12?'special-ally-10.webp':i===10?'special-ally.webp':'assets/monster-'+String(i+1).padStart(2,'0')+'.webp';
@@ -32,7 +22,7 @@ const css=document.createElement('style');css.textContent=`
 #wa-comp-modal{position:fixed;inset:0;z-index:100020;background:#0b1b30c9;display:flex;align-items:center;justify-content:center;padding:16px}
 #wa-comp-modal[hidden]{display:none!important}
 #wa-comp-modal .dialog{max-width:570px;width:100%;max-height:85dvh;overflow:auto;background:#1b3150;border:1px solid #7c99c0;border-radius:18px;color:white;padding:20px;text-align:center;font:16px system-ui}
-#wa-comp-modal .wa-comp-header{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:-12px;background:#1b3150;z-index:2;padding:6px 0}#wa-comp-modal .wa-comp-header h2{margin:0}#wa-comp-modal .picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0}
+#wa-comp-modal .picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0}
 #wa-comp-modal button{cursor:pointer;border:2px solid #6985ad;background:#2d496b;color:#fff;border-radius:10px;padding:7px}
 #wa-comp-modal button.active{border-color:#ffd469}
 #wa-comp-modal button:disabled{opacity:.65;cursor:default}
@@ -51,21 +41,12 @@ const css=document.createElement('style');css.textContent=`
 const root=document.createElement('div');root.id='wa-companion';root.innerHTML='<div class="bubble">がんばれ！</div><button aria-label="相棒を選ぶ" type="button"><img alt="応援する相棒"></button>';document.body.append(root);
 const modal=document.createElement('div');modal.id='wa-comp-modal';modal.hidden=true;document.body.append(modal);
 function refresh(){if(points<thresholds[selected]){selected=0;set('selected',selected)}const img=root.querySelector('img');img.src=imagePath(selected);img.alt=names[selected]}
-function open(){
- modal.hidden=false;
- const next=thresholds.find(x=>x>points);
- const progress=next===undefined?'全13体を解放しました！':'次の解放まで '+fmt(next-points)+' pt';
- modal.innerHTML='<div class="dialog" role="dialog" aria-modal="true" aria-label="マイ相棒"><div class="wa-comp-header"><h2>🐾 マイ相棒</h2><button type="button" id="wa-comp-close">✕ 閉じる</button></div><p>最初の3体は自由に選べます。累計ポイントで順番に解放！</p><p>累計ポイント：<strong>'+fmt(points)+' pt</strong></p><p class="wa-progress">'+progress+'</p><div class="wa-feed"><img id="wa-feed-img" src="'+imagePath(selected)+'" alt="選択中の相棒"><strong>'+names[selected]+'</strong><span id="wa-food-count">🍙 ご飯：'+fmt(food)+'個</span><button type="button" id="wa-ten-food-btn">🍙 ご飯をあげる（10問チャレンジ）</button><button type="button" id="wa-feed-btn" '+(food<=0?'disabled':'')+'>🍚 獲得したご飯をあげる</button><p id="wa-feed-message" aria-live="polite">'+(food>0?'10問チャレンジは1日1回、ご飯を1個獲得できます。':'10問チャレンジでご飯を獲得しよう！')+'</p></div><div class="picker">'+names.map((n,i)=>{const locked=points<thresholds[i];const secret=locked&&i>=11;return '<button type="button" data-i="'+i+'" '+(locked?'disabled':'')+' class="'+(selected===i?'active':'')+'" aria-label="'+(secret?'隠し相棒':n)+(locked?' 未解放':'')+'">'+(secret?'<div class="wa-secret" aria-hidden="true">？</div>':'<img src="'+imagePath(i)+'" alt="" onerror="this.style.visibility=\'hidden\'">')+'<small>'+(locked?'🔒 '+fmt(thresholds[i])+'pt':n)+'</small></button>'}).join('')+'</div></div>';
- modal.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{selected=Number(b.dataset.i);set('selected',selected);refresh();open()});
- modal.querySelector('#wa-ten-food-btn').onclick=()=>{const challenge=window.WATenChallenge;if(!challenge||typeof challenge.open!=='function'){modal.querySelector('#wa-feed-message').textContent='10問チャレンジを読み込めませんでした。ページを再読み込みしてください。';return;}let mode='e';try{const stored=localStorage.getItem('wordarrow-mode');if(stored){const parsed=JSON.parse(stored);mode=typeof parsed==='string'?parsed:stored.replace(/^"|"$/g,'');}}catch(e){}if(!['e','e5','k','k5','wh'].includes(mode))mode='e';modal.hidden=true;challenge.open(mode);};
- modal.querySelector('#wa-feed-btn').onclick=()=>{if(food<=0)return;food--;set(foodKey,food);modal.querySelector('#wa-food-count').textContent='🍙 ご飯：'+fmt(food)+'個';const messages=['おいしい！ありがとう！','元気いっぱい！','もっとがんばるね！','やったー！'];modal.querySelector('#wa-feed-message').textContent=messages[Math.floor(Math.random()*messages.length)];const im=modal.querySelector('#wa-feed-img');im.classList.remove('happy');void im.offsetWidth;im.classList.add('happy');modal.querySelector('#wa-feed-btn').disabled=food<=0;};
- modal.querySelector('#wa-comp-close').onclick=()=>modal.hidden=true;
-}
+function open(){modal.hidden=false;const next=thresholds.find(x=>x>points);const progress=next===undefined?'全13体を解放しました！':'次の解放まで '+fmt(next-points)+' pt';modal.innerHTML='<div class="dialog" role="dialog" aria-modal="true" aria-label="マイ相棒"><h2>🐾 マイ相棒</h2><p>最初の3体は自由に選べます。累計ポイントで順番に解放！</p><p>累計ポイント：<strong>'+fmt(points)+' pt</strong></p><p class="wa-progress">'+progress+'</p><div class="picker">'+names.map((n,i)=>{const locked=points<thresholds[i];const secret=locked&&i>=11;return '<button data-i="'+i+'" '+(locked?'disabled':'')+' class="'+(selected===i?'active':'')+'" aria-label="'+(secret?'隠し相棒':n)+(locked?' 未解放':'')+'">'+(secret?'<div class="wa-secret" aria-hidden="true">？</div>':'<img src="'+imagePath(i)+'" alt="" onerror="this.style.visibility=\'hidden\'">')+'<small>'+(locked?'🔒 '+fmt(thresholds[i])+'pt':n)+'</small></button>'}).join('')+'</div><button id="wa-comp-close">閉じる</button></div>';modal.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{selected=Number(b.dataset.i);set('selected',selected);refresh();open()});modal.querySelector('#wa-feed-btn').onclick=()=>{if(food<=0)return;food--;set(foodKey,food);modal.querySelector('#wa-food-count').textContent='🍙 ご飯：'+fmt(food)+'個';const messages=['おいしい！ありがとう！','元気いっぱい！','もっとがんばるね！','やったー！'];modal.querySelector('#wa-feed-message').textContent=messages[Math.floor(Math.random()*messages.length)];const im=modal.querySelector('#wa-feed-img');im.classList.remove('happy');void im.offsetWidth;im.classList.add('happy');modal.querySelector('#wa-feed-btn').disabled=food<=0;};modal.querySelector('#wa-comp-close').onclick=()=>modal.hidden=true;}
 function addPoints(delta){delta=Number(delta);if(!Number.isFinite(delta)||delta<=0)return;points+=delta;set('points',points);if(!modal.hidden)open()}
 /* Called by the main game's score update; count positive increments only, not a new game's reset. */
 let runScore=0;
 window.addEventListener('wa:companion-new-run',()=>{runScore=0});
 window.addEventListener('wa:companion-score',e=>{const n=Number(e.detail&&e.detail.score);if(!Number.isFinite(n)||n<0)return;if(n<runScore){runScore=n;return}const delta=n-runScore;runScore=n;addPoints(delta)});
 window.WACompanion={getPoints:()=>points,addPoints,open,addFood:(n=1)=>{food+=Math.max(0,Math.floor(Number(n)||0));set(foodKey,food);if(!modal.hidden)open();},getFood:()=>food};
-root.querySelector('button').onclick=open;document.addEventListener('click',e=>{if(e.target.closest('#wa-lobby-companion'))open()});modal.onclick=e=>{if(e.target===modal)modal.hidden=true};refresh();
+root.querySelector('button').onclick=open;modal.onclick=e=>{if(e.target===modal)modal.hidden=true};refresh();
 })();

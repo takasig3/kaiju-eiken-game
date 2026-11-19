@@ -268,6 +268,43 @@
 @keyframes waChanceZoom{0%{transform:scale(.42) rotate(-9deg);opacity:0}17%{transform:scale(.95) rotate(3deg);opacity:1}48%{transform:scale(1.12) rotate(0deg);opacity:1}100%{transform:scale(1.65) rotate(4deg);opacity:0}}
 @media(prefers-reduced-motion:reduce){.wa-chance-splash-inner{animation:waChanceFade .45s ease-out both}@keyframes waChanceFade{0%{opacity:0}35%{opacity:1}100%{opacity:0}}}
 
+
+/* 2026-11-19: tablet readability and restore two-row upcoming tiles */
+@media (max-width:699px){
+ .battle .pv{display:grid!important;aspect-ratio:7/0.95;gap:3px;margin-bottom:0;opacity:.72}
+ .battle .pcell{padding:1px;border-width:1px}
+}
+@media (min-width:700px) and (max-width:1199px) and (orientation:portrait){
+ .battle .pv{display:grid!important;aspect-ratio:7/1.05;gap:3px;margin-bottom:0;opacity:.72}
+ .battle .arena.stage-scenery{height:auto;min-height:clamp(200px,26dvh,300px)!important;padding:8px 10px 12px;gap:4px}
+ .battle .mon.illustrated-mon{width:min(170px,19dvh,24vw)!important;max-height:19dvh}
+ .battle .slot{width:min(96vw,calc(100dvh - 375px),760px)!important}
+ .battle .arena .hp{height:27px;width:min(100%,650px)}
+ .battle .arena .hp b{font-size:15px}
+ .battle .arena .wa-energy{width:96%;max-width:650px;padding:7px 12px;gap:10px}
+ .battle .wa-energy-label,.battle .wa-energy-count{font-size:15px}
+ .battle .wa-energy-seg{height:14px}
+ .battle .wa-enemy-warning{width:96%;max-width:650px;font-size:16px;line-height:1.4;padding:9px 12px}
+}
+@media (min-width:900px) and (orientation:landscape){
+ .battle{grid-template-columns:minmax(300px,0.9fr) minmax(0,1.1fr);column-gap:clamp(14px,2vw,32px);align-items:start}
+ .battle .slot{width:min(100%,calc(100dvh - 110px),760px);justify-self:center}
+ .battle .arena.stage-scenery{width:100%;min-height:clamp(280px,48dvh,540px);padding:16px 12px;align-content:center;gap:9px}
+ .battle .arena .hp{width:96%;max-width:560px;height:32px}
+ .battle .arena .hp b{font-size:17px}
+ .battle .arena .wa-energy{width:96%;max-width:560px;padding:9px 12px;gap:9px}
+ .battle .wa-energy-label,.battle .wa-energy-count{font-size:clamp(13px,1.5vw,18px)}
+ .battle .wa-energy-seg{height:16px}
+ .battle .wa-enemy-warning{width:96%;max-width:560px;font-size:clamp(14px,1.5vw,18px);padding:10px 12px;line-height:1.5}
+ .battle .pv{display:grid;aspect-ratio:7/1.05;opacity:.75;margin-bottom:0}
+ .battle .foot{font-size:clamp(14px,1.4vw,18px)}
+}
+@media (min-width:900px) and (orientation:landscape) and (max-height:650px){
+ .battle .arena.stage-scenery{min-height:0;padding:8px;gap:4px}
+ .battle .slot{width:min(100%,calc(100dvh - 95px),680px)}
+ .battle .arena .wa-energy{padding:5px 9px}
+ .battle .wa-enemy-warning{padding:6px 9px}
+}
 </style><style id="wa-learning-style">
 .wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
 .slot{position:relative}
@@ -619,9 +656,9 @@ var MONS=[
  {name:'アクアフィン',kind:'cloud',c:'#a9d3ff'},
  {name:'フレアキトン',kind:'bat',c:'#b9a3f0'},
  {name:'アースゴーレム',kind:'urchin',c:'#ffb86b'},
- {name:'ウィンドルー',kind:'shade',c:'#c7b8ff'},
+ {name:'アイスフェン',kind:'shade',c:'#c7b8ff'},
  {name:'シャドーミス',kind:'dragon',c:'#7fd6a4'},
- {name:'アイスペルク',kind:'mushroom',c:'#ff9aa8',crown:1},
+ {name:'ウィンドルー',kind:'mushroom',c:'#ff9aa8',crown:1},
  {name:'ネイチャリス',kind:'octo',c:'#ff8fb8',eyes:3},
  {name:'ストームヴェイル',kind:'robot',c:'#9fb7c9',crown:1},
  {name:'深淵の魔導王',kind:'king',c:'#ff8f8f',eyes:3}
@@ -2744,7 +2781,7 @@ document.addEventListener('click',function(e){if(e.target && e.target.id==='kanj
 <script src="./online.js?v=20261119-allrank1"></script>
 <script src="./world-online.js?v=20261119-allrank1"></script>
 <script src="./wa-rank-patch.js"></script>
-<script src="./wa-companion-restored.js?v=20261119-feed2"></script>
+<script src="./wa-companion-restored.js?v=20261119-namefix"></script>
 <script src="./wa-ten-challenge.js?v=20261119c"></script>
 
 
