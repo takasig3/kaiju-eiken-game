@@ -2346,16 +2346,29 @@ function waEnemyWarning(){
  var el=document.getElementById('wa-enemy-warning');if(!el)return;
  if(S.stage===0||!S.enemyCountdown){el.hidden=true;return}
  el.hidden=false;el.classList.toggle('urgent',S.enemyCountdown<=1);
- el.textContent='⚠️ 敵の予告攻撃：あと'+S.enemyCountdown+'手｜'+GEMNAME[S.enemyTarget]+'を合計6個消して阻止（'+Math.min(6,S.enemyColorCount||0)+'/6）';
+ el.textContent=S.enemyGuarded?'🛡️ 攻撃阻止！ +500pt':('⚠️ 敵の予告攻撃：あと'+S.enemyCountdown+'手｜'+GEMNAME[S.enemyTarget]+'を合計6個消して阻止（'+Math.min(6,S.enemyColorCount||0)+'/6）');
+}
+function waEnemyCountCleared(colors){
+ if(S.stage===0||S.hp<=0||!S.enemyCountdown||S.enemyGuarded)return;
+ var count=(colors||[])[S.enemyTarget]||0;
+ if(!count)return;
+ S.enemyColorCount=(S.enemyColorCount||0)+count;
+ if(S.enemyColorCount>=6){
+   S.enemyGuarded=true;
+   S.score+=500;
+   flash('🛡️ 攻撃阻止！ +500pt');
+   waShowPoints(500,'GUARD BONUS!','combo');
+ }
+ waEnemyWarning();
+ updateInfo();
 }
 async function waEnemyAfterTurn(res,ok){
  if(S.stage===0||S.hp<=0)return;
- var count=(res.colors||[])[S.enemyTarget]||0;
- S.enemyColorCount=(S.enemyColorCount||0)+count;
- if(S.enemyColorCount>=6){
-   S.score+=500;flash('🛡️ 攻撃阻止！ +500pt');waShowPoints(500,'GUARD BONUS!','combo');
+ if(S.enemyGuarded){
+   S.enemyGuarded=false;
    S.enemyCountdown=S.stage<4?4:S.stage<7?3:2;
-   S.enemyTarget=Math.floor(Math.random()*5);S.enemyColorCount=0;updateInfo();return;
+   S.enemyTarget=Math.floor(Math.random()*5);S.enemyColorCount=0;
+   updateInfo();return;
  }
  S.enemyCountdown--;
  if(S.enemyCountdown<=0){
@@ -2414,6 +2427,8 @@ async function resolve(){
     else if(special.four)flash('➶ 貫通アロー ×'+special.four+' 獲得！');
     chain++; cleared+=m.length;
     var all={};m.forEach(function(k){all[k]=1;var p=k.split(','),t=S.b[+p[0]][+p[1]].t;if(t>=0&&t<5)colors[t]++;});
+    var stepColors=[0,0,0,0,0];m.forEach(function(k){var p=k.split(','),t=S.b[+p[0]][+p[1]].t;if(t>=0&&t<5)stepColors[t]++;});
+    waEnemyCountCleared(stepColors);
     m.forEach(function(k){
       var p=k.split(','),r=+p[0],c=+p[1];
       [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){
@@ -2458,6 +2473,8 @@ async function activateItemSwap(r1,c1,r2,c2){
    if(sp.kind==='color')for(var r=0;r<N;r++)for(var c=0;c<N;c++)if(S.b[r][c]&&S.b[r][c].t===sp.color)affected[r+','+c]=1;
  });
  var n=Object.keys(affected).length;
+ var specialColors=[0,0,0,0,0];Object.keys(affected).forEach(function(k){var p=k.split(','),tile=S.b[+p[0]]&&S.b[+p[0]][+p[1]];if(tile&&tile.t>=0&&tile.t<5)specialColors[tile.t]++;});
+ waEnemyCountCleared(specialColors);
  flash(specials.map(function(sp){return ({row:'↔️ 横一列',col:'↕️ 縦一列',burst:'💥 周囲3×3',color:'🌈 同色全消し'})[sp.kind]}).join(' ＋ ')+'！');
  SFX.match(2);render(affected);await sleep(320);
  Object.keys(affected).forEach(function(k){var p=k.split(',');S.b[+p[0]][+p[1]]=null});
