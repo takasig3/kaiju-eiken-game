@@ -387,6 +387,29 @@ body.wa-on-title{padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))}
  .battle .arena .wa-enemy-warning:not([hidden]){font-size:clamp(16px,1.5vw,20px)!important}
 }
 </style>
+<style id="wa-fever-side-layout-20261119">
+/* Fever replaces the old 10-segment energy UI. */
+.battle .wa-energy-track{grid-template-columns:repeat(5,minmax(0,1fr))}
+.battle .wa-energy.wa-energy-full{box-shadow:0 0 0 2px #ffca56,0 0 18px #f59e0b99;animation:waEnergyPulse .9s ease-in-out infinite alternate}
+@media(min-width:700px){
+ .battle .arena.stage-scenery{display:grid!important;grid-template-columns:minmax(145px,1fr) minmax(130px,210px) minmax(145px,1fr);grid-template-rows:auto auto;align-items:center;column-gap:10px;row-gap:6px;min-height:0!important;height:auto!important;padding:12px!important;overflow:visible!important}
+ .battle .arena .mon{grid-column:2;grid-row:1 / span 2;justify-self:center;align-self:center;margin:0!important}
+ .battle .arena .mname{grid-column:2;grid-row:2;align-self:end;justify-self:center;z-index:3;margin:0!important}
+ .battle .arena .hp{grid-column:1;grid-row:1;align-self:end;width:100%!important;max-width:none!important;height:22px!important;margin:0!important}
+ .battle .arena .wa-energy{grid-column:3;grid-row:1 / span 2;align-self:center;width:100%!important;max-width:none!important;min-width:0;display:flex;flex-wrap:wrap;justify-content:center;margin:0!important;padding:9px!important}
+ .battle .arena .wa-energy-label{font-size:clamp(13px,1.5vw,19px)!important}
+ .battle .arena .wa-energy-track{flex-basis:100%;order:3}
+ .battle .arena .wa-energy-count{font-size:clamp(13px,1.5vw,19px)!important}
+ .battle .arena .wa-enemy-warning:not([hidden]){grid-column:1;grid-row:2;align-self:start;width:100%!important;max-width:none!important;margin:0!important;font-size:clamp(13px,1.45vw,18px)!important;padding:7px!important;line-height:1.3!important}
+ .battle .slot{margin-top:5px!important}
+}
+@media(max-width:699px){
+ .battle .arena .wa-energy{width:96%;max-width:390px}
+ .battle .arena .wa-energy-label{font-size:11px}
+ .battle .arena .wa-energy-track{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){.battle .wa-energy.wa-energy-full{animation:none}}
+</style>
 </head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -1077,16 +1100,27 @@ var NB={e:lsj('wordarrow-nb-e',{}),k:lsj('wordarrow-nb-k',{}),e5:lsj('wordarrow-
 var SEEN={e:lsj('wordarrow-seen-e',{}),k:lsj('wordarrow-seen-k',{}),e5:lsj('wordarrow-seen-e5',{}),k5:lsj('wordarrow-seen-k5',{}),wh:lsj('wordarrow-seen-wh',{})};
 var RK={e:lsj('wordarrow-rank-e',[]),k:lsj('wordarrow-rank-k',[]),e5:lsj('wordarrow-rank-e5',[]),k5:lsj('wordarrow-rank-k5',[]),wh:lsj('wordarrow-rank-wh',[])};
 var board,slot,battle;
-/* One energy for every real 5+ chain; at 10, one 5x ally quiz is earned. */
-function waEnergyKey(){return 'wordarrow-chain-energy-v1-'+S.mode}
-function waGetEnergy(){return Math.min(9,Math.max(0,Number(lsj(waEnergyKey(),0))||0))}
-function waSetEnergy(n){S.chainEnergy=Math.min(9,Math.max(0,n|0));lsw(waEnergyKey(),S.chainEnergy);waDrawEnergy()}
+/* Fever is a per-run mechanic; old energy keys are left untouched for compatibility. */
+function waSetEnergy(n){ S.feverCharge=Math.max(0,Math.min(5,n|0));waDrawEnergy(); }
 function waDrawEnergy(){
  var meter=document.getElementById('wa-energy');if(!meter)return;
- var n=S.chainEnergy||0,bar=meter.querySelector('.wa-energy-track'),count=meter.querySelector('.wa-energy-count');
- if(bar)bar.innerHTML=Array.from({length:10},function(_,i){return '<i class="wa-energy-seg'+(i<n?' on':'')+'"></i>'}).join('');
- if(count)count.textContent=n+'/10';
- meter.setAttribute('aria-label','連鎖エナジー '+n+' / 10');
+ var n=S.feverCharge||0,active=(S.feverMoves||0)>0;
+ var bar=meter.querySelector('.wa-energy-track'),count=meter.querySelector('.wa-energy-count');
+ var label=meter.querySelector('.wa-energy-label');
+ if(label)label.textContent=active?'🔥 FEVER!':'✨ 連鎖フィーバー';
+ if(bar)bar.innerHTML=Array.from({length:5},function(_,i){return '<i class="wa-energy-seg'+(i<n||active?' on':'')+'"></i>'}).join('');
+ if(count)count.textContent=active?'残り'+S.feverMoves+'手':n+'/5';
+ meter.classList.toggle('wa-energy-full',active);
+ meter.setAttribute('aria-label',active?'フィーバー残り'+S.feverMoves+'手':'フィーバー '+n+' / 5');
+}
+function waFeverAfterMove(res){
+ var chain=res.chain||0;
+ if(S.feverMoves>0){S.feverMoves--;if(!S.feverMoves)flash('✨ FEVER終了！');}
+ if(chain>=2){S.feverCharge=Math.min(5,(S.feverCharge||0)+Math.min(3,chain-1));S.dryMoves=0;}
+ else {S.feverCharge=Math.min(5,(S.feverCharge||0)+1);S.dryMoves=(S.dryMoves||0)+1;}
+ if(S.dryMoves>=3){S.dryMoves=0;S.feverCharge=Math.min(5,S.feverCharge+2);flash('🐾 相棒の応援！ フィーバー＋2');}
+ if(S.feverCharge>=5&&S.feverMoves===0){S.feverCharge=0;S.feverMoves=3;flash('🔥 FEVER! 3手の連鎖チャンス！');}
+ waDrawEnergy();
 }
 
 
@@ -1945,12 +1979,12 @@ function jamaCount(){var n=0;for(var r=0;r<N;r++)for(var c=0;c<N;c++)if(S.b[r][c
 // Standard assist: in 40% of refill events, try to place ONE color
 // which completes a real 3-match. If no legal candidate exists, refill normally.
 function assistRefill(holes,chainDepth){
- var chance=chainDepth>=7?.88:chainDepth>=5?.78:chainDepth>=3?.68:.55;
+ var chance=(S.feverMoves>0?.96:chainDepth>=7?.88:chainDepth>=5?.78:chainDepth>=3?.68:.55);
  if(!holes.length||Math.random()>=chance)return false;
  var choices=[],b=S.b;
  function at(r,c){return r>=0&&r<N&&c>=0&&c<N&&b[r][c]?b[r][c].t:-9}
  holes.forEach(function(p){var r=p[0],c=p[1],cell=b[r][c];
-  for(var t=0;t<4;t++){
+  for(var t=0;t<5;t++){
    var horiz=(at(r,c-2)===t&&at(r,c-1)===t)||(at(r,c-1)===t&&at(r,c+1)===t)||(at(r,c+1)===t&&at(r,c+2)===t);
    var vert=(at(r-2,c)===t&&at(r-1,c)===t)||(at(r-1,c)===t&&at(r+1,c)===t)||(at(r+1,c)===t&&at(r+2,c)===t);
    if((horiz||vert)&&cell.t!==t)choices.push({r:r,c:c,t:t});
@@ -1971,6 +2005,7 @@ function gravity(chainDepth){
     for(r=w;r>=0;r--){S.b[r][c]={t:S.q[c].shift(),f:w+1};holes.push([r,c]);fillQ(c)}
   }
   assistRefill(holes,chainDepth||0);
+  if(S.feverMoves>0)assistRefill(holes,chainDepth||0);
 }
 function renderPv(){
   var pv=$('#pv'); if(!pv||!S.q) return;
@@ -2042,7 +2077,7 @@ function clearChainCount(){
 /* ---------- battle ---------- */
 function startBattle(){
   var st=stages()[S.stage],mon=MONS[S.stage]; window.scrollTo(0,0);
-  S.chainEnergy=waGetEnergy();
+  S.feverCharge=0;S.feverMoves=0;S.dryMoves=0;S.relayChain=0;
   S.enemyCountdown=S.stage===0?0:(S.stage<4?4:S.stage<7?3:2); S.enemyTarget=Math.floor(Math.random()*5); S.enemyColorCount=0; S.enemyGuarded=false;
   S.maxHp=550+S.stage*75;S.hp=S.maxHp;S.allyPointMultiplier=1;S.allyPointHero=5;S.moves=0;S.streak=0;S.locked=true;S.sel=null;S.drag=null;S.lastKey=null;S.stat={};S.charge=[];
   st.cards.forEach(function(c){S.stat[c.id]={ok:0,ng:0,asked:0}});
@@ -2050,7 +2085,7 @@ function startBattle(){
   '<section class="battle'+(S.stage===9?' final-boss':'')+'" id="battle">'+
    '<div class="bar"><span class="stg">STAGE '+(S.stage+1)+'</span><span class="stn">'+MODE_NAME[S.mode]+'　'+st.name+'</span><button type="button" class="snd" id="snd"></button><span class="sc" id="score"></span></div>'+
    '<div class="arena stage-scenery" style="--stage-bg:url(assets/stage-bg-'+String(STAGE_BG_ORDER[S.stage]).padStart(2,'0')+'.webp)">'+(S.stage===9?'<div class="boss-banner">✦ FINAL BOSS ✦</div>':'')+'<div class="mon'+' illustrated-mon'+'" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+'<img class="monster-portrait" src="assets/monster-'+String(STAGE_MONSTER_ORDER[S.stage]).padStart(2,'0')+'.webp" alt="'+esc(mon.name)+'"><span class="monster-sweat" aria-hidden="true">💦</span><span class="monster-pain" aria-hidden="true">うぅ…</span>'+'</div><div class="mname">'+mon.name+'</div>'+
-   '<div class="hp" role="progressbar" aria-label="モンスターの体力"><i id="hpfill"></i><b id="hptxt"></b></div><div class="wa-energy" id="wa-energy" role="status" aria-live="polite"><span class="wa-energy-label">⚡連鎖エナジー</span><span class="wa-energy-track"></span><span class="wa-energy-count">0/10</span></div><div class="wa-enemy-warning" id="wa-enemy-warning" hidden></div></div>'+
+   '<div class="hp" role="progressbar" aria-label="モンスターの体力"><i id="hpfill"></i><b id="hptxt"></b></div><div class="wa-energy" id="wa-energy" role="status" aria-live="polite"><span class="wa-energy-label">✨ 連鎖フィーバー</span><span class="wa-energy-track"></span><span class="wa-energy-count">0/5</span></div><div class="wa-enemy-warning" id="wa-enemy-warning" hidden></div></div>'+
    '<div class="slot" id="slot"><div class="pv" id="pv" aria-hidden="true"></div><div class="board" id="board"></div></div>'+
    '<div class="foot" id="info"></div>'+
    '<div class="fx" id="fx"></div>'+
@@ -2440,19 +2475,16 @@ async function finishPuzzleTurn(res){
   // A cascade earns visible points once per completed move, not per animation frame.
   if(res.chain>=2){var chainPts=(res.chain-1)*50;S.score+=chainPts;updateInfo();waShowPoints(chainPts,res.chain+'連鎖ボーナス','combo');}
 
-  // A 5+ chain earns one energy (not one per cascade step). 10/10 is
-  // consumed immediately for a single 5x ally quiz, even without 10 chains.
-  // A real 10+ chain still grants 5x; never present two ally quizzes at once.
-  if(res.chain>=5){
-    var nextEnergy=(S.chainEnergy||0)+1;
-    var energyReward=nextEnergy>=10;
-    waSetEnergy(energyReward?0:nextEnergy);
-    if(energyReward){
-      var meter=document.getElementById('wa-energy');
-      if(meter){meter.classList.add('wa-energy-full');setTimeout(function(){meter.classList.remove('wa-energy-full')},1100)}
-    }
-    await summonChainAlly(res.chain,energyReward);
-  }
+  // Relay: a new matching move can continue the previous cascade's streak.
+  // The relay expires after one move; special ally rewards still require a real 5+ chain.
+  if(res.chain>0&&S.relayChain>=2){
+    var total=Math.min(10,S.relayChain+res.chain);
+    flash('🔗 連鎖リレー '+total+' CHAIN!');
+    waShowPoints(total*30,'連鎖リレー','combo');S.score+=total*30;
+    S.relayChain=0;
+  }else S.relayChain=res.chain>=2?res.chain:0;
+  waFeverAfterMove(res);
+  if(res.chain>=5)await summonChainAlly(res.chain,false);
   if(S.mode==='e'||S.mode==='e5'){
     // Every third completed move offers a word-spelling rearrangement challenge.
     // Other turns retain the existing English mini-game rotation.
