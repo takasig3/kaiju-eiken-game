@@ -2673,31 +2673,7 @@ document.addEventListener('click',function(e){if(e.target && e.target.id==='kanj
 <script src="./world-online.js"></script>
 <script src="./wa-rank-patch.js"></script>
 
-<script>
-/* Enhance any existing online invite URL input with a scannable QR image. */
-(function(){
-  var timer=0;
-  function refresh(){
-    var input=document.querySelector('#wa-invite');
-    if(!input||!/^https:\/\//.test(input.value))return;
-    var parent=input.parentElement;
-    if(!parent)return;
-    var host=parent.querySelector('.wa-qr-invite');
-    if(!host){host=document.createElement('div');host.className='wa-qr-invite';input.insertAdjacentElement('afterend',host)}
-    if(host.dataset.url===input.value)return;
-    host.dataset.url=input.value;
-    var label=document.createElement('strong');label.textContent='📱 招待QRコード';
-    var img=document.createElement('img');img.alt='ギルドへの招待QRコード';img.loading='lazy';
-    img.src='https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=12&data='+encodeURIComponent(input.value);
-    var p=document.createElement('p');p.textContent='読み取るとギルドの招待ページを開きます。画像を長押しして保存・印刷できます。';
-    var error=document.createElement('p');error.style.color='#a33';error.hidden=true;error.textContent='QRコードを読み込めません。ネットワークの制限を確認してください。';
-    img.onerror=function(){error.hidden=false};
-    host.replaceChildren(label,document.createElement('br'),img,p,error);
-  }
-  new MutationObserver(function(){clearTimeout(timer);timer=setTimeout(refresh,50)}).observe(document.body,{childList:true,subtree:true});
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh);else refresh();
-})();
-</script>
+
 <script>
 /* Keep the existing start handler intact; the fixed button delegates to it. */
 (function(){
