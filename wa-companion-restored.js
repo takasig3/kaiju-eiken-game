@@ -1,13 +1,16 @@
-/* Companion restored as an independent feature; no guild required. */
+/* Word Arrow: 13 companions, cumulative points across all five courses. */
 (function(){'use strict';
-const key='wa-companion-standalone-v1';
-const names=['ライボルトン','アクアフィン','アースゴーレム','モンスター4','モンスター5','モンスター6','モンスター7','モンスター8','モンスター9','モンスター10','お助けキャラ'];
-const unlock=[0,0,0,1000,2500,4500,7000,10000,14000,18000,25000];
-const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(key+':'+k))??d}catch(e){return d}};
-const set=(k,v)=>{try{localStorage.setItem(key+':'+k,JSON.stringify(v))}catch(e){}};
-const legacy=(suffix)=>{try{for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(k&&k.startsWith('wa-guild-v2:')&&k.endsWith(':'+suffix))return localStorage.getItem(k)}}catch(e){}return null};
-let points=get('points',null);if(points===null){points=Number(legacy('companion-total-points')||0);set('points',points)}
-let selected=get('selected',null);if(selected===null){selected=Number(legacy('companion')||0);set('selected',selected)}
+const prefix='wa-companion-standalone-v1:';
+const thresholds=[0,0,0,40000,80000,120000,160000,200000,250000,300000,400000,500000,700000];
+const names=['ライボルトン','アクアフィン','アースゴーレム','モンスター4','モンスター5','モンスター6','モンスター7','モンスター8','モンスター9','モンスター10','お助けキャラ','5連鎖の隠し相棒','10連鎖の隠し相棒'];
+const get=(k,d)=>{try{let v=localStorage.getItem(prefix+k);return v===null?d:JSON.parse(v)}catch(e){return d}};
+const set=(k,v)=>{try{localStorage.setItem(prefix+k,JSON.stringify(v))}catch(e){}};
+const legacy=suffix=>{try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('wa-guild-v2:')&&k.endsWith(':'+suffix))return JSON.parse(localStorage.getItem(k))}}catch(e){}return null};
+let points=Math.max(0,Number(get('points',legacy('companion-total-points')||0))||0);
+let selected=Math.max(0,Math.min(12,Number(get('selected',legacy('companion')||0))||0));
+set('points',points);
+const imagePath=i=>i===11?'special-ally.webp':i===12?'special-ally-10.webp':i===10?'special-ally.webp':'assets/monster-'+String(i+1).padStart(2,'0')+'.webp';
+const fmt=n=>Math.floor(n).toLocaleString('ja-JP');
 const css=document.createElement('style');css.textContent=`
 #wa-companion{position:fixed;z-index:9000;right:clamp(4px,2vw,18px);bottom:calc(8px + env(safe-area-inset-bottom,0px));width:clamp(82px,12vw,135px);text-align:center;pointer-events:none;font:800 12px system-ui,sans-serif}
 #wa-companion button{background:none;border:0;padding:0;cursor:pointer;pointer-events:auto}
@@ -16,19 +19,27 @@ const css=document.createElement('style');css.textContent=`
 @keyframes wa-comp-float{50%{transform:translateY(-7px)}}
 #wa-comp-modal{position:fixed;inset:0;z-index:100020;background:#0b1b30c9;display:flex;align-items:center;justify-content:center;padding:16px}
 #wa-comp-modal[hidden]{display:none!important}
-#wa-comp-modal .dialog{max-width:480px;width:100%;max-height:85dvh;overflow:auto;background:#1b3150;border:1px solid #7c99c0;border-radius:18px;color:white;padding:20px;text-align:center;font:16px system-ui}
+#wa-comp-modal .dialog{max-width:570px;width:100%;max-height:85dvh;overflow:auto;background:#1b3150;border:1px solid #7c99c0;border-radius:18px;color:white;padding:20px;text-align:center;font:16px system-ui}
 #wa-comp-modal .picker{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0}
 #wa-comp-modal button{cursor:pointer;border:2px solid #6985ad;background:#2d496b;color:#fff;border-radius:10px;padding:7px}
 #wa-comp-modal button.active{border-color:#ffd469}
-#wa-comp-modal button:disabled{opacity:.45;cursor:default}
+#wa-comp-modal button:disabled{opacity:.65;cursor:default}
 #wa-comp-modal .picker img{width:100%;aspect-ratio:1;object-fit:contain}
-@media(max-width:699px){#wa-companion{width:100px;right:3px;bottom:calc(3px + env(safe-area-inset-bottom,0px))}#wa-companion img{max-height:98px}#wa-companion .bubble{font-size:10px}}
+#wa-comp-modal .wa-secret{aspect-ratio:1;display:grid;place-items:center;font-size:clamp(36px,6vw,64px);font-weight:900;color:#ffda72;text-shadow:0 3px 10px #0009}
+#wa-comp-modal .picker small{display:block;line-height:1.35;font-size:11px;overflow-wrap:anywhere}
+#wa-comp-modal .wa-progress{color:#c6d6ed;font-size:13px;margin:4px 0 10px}
+@media(max-width:699px){#wa-companion{width:100px;right:3px;bottom:calc(3px + env(safe-area-inset-bottom,0px))}#wa-companion img{max-height:98px}#wa-companion .bubble{font-size:10px}#wa-comp-modal .dialog{padding:12px}#wa-comp-modal .picker{gap:5px}}
 @media(prefers-reduced-motion:reduce){#wa-companion img{animation:none}}
 `;document.head.append(css);
 const root=document.createElement('div');root.id='wa-companion';root.innerHTML='<div class="bubble">がんばれ！</div><button aria-label="相棒を選ぶ" type="button"><img alt="応援する相棒"></button>';document.body.append(root);
 const modal=document.createElement('div');modal.id='wa-comp-modal';modal.hidden=true;document.body.append(modal);
-const path=i=>i===10?'special-ally.webp':'assets/monster-'+String(i+1).padStart(2,'0')+'.webp';
-function refresh(){selected=Math.min(10,Math.max(0,selected));if(points<unlock[selected])selected=0;root.querySelector('img').src=path(selected);root.querySelector('img').alt=names[selected];}
-function open(){modal.hidden=false;modal.innerHTML='<div class="dialog" role="dialog" aria-modal="true"><h2>🐾 マイ相棒</h2><p>相棒を選ぼう！ 最初の3体は自由に選べます。</p><p>累計ポイント：'+Math.floor(points).toLocaleString()+' pt</p><div class="picker">'+names.map((n,i)=>'<button data-i="'+i+'" '+(points<unlock[i]?'disabled':'')+' class="'+(selected===i?'active':'')+'"><img src="'+path(i)+'" alt="'+n+'" onerror="this.style.display=\'none\'"><small>'+(points<unlock[i]?'🔒 '+unlock[i].toLocaleString()+'pt':n)+'</small></button>').join('')+'</div><button id="wa-comp-close">閉じる</button></div>';modal.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{selected=Number(b.dataset.i);set('selected',selected);refresh();open()});modal.querySelector('#wa-comp-close').onclick=()=>modal.hidden=true;}
+function refresh(){if(points<thresholds[selected]){selected=0;set('selected',selected)}const img=root.querySelector('img');img.src=imagePath(selected);img.alt=names[selected]}
+function open(){modal.hidden=false;const next=thresholds.find(x=>x>points);const progress=next===undefined?'全13体を解放しました！':'次の解放まで '+fmt(next-points)+' pt';modal.innerHTML='<div class="dialog" role="dialog" aria-modal="true" aria-label="マイ相棒"><h2>🐾 マイ相棒</h2><p>最初の3体は自由に選べます。累計ポイントで順番に解放！</p><p>累計ポイント：<strong>'+fmt(points)+' pt</strong></p><p class="wa-progress">'+progress+'</p><div class="picker">'+names.map((n,i)=>{const locked=points<thresholds[i];const secret=locked&&i>=11;return '<button data-i="'+i+'" '+(locked?'disabled':'')+' class="'+(selected===i?'active':'')+'" aria-label="'+(secret?'隠し相棒':n)+(locked?' 未解放':'')+'">'+(secret?'<div class="wa-secret" aria-hidden="true">？</div>':'<img src="'+imagePath(i)+'" alt="" onerror="this.style.visibility=\'hidden\'">')+'<small>'+(locked?'🔒 '+fmt(thresholds[i])+'pt':n)+'</small></button>'}).join('')+'</div><button id="wa-comp-close">閉じる</button></div>';modal.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{selected=Number(b.dataset.i);set('selected',selected);refresh();open()});modal.querySelector('#wa-comp-close').onclick=()=>modal.hidden=true;}
+function addPoints(delta){delta=Number(delta);if(!Number.isFinite(delta)||delta<=0)return;points+=delta;set('points',points);if(!modal.hidden)open()}
+/* Called by the main game's score update; count positive increments only, not a new game's reset. */
+let runScore=0;
+window.addEventListener('wa:companion-new-run',()=>{runScore=0});
+window.addEventListener('wa:companion-score',e=>{const n=Number(e.detail&&e.detail.score);if(!Number.isFinite(n)||n<0)return;if(n<runScore){runScore=n;return}const delta=n-runScore;runScore=n;addPoints(delta)});
+window.WACompanion={getPoints:()=>points,addPoints,open};
 root.querySelector('button').onclick=open;modal.onclick=e=>{if(e.target===modal)modal.hidden=true};refresh();
 })();

@@ -1745,7 +1745,7 @@ function showTitle(){
   '</section>';
   bindSnd();
   app.querySelectorAll('.modebtn').forEach(function(b){b.onclick=function(){S.mode=b.dataset.m;lsw('wordarrow-mode',S.mode);showTitle()}});
-  function start(si){S.tot={ok:0,ng:0};S.miss={};S.score=0;S.used={};S.usedCard={};if(si===0)waSetEnergy(0);showStudy(si)}
+  function start(si){window.dispatchEvent(new Event('wa:companion-new-run'));S.tot={ok:0,ng:0};S.miss={};S.score=0;S.used={};S.usedCard={};if(si===0)waSetEnergy(0);showStudy(si)}
   $('#go0').onclick=function(){
     var plan=makePlan(m);lsw('wordarrow-plan-'+m,plan);progSet(m,0);applyPlan(m,plan);start(0);
   };
@@ -1928,6 +1928,7 @@ function updateInfo(){
   for(var k=0;k<3;k++) pips+=k<S.charge.length?'●':'○';
   i.innerHTML='<span>チャージ '+pips+(S.charge.length?'　合計 '+Math.round(cs.P)+' ×'+cs.M.toFixed(1)+(cs.four?' ➶'+cs.four:'')+(cs.five?' 🌈'+cs.five:''):'')+'</span>'+(S.allyPointMultiplier>1?'<span class="ally-boost-status">✨ 次の攻撃ポイント×'+S.allyPointMultiplier+'</span>':'')+'<span>れんぞく正解 '+S.streak+'</span><span>じゃま '+jamaCount()+'</span>';
   $('#score').textContent=S.score+' pt';
+  window.dispatchEvent(new CustomEvent('wa:companion-score',{detail:{score:S.score,mode:S.mode}}));
   if(!$('#finish-action'))i.insertAdjacentHTML('beforeend','<div class="finish-row" id="finish-action" hidden><button type="button" class="finish-btn" id="finish-btn">🚀 今すぐ発射！</button></div>');
   var fin=$('#finish-action');
   if(fin){
