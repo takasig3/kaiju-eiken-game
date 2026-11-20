@@ -474,6 +474,143 @@ body.wa-on-title{padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))}
 }
 @media(prefers-reduced-motion:reduce){.battle .wa-energy.wa-energy-full{animation:none}}
 </style>
+
+<style id="wa-mobile-side-meters-20261120">
+/* Compact portrait battle HUD: monster center, HP left, fever right.
+   Keep the enemy-warning readable below the portrait. */
+@media (max-width:699px) and (orientation:portrait) {
+  .battle .arena.stage-scenery {
+    display:grid!important;
+    grid-template-columns:43px minmax(0,1fr) 43px!important;
+    grid-template-rows:minmax(128px,auto) auto auto!important;
+    column-gap:3px!important;
+    row-gap:2px!important;
+    align-items:center!important;
+    justify-items:center!important;
+    min-height:0!important;
+    height:auto!important;
+    max-height:none!important;
+    padding:8px 6px 7px!important;
+    box-sizing:border-box!important;
+    overflow:visible!important;
+  }
+  .battle .arena .mon,
+  .battle .arena .mon.illustrated-mon {
+    grid-column:2!important;
+    grid-row:1!important;
+    justify-self:center!important;
+    align-self:center!important;
+    width:min(49vw,180px,21dvh)!important;
+    max-height:22dvh!important;
+    margin:0!important;
+  }
+  .battle .arena .mname {
+    grid-column:2!important;
+    grid-row:2!important;
+    justify-self:center!important;
+    align-self:center!important;
+    margin:0!important;
+    font-size:clamp(14px,4vw,19px)!important;
+    z-index:2!important;
+  }
+  .battle .arena .hp {
+    grid-column:1!important;
+    grid-row:1 / 3!important;
+    position:relative!important;
+    justify-self:center!important;
+    align-self:center!important;
+    width:27px!important;
+    min-width:27px!important;
+    max-width:27px!important;
+    height:clamp(105px,17dvh,166px)!important;
+    margin:0!important;
+    border-radius:14px!important;
+    overflow:hidden!important;
+    background:#293449!important;
+    border:2px solid #fff!important;
+  }
+  .battle .arena .hp i {
+    position:absolute!important;
+    inset:auto 0 0 0!important;
+    width:100%!important;
+    height:var(--wa-hp-pct,100%)!important;
+    transition:height .5s!important;
+  }
+  .battle .arena .hp b {
+    position:absolute!important;
+    inset:0!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    writing-mode:vertical-rl!important;
+    transform:rotate(180deg)!important;
+    white-space:nowrap!important;
+    font-size:10px!important;
+    line-height:1!important;
+    color:#fff!important;
+    text-shadow:0 1px 3px #111,0 -1px 3px #111!important;
+  }
+  .battle .arena .wa-energy {
+    grid-column:3!important;
+    grid-row:1 / 3!important;
+    justify-self:center!important;
+    align-self:center!important;
+    display:flex!important;
+    flex-direction:column!important;
+    flex-wrap:nowrap!important;
+    gap:3px!important;
+    width:41px!important;
+    min-width:41px!important;
+    max-width:41px!important;
+    height:clamp(130px,20dvh,190px)!important;
+    margin:0!important;
+    padding:5px 3px!important;
+    border-radius:13px!important;
+    box-sizing:border-box!important;
+  }
+  .battle .arena .wa-energy-label {
+    writing-mode:vertical-rl!important;
+    font-size:10px!important;
+    line-height:1.1!important;
+    white-space:nowrap!important;
+    order:1!important;
+  }
+  .battle .arena .wa-energy-track {
+    display:flex!important;
+    flex-direction:column-reverse!important;
+    flex:1 1 auto!important;
+    width:16px!important;
+    min-width:16px!important;
+    gap:3px!important;
+    order:2!important;
+  }
+  .battle .arena .wa-energy-seg {
+    width:100%!important;
+    height:auto!important;
+    flex:1 1 0!important;
+    min-height:6px!important;
+  }
+  .battle .arena .wa-energy-count {
+    font-size:10px!important;
+    order:3!important;
+    white-space:nowrap!important;
+  }
+  .battle .arena .wa-enemy-warning:not([hidden]) {
+    grid-column:1 / -1!important;
+    grid-row:3!important;
+    position:relative!important;
+    justify-self:stretch!important;
+    width:100%!important;
+    max-width:none!important;
+    margin:4px 0 0!important;
+    padding:5px 7px!important;
+    box-sizing:border-box!important;
+    font-size:clamp(11px,3vw,13px)!important;
+    line-height:1.25!important;
+  }
+  .battle .slot {margin-top:3px!important;}
+}
+</style>
 </head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -2205,6 +2342,7 @@ function monsterPose(pose){
 function setHp(){
   var f=$('#hpfill'),t=$('#hptxt'); if(!f) return;
   f.style.width=(100*S.hp/S.maxHp)+'%';
+  var hpMeter=$('#battle .arena .hp');if(hpMeter)hpMeter.style.setProperty('--wa-hp-pct',Math.max(0,Math.min(100,100*S.hp/S.maxHp))+'%');
   t.textContent='HP '+S.hp+' / '+S.maxHp;
   var mon=$('#mon');
   if(mon&&S.hp>0&&S.hp<=S.maxHp/2&&!mon.classList.contains('rage')){
@@ -2529,6 +2667,82 @@ var WA_BE_BANK=[
  ['He ___ not at home yesterday.','彼は昨日家にいませんでした。','was','He was not の形'],
  ['We ___ not tired yesterday.','私たちは昨日疲れていませんでした。','were','We were not の形']
 ];
+
+/* Extended mini-game question bank: additional unique sentences and be-verb drills. */
+WA_MINI_BANK.push(
+["I brush my teeth every morning.", "私は毎朝歯を磨きます。", "brush", "磨く", "brush → brushed"],
+["She cooks dinner on Sundays.", "彼女は日曜日に夕食を作ります。", "cooks", "作る", "cook → cooked"],
+["He washed his bike yesterday.", "彼は昨日自転車を洗いました。", "washed", "洗った", "wash → washed"],
+["We walked to the station.", "私たちは駅まで歩きました。", "walked", "歩いた", "walk → walked"],
+["They danced at the festival.", "彼らは祭りで踊りました。", "danced", "踊った", "dance → danced"],
+["I opened the window.", "私は窓を開けました。", "opened", "開けた", "open → opened"],
+["She closed the door quietly.", "彼女は静かにドアを閉めました。", "closed", "閉めた", "close → closed"],
+["He helped his grandfather.", "彼は祖父を手伝いました。", "helped", "手伝った", "help → helped"],
+["We visited the museum.", "私たちは博物館を訪れました。", "visited", "訪れた", "visit → visited"],
+["They enjoyed the movie.", "彼らは映画を楽しみました。", "enjoyed", "楽しんだ", "enjoy → enjoyed"],
+["I found my pencil.", "私は鉛筆を見つけました。", "found", "見つけた", "find → found"],
+["She lost her key.", "彼女は鍵をなくしました。", "lost", "なくした", "lose → lost"],
+["He gave me a present.", "彼は私にプレゼントをくれました。", "gave", "くれた", "give → gave"],
+["We met at the library.", "私たちは図書館で会いました。", "met", "会った", "meet → met"],
+["They built a small house.", "彼らは小さな家を建てました。", "built", "建てた", "build → built"],
+["I sent an email.", "私はメールを送りました。", "sent", "送った", "send → sent"],
+["She sang a beautiful song.", "彼女は美しい歌を歌いました。", "sang", "歌った", "sing → sang"],
+["He swam in the pool.", "彼はプールで泳ぎました。", "swam", "泳いだ", "swim → swam"],
+["We rode our bicycles.", "私たちは自転車に乗りました。", "rode", "乗った", "ride → rode"],
+["They slept for eight hours.", "彼らは8時間眠りました。", "slept", "眠った", "sleep → slept"],
+["I forgot my umbrella.", "私は傘を忘れました。", "forgot", "忘れた", "forget → forgot"],
+["She wore a red hat.", "彼女は赤い帽子をかぶりました。", "wore", "かぶった", "wear → wore"],
+["He broke the glass.", "彼はコップを割りました。", "broke", "割った", "break → broke"],
+["We chose the blue bag.", "私たちは青いかばんを選びました。", "chose", "選んだ", "choose → chose"],
+["They began the game.", "彼らはゲームを始めました。", "began", "始めた", "begin → began"],
+["I keep a diary.", "私は日記をつけています。", "keep", "つける", "keep → kept"],
+["She teaches English.", "彼女は英語を教えます。", "teaches", "教える", "teach → taught"],
+["He catches the bus.", "彼はバスに乗ります。", "catches", "乗る", "catch → caught"],
+["We need more time.", "私たちはもっと時間が必要です。", "need", "必要とする", "need → needed"],
+["They live near the river.", "彼らは川の近くに住んでいます。", "live", "住む", "live → lived"],
+["I will call you tomorrow.", "私は明日あなたに電話します。", "call", "電話する", "call → called"],
+["She can play the piano.", "彼女はピアノを弾けます。", "play", "弾く", "play → played"],
+["He must finish his homework.", "彼は宿題を終えなければなりません。", "finish", "終える", "finish → finished"],
+["We are going to the zoo.", "私たちは動物園に行くところです。", "going", "行く", "go → went"],
+["They were playing outside.", "彼らは外で遊んでいました。", "playing", "遊んでいた", "play → played"],
+["I have a younger sister.", "私には妹がいます。", "have", "いる", "have → had"],
+["She speaks English well.", "彼女は英語を上手に話します。", "speaks", "話す", "speak → spoke"],
+["He drew a picture.", "彼は絵を描きました。", "drew", "描いた", "draw → drew"],
+["We heard a strange sound.", "私たちは変な音を聞きました。", "heard", "聞いた", "hear → heard"],
+["They paid for the tickets.", "彼らはチケット代を払いました。", "paid", "払った", "pay → paid"]
+);
+WA_BE_BANK.push(
+["I ___ ten years old.", "私は10歳です。", "am", "I の現在形は am"],
+["I ___ at home yesterday.", "私は昨日家にいました。", "was", "I の過去形は was"],
+["He ___ a good singer.", "彼は歌が上手です。", "is", "He の現在形は is"],
+["He ___ sick last week.", "彼は先週病気でした。", "was", "He の過去形は was"],
+["She ___ in the kitchen now.", "彼女は今台所にいます。", "is", "She の現在形は is"],
+["She ___ late yesterday.", "彼女は昨日遅刻しました。", "was", "She の過去形は was"],
+["It ___ cold today.", "今日は寒いです。", "is", "It の現在形は is"],
+["It ___ sunny yesterday.", "昨日は晴れでした。", "was", "It の過去形は was"],
+["You ___ my best friend.", "あなたは私の親友です。", "are", "You の現在形は are"],
+["You ___ very kind yesterday.", "あなたは昨日とても親切でした。", "were", "You の過去形は were"],
+["We ___ ready now.", "私たちは今準備ができています。", "are", "We の現在形は are"],
+["We ___ at the park last Sunday.", "私たちは先週の日曜日に公園にいました。", "were", "We の過去形は were"],
+["They ___ hungry now.", "彼らは今お腹がすいています。", "are", "They の現在形は are"],
+["They ___ at school this morning.", "彼らは今朝学校にいました。", "were", "They の過去形は were"],
+["My father ___ a teacher.", "私の父は先生です。", "is", "My father は一人なので is"],
+["My parents ___ busy today.", "私の両親は今日忙しいです。", "are", "My parents は複数なので are"],
+["The dogs ___ noisy last night.", "その犬たちは昨夜うるさかったです。", "were", "複数形の過去は were"],
+["The dog ___ sleepy last night.", "その犬は昨夜眠そうでした。", "was", "単数形の過去は was"],
+["___ he your brother?", "彼はあなたの兄弟ですか。", "Is", "現在の He の疑問文は Is で始める"],
+["___ they at the station yesterday?", "彼らは昨日駅にいましたか。", "Were", "過去の They の疑問文は Were で始める"],
+["___ you tired now?", "あなたは今疲れていますか。", "Are", "現在の You の疑問文は Are で始める"],
+["___ she at the library yesterday?", "彼女は昨日図書館にいましたか。", "Was", "過去の She の疑問文は Was で始める"],
+["I ___ not afraid.", "私は怖くありません。", "am", "I am not が正しい形"],
+["He ___ not at school yesterday.", "彼は昨日学校にいませんでした。", "was", "He was not が正しい形"],
+["We ___ not late yesterday.", "私たちは昨日遅刻しませんでした。", "were", "We were not が正しい形"],
+["These books ___ interesting.", "これらの本は面白いです。", "are", "These books は複数なので are"],
+["This book ___ interesting.", "この本は面白いです。", "is", "This book は単数なので is"],
+["There ___ a cat under the table.", "テーブルの下に猫が1匹います。", "is", "There is + 単数"],
+["There ___ two cats under the table.", "テーブルの下に猫が2匹います。", "are", "There are + 複数"],
+["There ___ many people at the concert.", "コンサートにはたくさんの人がいました。", "were", "複数の過去は were"]
+);
 var waMiniDeck=[],waBeDeck=[],waMiniRecent=[];
 function waMiniDraw(deckName,pool){
  var deck=deckName==='be'?waBeDeck:waMiniDeck;
@@ -3014,4 +3228,5 @@ document.addEventListener('click',function(e){if(e.target && e.target.id==='kanj
  var root=document.getElementById('app');if(root)new MutationObserver(sync).observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['aria-pressed']});
  sync();
 })();
-</script></body></html>
+</script>
+</body></html>
