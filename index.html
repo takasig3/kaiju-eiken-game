@@ -2457,46 +2457,108 @@ function waSpellingChallenge(){
     draw();
   });
 }
-/* English mini-games in regular monster battles.  Five types rotate per session. */
+/* Varied English battle mini-games: shuffled question deck, grammar and past tense. */
 var waBattleMiniIndex=0;
 var waSpellTurnCounter=0;
+var WA_MINI_BANK=[
+ ['I visited my friend yesterday.','私は昨日友達を訪ねました。','visited','訪ねた','visit → visited'],
+ ['We played soccer after school.','私たちは放課後サッカーをしました。','played','した','play → played'],
+ ['She watched TV last night.','彼女は昨夜テレビを見ました。','watched','見た','watch → watched'],
+ ['He went to the park yesterday.','彼は昨日公園へ行きました。','went','行った','go → went'],
+ ['I ate breakfast at seven.','私は7時に朝食を食べました。','ate','食べた','eat → ate'],
+ ['They saw a big dog.','彼らは大きな犬を見ました。','saw','見た','see → saw'],
+ ['My mother made a cake.','母はケーキを作りました。','made','作った','make → made'],
+ ['We studied English yesterday.','私たちは昨日英語を勉強しました。','studied','勉強した','study → studied'],
+ ['I bought a new book.','私は新しい本を買いました。','bought','買った','buy → bought'],
+ ['She had a nice day.','彼女は楽しい一日を過ごしました。','had','過ごした','have → had'],
+ ['He wrote a letter.','彼は手紙を書きました。','wrote','書いた','write → wrote'],
+ ['I drank some water.','私は水を飲みました。','drank','飲んだ','drink → drank'],
+ ['They came to my house.','彼らは私の家に来ました。','came','来た','come → came'],
+ ['I did my homework.','私は宿題をしました。','did','した','do → did'],
+ ['We took a picture.','私たちは写真を撮りました。','took','撮った','take → took'],
+ ['She read a book yesterday.','彼女は昨日本を読みました。','read','読んだ','read → read'],
+ ['He ran in the park.','彼は公園で走りました。','ran','走った','run → ran'],
+ ['I got up at six.','私は6時に起きました。','got','起きた','get → got'],
+ ['We cleaned our classroom.','私たちは教室を掃除しました。','cleaned','掃除した','clean → cleaned'],
+ ['She listened to music.','彼女は音楽を聴きました。','listened','聴いた','listen → listened'],
+ ['I like apples.','私はりんごが好きです。','like','好き','like → liked'],
+ ['This is my school.','これは私の学校です。','school','学校',''],
+ ['He plays tennis.','彼はテニスをします。','plays','する','play → played'],
+ ['They have two cats.','彼らは猫を2匹飼っています。','have','飼っている','have → had'],
+ ['She likes music.','彼女は音楽が好きです。','likes','好き','like → liked'],
+ ['We go to school by bus.','私たちはバスで学校に行きます。','go','行く','go → went'],
+ ['My brother is tall.','私の兄は背が高いです。','tall','背が高い',''],
+ ['I can swim well.','私は上手に泳げます。','swim','泳ぐ','swim → swam'],
+ ['He is reading a book.','彼は本を読んでいます。','reading','読んでいる','read → read'],
+ ['We eat lunch at noon.','私たちは正午に昼食を食べます。','eat','食べる','eat → ate']
+];
+var WA_BE_BANK=[
+ ['I ___ happy.','私はうれしいです。','am','I の現在形は am'],
+ ['He ___ my friend.','彼は私の友達です。','is','He / She / It の現在形は is'],
+ ['She ___ a student.','彼女は生徒です。','is','She の現在形は is'],
+ ['You ___ kind.','あなたは親切です。','are','You の現在形は are'],
+ ['We ___ classmates.','私たちはクラスメートです。','are','We の現在形は are'],
+ ['They ___ at school.','彼らは学校にいます。','are','They の現在形は are'],
+ ['It ___ sunny today.','今日は晴れです。','is','It の現在形は is'],
+ ['I ___ tired yesterday.','私は昨日疲れていました。','was','I の過去形は was'],
+ ['He ___ sick yesterday.','彼は昨日病気でした。','was','He の過去形は was'],
+ ['She ___ at home last night.','彼女は昨夜家にいました。','was','She の過去形は was'],
+ ['We ___ busy yesterday.','私たちは昨日忙しかったです。','were','We の過去形は were'],
+ ['They ___ in the park.','彼らは公園にいました。','were','They の過去形は were'],
+ ['You ___ late yesterday.','あなたは昨日遅刻しました。','were','You の過去形は were'],
+ ['___ he your teacher?','彼はあなたの先生ですか。','Is','現在形で He に使うのは Is'],
+ ['___ you hungry?','あなたはお腹がすいていますか。','Are','現在形で You に使うのは Are'],
+ ['___ she at school yesterday?','彼女は昨日学校にいましたか。','Was','過去形で She に使うのは Was'],
+ ['___ they happy yesterday?','彼らは昨日うれしかったですか。','Were','過去形で They に使うのは Were'],
+ ['I ___ not angry.','私は怒っていません。','am','I am not の形'],
+ ['He ___ not at home yesterday.','彼は昨日家にいませんでした。','was','He was not の形'],
+ ['We ___ not tired yesterday.','私たちは昨日疲れていませんでした。','were','We were not の形']
+];
+var waMiniDeck=[],waBeDeck=[],waMiniRecent=[];
+function waMiniDraw(deckName,pool){
+ var deck=deckName==='be'?waBeDeck:waMiniDeck;
+ if(!deck.length){for(var i=0;i<pool.length;i++)deck.push(i);for(var j=deck.length-1;j>0;j--){var k=Math.floor(Math.random()*(j+1));var tmp=deck[j];deck[j]=deck[k];deck[k]=tmp;}}
+ var index=deck.pop();
+ // Prevent repeats across deck boundaries as well.
+ if(deckName!=='be'&&waMiniRecent.indexOf(index)>=0&&deck.length){deck.unshift(index);index=deck.pop();}
+ if(deckName!=='be'){waMiniRecent.push(index);if(waMiniRecent.length>8)waMiniRecent.shift();}
+ return pool[index];
+}
 function waBattleEnglishMini(){
-  var mode=S.mode,grade4=mode==='e';
-  var sets=grade4?[
-    {en:'I visited my friend yesterday.',ja:'私は昨日友達を訪ねました。',word:'visited',meaning:'訪ねた',past:'visit → visited',jp:['私は','昨日','友達を','訪ねました'],wrong:['泳いだ','買った','書いた']},
-    {en:'She is reading a book.',ja:'彼女は本を読んでいます。',word:'reading',meaning:'読んでいる',past:'read → read',jp:['彼女は','本を','読んでいます'],wrong:['走っている','眠っている','歌っている']},
-    {en:'We played soccer after school.',ja:'私たちは放課後サッカーをしました。',word:'played',meaning:'した',past:'play → played',jp:['私たちは','放課後','サッカーを','しました'],wrong:['食べた','見た','聞いた']}
-  ]:[
-    {en:'I like apples.',ja:'私はりんごが好きです。',word:'like',meaning:'好き',past:'like → liked',jp:['私は','りんごが','好きです'],wrong:['嫌い','走る','飲む']},
-    {en:'This is my school.',ja:'これは私の学校です。',word:'school',meaning:'学校',past:'',jp:['これは','私の','学校です'],wrong:['公園','駅','病院']},
-    {en:'He plays tennis.',ja:'彼はテニスをします。',word:'plays',meaning:'する',past:'play → played',jp:['彼は','テニスを','します'],wrong:['寝る','読む','泳ぐ']}
-  ];
-  var turn=waBattleMiniIndex++,kind=turn%5,q=sets[Math.floor(turn/5)%sets.length];
-  var labels=['英文を組み立てよう','意味のペアを探そう','聞こえた英語を選ぼう','正しい意味を選ぼう','日本語訳を組み立てよう'];
-  var words=q.en.replace(/[.!?]/g,'').split(/\s+/);
-  var correct=kind===0?words:kind===4?q.jp:[kind===2?q.word:q.meaning];
-  var options=kind===0?shuffle(words):kind===4?shuffle(q.jp):shuffle(kind===2?[q.word,'school','apple','played','reading'].filter(function(x,i,a){return a.indexOf(x)===i}).slice(0,4):[q.meaning].concat(q.wrong));
-  if(kind===2&&options.indexOf(q.word)<0)options[0]=q.word;
-  return new Promise(function(resolve){
-    board.hidden=true;$('#pv').hidden=true;
-    var host=document.createElement('section');host.className='wa-spell-panel';slot.appendChild(host);
-    var start=Date.now(),done=false,selected=[],used=[],timer;
-    var points=grade4?400:250;
-    host.innerHTML='<div style="font-weight:900;color:#d34b23">✨ 英検スペシャル・ミニゲーム</div><h2>'+labels[kind]+'</h2><p class="wa-spell-prompt" id="wa-mini-prompt"></p><div id="wa-battle-answer" style="min-height:48px;margin:12px 0;padding:12px;border:2px dashed #8ca9cb;border-radius:12px;overflow-wrap:anywhere"></div><div id="wa-battle-options" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center"></div><p id="wa-battle-time">残り30秒</p><div class="wa-spell-feedback" aria-live="polite"></div><div class="wa-spell-actions"><button type="button" id="wa-battle-undo">1つ戻す</button><button type="button" id="wa-battle-check">こたえを決定！</button><button type="button" id="wa-battle-skip">スキップ</button></div>';
-    var prompt=host.querySelector('#wa-mini-prompt'),answer=host.querySelector('#wa-battle-answer'),opts=host.querySelector('#wa-battle-options'),feedback=host.querySelector('.wa-spell-feedback');
-    prompt.textContent=kind===0?q.ja:kind===1?'「'+q.word+'」と同じ意味を選ぼう':kind===2?'英語を聞いて、聞こえた単語を選ぼう':kind===3?'「'+q.word+'」の意味は？':q.en;
-    if(kind===2){var audio=document.createElement('button');audio.textContent='🔊 もう一度聞く';audio.type='button';audio.onclick=function(){speak(q.word,'en-US')};prompt.appendChild(audio);}
-    function draw(){answer.textContent=selected.join(kind===4?'':' ');opts.innerHTML='';options.forEach(function(x,i){var b=document.createElement('button');b.type='button';b.textContent=x;b.style.cssText='min-height:48px;padding:10px;font-size:17px';b.disabled=done||((kind===0||kind===4)&&used.indexOf(i)>=0);b.onclick=function(){if(done)return;if(kind===0||kind===4){used.push(i);selected.push(x)}else{selected=[x]}draw()};opts.appendChild(b)});}
-    function cleanup(){clearInterval(timer);host.remove();board.hidden=false;$('#pv').hidden=false;render();updateInfo();resolve();}
-    function finish(ok,skip){if(done)return;done=true;clearInterval(timer);if(ok){SFX.good();S.score+=points;updateInfo();flash('+'+points+' Point!');}feedback.innerHTML=skip?'スキップしました':ok?'<strong style="color:#16824a">ピンポン♪ 正解！ +'+points+' Point!</strong>':'<strong>正解：'+esc(correct.join(kind===4?'':' '))+'</strong>';
-      if(q.past)feedback.innerHTML+='<div>現在形・過去形：'+esc(q.past)+'</div>';
-      host.querySelector('#wa-battle-check').textContent='バトルにもどる';host.querySelector('#wa-battle-check').onclick=cleanup;host.querySelector('#wa-battle-undo').hidden=true;host.querySelector('#wa-battle-skip').hidden=true;draw();}
-    host.querySelector('#wa-battle-undo').onclick=function(){if(done)return;used.pop();selected.pop();draw()};
-    host.querySelector('#wa-battle-check').onclick=function(){if(done)return;var actual=selected.join(kind===4?'':' ').replace(/[。.!?\s]/g,'').toLowerCase(),expected=correct.join(kind===4?'':' ').replace(/[。.!?\s]/g,'').toLowerCase();finish(actual===expected,false)};
-    host.querySelector('#wa-battle-skip').onclick=function(){finish(false,true)};
-    timer=setInterval(function(){if(done)return;var left=Math.max(0,30-Math.floor((Date.now()-start)/1000));var t=host.querySelector('#wa-battle-time');if(t)t.textContent='残り'+left+'秒';if(!left)finish(false,false)},250);
-    draw();if(kind===2)speak(q.word,'en-US');
-  });
+ var grade4=S.mode==='e',turn=waBattleMiniIndex++;
+ // Roughly 1 in 3 mini-games practices be-verbs; other turns rotate five activities.
+ var grammar=(turn%3===1),kind=grammar?5:Math.floor(turn/3+turn%3)%5;
+ var raw=grammar?waMiniDraw('be',WA_BE_BANK):waMiniDraw('normal',WA_MINI_BANK);
+ var q=grammar?{en:raw[0],ja:raw[1],word:raw[2],past:'',explain:raw[3]}:{en:raw[0],ja:raw[1],word:raw[2],meaning:raw[3],past:raw[4]};
+ var labels=['英文を組み立てよう','意味のペアを探そう','聞こえた英語を選ぼう','正しい意味を選ぼう','日本語訳を組み立てよう','be動詞を選ぼう！'];
+ var words=q.en.replace(/[.!?]/g,'').split(/\s+/);
+ var jp=q.ja.replace(/[。]/g,'').split(/(私は|私たちは|彼は|彼女は|昨日|昨夜|学校|公園|友達|本|英語|朝食)/).filter(Boolean);
+ // Japanese ordering uses natural chunks; preserve punctuation and exact answer.
+ if(jp.length<2)jp=[q.ja];
+ var correct=kind===0?words:kind===4?jp:[kind===2?q.word:kind===5?q.word:q.meaning];
+ var distractors=['食べた','走った','買った','聞いた','書いた','遊んだ','泳いだ','読んだ','学校','公園','好き','見る'];
+ var options=kind===0?shuffle(words):kind===4?shuffle(jp):kind===5?shuffle(['am','is','are','was','were','Am','Is','Are','Was','Were'].filter(function(x){return x===q.word||x.toLowerCase()!==q.word.toLowerCase()}).filter(function(x){return x===q.word||x===x.toLowerCase()}).slice(0,5)):kind===2?shuffle([q.word].concat(['played','school','apple','reading','went','tall'].filter(function(x){return x!==q.word}).slice(0,3))):shuffle([q.meaning].concat(distractors.filter(function(x){return x!==q.meaning}).sort(function(){return Math.random()-.5}).slice(0,3)));
+ if(kind===5){options=shuffle([q.word].concat(['am','is','are','was','were'].filter(function(x){return x!==q.word&&x.toLowerCase()!==q.word.toLowerCase()}).slice(0,3)));}
+ return new Promise(function(resolve){
+  board.hidden=true;$('#pv').hidden=true;
+  var host=document.createElement('section');host.className='wa-spell-panel';slot.appendChild(host);
+  var start=Date.now(),done=false,selected=[],used=[],timer,points=grade4?400:250;
+  host.innerHTML='<div style="font-weight:900;color:#d34b23">✨ 英検スペシャル・ミニゲーム</div><h2>'+labels[kind]+'</h2><p class="wa-spell-prompt" id="wa-mini-prompt"></p><div id="wa-battle-answer" style="min-height:48px;margin:12px 0;padding:12px;border:2px dashed #8ca9cb;border-radius:12px;overflow-wrap:anywhere"></div><div id="wa-battle-options" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center"></div><p id="wa-battle-time">残り30秒</p><div class="wa-spell-feedback" aria-live="polite"></div><div class="wa-spell-actions"><button type="button" id="wa-battle-undo">1つ戻す</button><button type="button" id="wa-battle-check">こたえを決定！</button><button type="button" id="wa-battle-skip">スキップ</button></div>';
+  var prompt=host.querySelector('#wa-mini-prompt'),answer=host.querySelector('#wa-battle-answer'),opts=host.querySelector('#wa-battle-options'),feedback=host.querySelector('.wa-spell-feedback');
+  prompt.textContent=kind===0?q.ja:kind===1?'「'+q.word+'」と同じ意味を選ぼう':kind===2?'英語を聞いて、聞こえた単語を選ぼう':kind===3?'「'+q.word+'」の意味は？':kind===5?q.en+'\n'+q.ja:q.en;
+  if(kind===2){var audio=document.createElement('button');audio.textContent='🔊 もう一度聞く';audio.type='button';audio.onclick=function(){speak(q.word,'en-US')};prompt.appendChild(audio);}
+  function draw(){answer.textContent=selected.join(kind===4?'':' ');opts.innerHTML='';options.forEach(function(x,i){var btn=document.createElement('button');btn.type='button';btn.textContent=x;btn.style.cssText='min-height:48px;padding:10px;font-size:17px';btn.disabled=done||((kind===0||kind===4)&&used.indexOf(i)>=0);btn.onclick=function(){if(done)return;if(kind===0||kind===4){used.push(i);selected.push(x)}else selected=[x];draw()};opts.appendChild(btn)});}
+  function cleanup(){clearInterval(timer);host.remove();board.hidden=false;$('#pv').hidden=false;render();updateInfo();resolve();}
+  function finish(ok,skip){if(done)return;done=true;clearInterval(timer);if(ok){SFX.good();S.score+=points;updateInfo();flash('+'+points+' Point!');}feedback.innerHTML=skip?'スキップしました':ok?'<strong style="color:#16824a">ピンポン♪ 正解！ +'+points+' Point!</strong>':'<strong>正解：'+esc(correct.join(kind===4?'':' '))+'</strong>';
+   if(q.past)feedback.innerHTML+='<div>現在形・過去形：'+esc(q.past)+'</div>';
+   if(q.explain)feedback.innerHTML+='<div>💡 '+esc(q.explain)+'</div>';
+   host.querySelector('#wa-battle-check').textContent='バトルにもどる';host.querySelector('#wa-battle-check').onclick=cleanup;host.querySelector('#wa-battle-undo').hidden=true;host.querySelector('#wa-battle-skip').hidden=true;draw();}
+  host.querySelector('#wa-battle-undo').onclick=function(){if(!done){used.pop();selected.pop();draw()}};
+  host.querySelector('#wa-battle-check').onclick=function(){if(done)return;var norm=function(a){return a.join(kind===4?'':' ').replace(/[。.!?\s]/g,'').toLowerCase()};finish(norm(selected)===norm(correct),false)};
+  host.querySelector('#wa-battle-skip').onclick=function(){finish(false,true)};
+  timer=setInterval(function(){if(done)return;var left=Math.max(0,30-Math.floor((Date.now()-start)/1000));var t=host.querySelector('#wa-battle-time');if(t)t.textContent='残り'+left+'秒';if(!left)finish(false,false)},250);
+  draw();if(kind===2)speak(q.word,'en-US');
+ });
 }
 function waEnemyWarning(){
  var el=document.getElementById('wa-enemy-warning');if(!el)return;
