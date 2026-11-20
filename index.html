@@ -740,6 +740,21 @@ mark{background:linear-gradient(transparent 55%,var(--mark) 55%);color:inherit;f
   .arena{align-self:center;padding-top:24px}
   .hp{width:min(100%,460px)}
 }
+
+/* Accessibility: ally challenge stays readable in iOS automatic dark mode. */
+.battle .slot .ally-quiz .quiz{background:#fffdf8!important;color:#17253a!important;color-scheme:light!important;border-color:#273c59!important}
+.battle .slot .ally-quiz .quiz .sent,.battle .slot .ally-quiz .quiz .qask,.battle .slot .ally-quiz .quiz .bigword,.battle .slot .ally-quiz .quiz .en,.battle .slot .ally-quiz .quiz .ans,.battle .slot .ally-quiz .quiz .ex,.battle .slot .ally-quiz .quiz .fb{color:#17253a!important}
+.battle .slot .ally-quiz .quiz .ch{background:#f0f5ff!important;color:#17253a!important;border-color:#7890ae!important;-webkit-text-fill-color:#17253a!important;opacity:1!important}
+.battle .slot .ally-quiz .quiz .ch:disabled{opacity:1!important;color:#17253a!important;-webkit-text-fill-color:#17253a!important}
+.battle .slot .ally-quiz .quiz .ch.right{background:#dcf8e9!important;border-color:#16834d!important}
+.battle .slot .ally-quiz .quiz .ch.wrong{background:#fff0ee!important;border-color:#c34b42!important}
+.battle .slot .ally-quiz .quiz .tag{background:#233a59!important;color:#fff!important}
+.battle .slot .ally-quiz .quiz .arrows{color:#9c3423!important}
+.battle .slot .ally-quiz .quiz .say{background:#e8f0ff!important;color:#18375c!important;border-color:#7993b5!important}
+.battle .slot .ally-quiz .quiz .fb .ex{background:#edf3ff!important}
+.battle .slot .ally-quiz .quiz .verdict.ok{color:#08743e!important}
+.battle .slot .ally-quiz .quiz .verdict.ng{color:#b12b23!important}
+.battle .slot .ally-quiz .quiz .btn.primary{background:#e8f1ff!important;color:#18375c!important;border-color:#294d77!important;-webkit-text-fill-color:#18375c!important}
 </style>
 
 <div id="app"></div>
