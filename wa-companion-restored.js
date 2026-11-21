@@ -1,15 +1,15 @@
 /* Word Arrow: 13 companions, cumulative points across all five courses. */
 (function(){'use strict';
 const prefix='wa-companion-standalone-v1:';
-const thresholds=[0,0,0,40000,80000,120000,160000,200000,250000,300000,400000,500000,700000];
-const names=['ライボルトン','アクアフィン','フレアキトン','アースゴーレム','アイスフェン','ルナミスト','ウィンドルー','ナイトヴェイル','ダークロード','ミコフェリス','お助けキャラ','5連鎖の隠し相棒','10連鎖の隠し相棒'];
+const thresholds=[0,0,0,40000,80000,120000,160000,200000,250000,300000,400000,500000,700000,900000];
+const names=['ライボルトン','アクアフィン','フレアキトン','アースゴーレム','アイスフェン','ルナミスト','ウィンドルー','ナイトヴェイル','ダークロード','ミコフェリス','お助けキャラ','5連鎖の隠し相棒','10連鎖の隠し相棒','ジュニアライダー'];
 const get=(k,d)=>{try{let v=localStorage.getItem(prefix+k);return v===null?d:JSON.parse(v)}catch(e){return d}};
 const set=(k,v)=>{try{localStorage.setItem(prefix+k,JSON.stringify(v))}catch(e){}};
 const legacy=suffix=>{try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('wa-guild-v2:')&&k.endsWith(':'+suffix))return JSON.parse(localStorage.getItem(k))}}catch(e){}return null};
 let points=Math.max(0,Number(get('points',legacy('companion-total-points')||0))||0);
-let selected=Math.max(0,Math.min(12,Number(get('selected',legacy('companion')||0))||0));
+let selected=Math.max(0,Math.min(13,Number(get('selected',legacy('companion')||0))||0));
 set('points',points);
-const imagePath=i=>i===11?'special-ally.webp':i===12?'special-ally-10.webp':i===10?'special-ally.webp':'assets/monster-'+String(i+1).padStart(2,'0')+'.webp';
+const imagePath=i=>i===13?'assets/new-companion.webp':i===11?'special-ally.webp':i===12?'special-ally-10.webp':i===10?'special-ally.webp':'assets/monster-'+String(i+1).padStart(2,'0')+'.webp';
 const foodKey='food-count';
 let food=Math.max(0,Number(get(foodKey,3))||0);
 const fmt=n=>Math.floor(n).toLocaleString('ja-JP');
@@ -19,6 +19,10 @@ const css=document.createElement('style');css.textContent=`
 #wa-companion img{display:block;width:100%;max-height:130px;object-fit:contain;filter:drop-shadow(0 4px 5px #0005);animation:wa-comp-float 2.2s ease-in-out infinite}
 #wa-companion .bubble{display:inline-block;background:#fff;border:2px solid #e3b95e;border-radius:99px;padding:3px 8px;color:#14233b;white-space:nowrap;box-shadow:0 2px 5px #0002}
 @keyframes wa-comp-float{50%{transform:translateY(-7px)}}
+#wa-companion img[src*="new-companion"]{animation:wa-junior-hover 2.1s ease-in-out infinite;transform-origin:50% 65%}
+#wa-comp-modal .picker img[src*="new-companion"]{animation:wa-junior-hover 2.1s ease-in-out infinite;transform-origin:50% 65%}
+@keyframes wa-junior-hover{0%,100%{transform:translateY(2px) rotate(-2deg)}50%{transform:translateY(-9px) rotate(2deg)}}
+@media(prefers-reduced-motion:reduce){#wa-companion img[src*="new-companion"],#wa-comp-modal .picker img[src*="new-companion"]{animation:none}}
 #wa-comp-modal{position:fixed;inset:0;z-index:100020;background:#0b1b30c9;display:flex;align-items:center;justify-content:center;padding:16px}
 #wa-comp-modal[hidden]{display:none!important}
 #wa-comp-modal .dialog{max-width:570px;width:100%;max-height:85dvh;overflow:auto;background:#1b3150;border:1px solid #7c99c0;border-radius:18px;color:white;padding:20px;text-align:center;font:16px system-ui}
@@ -41,7 +45,7 @@ const css=document.createElement('style');css.textContent=`
 const root=document.createElement('div');root.id='wa-companion';root.innerHTML='<div class="bubble">がんばれ！</div><button aria-label="相棒を選ぶ" type="button"><img alt="応援する相棒"></button>';document.body.append(root);
 const modal=document.createElement('div');modal.id='wa-comp-modal';modal.hidden=true;document.body.append(modal);
 function refresh(){if(points<thresholds[selected]){selected=0;set('selected',selected)}const img=root.querySelector('img');img.src=imagePath(selected);img.alt=names[selected]}
-function open(){modal.hidden=false;const next=thresholds.find(x=>x>points);const progress=next===undefined?'全13体を解放しました！':'次の解放まで '+fmt(next-points)+' pt';modal.innerHTML='<div class="dialog" role="dialog" aria-modal="true" aria-label="マイ相棒"><h2>🐾 マイ相棒</h2><p>最初の3体は自由に選べます。累計ポイントで順番に解放！</p><p>累計ポイント：<strong>'+fmt(points)+' pt</strong></p><p class="wa-progress">'+progress+'</p><div class="picker">'+names.map((n,i)=>{const locked=points<thresholds[i];const secret=locked;return '<button data-i="'+i+'" '+(locked?'disabled':'')+' class="'+(selected===i?'active':'')+'" aria-label="'+(secret?'未解放の相棒':n)+(locked?' 未解放':'')+'">'+(secret?'<div class="wa-secret" aria-hidden="true">？</div>':'<img src="'+imagePath(i)+'" alt="" onerror="this.style.visibility=\'hidden\'">')+'<small>'+(locked?'🔒 '+fmt(thresholds[i])+'pt':n)+'</small></button>'}).join('')+'</div><button id="wa-comp-close">閉じる</button></div>';modal.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{selected=Number(b.dataset.i);set('selected',selected);refresh();open()});const feedBtn=modal.querySelector('#wa-feed-btn');if(feedBtn)feedBtn.onclick=()=>{if(food<=0)return;food--;set(foodKey,food);modal.querySelector('#wa-food-count').textContent='🍙 ご飯：'+fmt(food)+'個';const messages=['おいしい！ありがとう！','元気いっぱい！','もっとがんばるね！','やったー！'];modal.querySelector('#wa-feed-message').textContent=messages[Math.floor(Math.random()*messages.length)];const im=modal.querySelector('#wa-feed-img');im.classList.remove('happy');void im.offsetWidth;im.classList.add('happy');modal.querySelector('#wa-feed-btn').disabled=food<=0;};modal.querySelector('#wa-comp-close').onclick=()=>modal.hidden=true;}
+function open(){modal.hidden=false;const next=thresholds.find(x=>x>points);const progress=next===undefined?'全14体を解放しました！':'次の解放まで '+fmt(next-points)+' pt';modal.innerHTML='<div class="dialog" role="dialog" aria-modal="true" aria-label="マイ相棒"><h2>🐾 マイ相棒</h2><p>最初の3体は自由に選べます。累計ポイントで順番に解放！</p><p>累計ポイント：<strong>'+fmt(points)+' pt</strong></p><p class="wa-progress">'+progress+'</p><div class="picker">'+names.map((n,i)=>{const locked=points<thresholds[i];const secret=locked&&i>=11;return '<button data-i="'+i+'" '+(locked?'disabled':'')+' class="'+(selected===i?'active':'')+'" aria-label="'+(secret?'隠し相棒':n)+(locked?' 未解放':'')+'">'+(secret?'<div class="wa-secret" aria-hidden="true">？</div>':'<img src="'+imagePath(i)+'" alt="" onerror="this.style.visibility=\'hidden\'">')+'<small>'+(locked?'🔒 '+fmt(thresholds[i])+'pt':n)+'</small></button>'}).join('')+'</div><button id="wa-comp-close">閉じる</button></div>';modal.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{selected=Number(b.dataset.i);set('selected',selected);refresh();open()});if(modal.querySelector('#wa-feed-btn'))modal.querySelector('#wa-feed-btn').onclick=()=>{if(food<=0)return;food--;set(foodKey,food);modal.querySelector('#wa-food-count').textContent='🍙 ご飯：'+fmt(food)+'個';const messages=['おいしい！ありがとう！','元気いっぱい！','もっとがんばるね！','やったー！'];modal.querySelector('#wa-feed-message').textContent=messages[Math.floor(Math.random()*messages.length)];const im=modal.querySelector('#wa-feed-img');im.classList.remove('happy');void im.offsetWidth;im.classList.add('happy');modal.querySelector('#wa-feed-btn').disabled=food<=0;};modal.querySelector('#wa-comp-close').onclick=()=>modal.hidden=true;}
 function addPoints(delta){delta=Number(delta);if(!Number.isFinite(delta)||delta<=0)return;points+=delta;set('points',points);if(!modal.hidden)open()}
 /* Called by the main game's score update; count positive increments only, not a new game's reset. */
 let runScore=0;
