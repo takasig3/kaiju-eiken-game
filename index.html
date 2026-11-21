@@ -369,6 +369,13 @@
   .battle .slot{width:min(48vw,440px,calc((100dvh - 320px)*.84))!important}
 }
 
+
+/* Occasional junior rider prank: visual entrance, then temporary puzzle obstacles. */
+.wa-prank-flyer{position:absolute;z-index:85;left:50%;top:42%;width:clamp(100px,28vw,175px);pointer-events:none;filter:drop-shadow(0 6px 12px #162c6688);animation:wa-prank-flight 1.25s ease-in-out both}
+.wa-prank-flyer img{width:100%;height:auto;display:block}
+.wa-prank-flyer b{display:block;text-align:center;color:#fff;background:#b22d67;border:2px solid #fff;border-radius:12px;padding:5px;font-size:clamp(13px,3.5vw,19px);white-space:nowrap;text-shadow:0 1px #512047}
+@keyframes wa-prank-flight{0%{opacity:0;transform:translate(85%,-80%) rotate(12deg) scale(.6)}25%{opacity:1;transform:translate(-35%,-55%) rotate(-8deg) scale(1.1)}75%{opacity:1;transform:translate(-50%,-60%) rotate(5deg) scale(1)}100%{opacity:0;transform:translate(-150%,-100%) rotate(-14deg) scale(.7)}}
+@media(prefers-reduced-motion:reduce){.wa-prank-flyer{animation:wa-prank-fade 1s ease-in-out both}@keyframes wa-prank-fade{0%,100%{opacity:0}25%,75%{opacity:1}}}
 </style><style id="wa-learning-style">
 .wa-learn-panel{position:absolute;inset:4px;z-index:12;background:rgba(245,249,255,.97);border:3px solid #486ec8;border-radius:18px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:14px;text-align:center;box-shadow:0 12px 30px #172f5966}
 .slot{position:relative}
@@ -2917,7 +2924,40 @@ async function waEnemyAfterTurn(res,ok){
  }
  updateInfo();
 }
+// The new character is an occasional independent troublemaker, even when locked as a companion.
+// Runs only after a completed valid move; never interrupts questions or active cascades.
+var waJuniorPrankCooldown=0;
+async function waJuniorPrank(){
+  if(!battle||!battle.isConnected||!S.b||S.hp<=0)return;
+  if(waJuniorPrankCooldown>0){waJuniorPrankCooldown--;return;}
+  if(S.moves<2||Math.random()>=.13)return;
+  if(jamaCount()>=5)return;
+  var free=[];
+  for(var r=0;r<N;r++)for(var c=0;c<N;c++){
+    var tile=S.b[r][c];if(tile&&tile.t>=0&&!tile.item)free.push([r,c]);
+  }
+  if(free.length<14)return;
+  waJuniorPrankCooldown=3+Math.floor(Math.random()*3);
+  var flyer=document.createElement('div');flyer.className='wa-prank-flyer';
+  var portrait=document.createElement('img');portrait.src='assets/new-companion.webp';portrait.alt='';
+  var text=document.createElement('b');text.textContent='へへっ！おじゃま！';
+  flyer.append(portrait,text);battle.appendChild(flyer);
+  await sleep(680);
+  if(!battle.isConnected){flyer.remove();return;}
+  var picks=shuffle(free).slice(0,Math.min(2,5-jamaCount()));
+  var old=picks.map(function(p){return S.b[p[0]][p[1]]});
+  picks.forEach(function(p){S.b[p[0]][p[1]]={t:-1,f:0}});
+  // Do not leave the board without a legal move.
+  if(!hasMoves()){
+    picks.forEach(function(p,i){S.b[p[0]][p[1]]=old[i]});
+    if(picks.length>1){S.b[picks[0][0]][picks[0][1]]={t:-1,f:0};
+      if(!hasMoves())S.b[picks[0][0]][picks[0][1]]=old[0];}
+  }
+  render();flash('🌀 ジュニアライダーがじゃまブロックを置いた！');
+  await sleep(570);flyer.remove();
+}
 async function finishPuzzleTurn(res){
+  await waJuniorPrank();
   // A cascade earns visible points once per completed move, not per animation frame.
   if(res.chain>=2){var chainPts=(res.chain-1)*50;S.score+=chainPts;updateInfo();waShowPoints(chainPts,res.chain+'連鎖ボーナス','combo');}
 
