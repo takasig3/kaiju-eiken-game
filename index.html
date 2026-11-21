@@ -2019,6 +2019,46 @@ function waCastleMidiChain(chain,stage){
   }
   WA_CASTLE_CURSOR=end>=data.length?0:end;
 }
+// Stage 1-7: choose one of the two Mario themes once per stage visit.
+// The uploaded title-theme MP3 is an external asset; the original Mario MIDI stays embedded.
+var WA_TITLE_AUDIO=null,WA_STAGE_MUSIC_KEY='',WA_STAGE_MUSIC_CHOICE='';
+function waStopTitleTheme(){
+  if(WA_TITLE_AUDIO){WA_TITLE_AUDIO.pause();WA_TITLE_AUDIO.currentTime=0;}
+}
+function waStageMusicChoice(stage){
+  var key=(typeof S!=='undefined' ? String(S.mode) : '')+':'+stage;
+  if(key!==WA_STAGE_MUSIC_KEY){
+    waStopTitleTheme();
+    WA_STAGE_MUSIC_KEY=key;
+    WA_STAGE_MUSIC_CHOICE=stage>=7?'castle':(Math.random()<.5?'title':'mario');
+  }
+  return WA_STAGE_MUSIC_CHOICE;
+}
+function waPlayTitleTheme(){
+  if(!SND)return;
+  if(!WA_TITLE_AUDIO){
+    WA_TITLE_AUDIO=new Audio('assets/wa-title-theme.mp3');
+    WA_TITLE_AUDIO.loop=true;
+    WA_TITLE_AUDIO.preload='none';
+    WA_TITLE_AUDIO.volume=.30;
+  }
+  if(WA_TITLE_AUDIO.paused){
+    var promise=WA_TITLE_AUDIO.play();
+    if(promise&&promise.catch)promise.catch(function(e){console.warn('Title theme playback:',e)});
+  }
+}
+// Stop recorded music on leaving battle or muting; never play it over menus or quizzes.
+setInterval(function(){
+  if(!WA_TITLE_AUDIO||WA_TITLE_AUDIO.paused)return;
+  var battle=document.querySelector('.battle');
+  if(!SND||!battle||typeof S==='undefined'||S.stage>=7||
+     (WA_STAGE_MUSIC_KEY!==String(S.mode)+':'+S.stage)){
+    waStopTitleTheme();
+  }
+},400);
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden&&WA_TITLE_AUDIO)WA_TITLE_AUDIO.pause();
+});
 var SFX={
   match:function(chain){
     // Score-driven 8-bit chain music: starts at chain 1, with low-volume voices.
@@ -2027,7 +2067,7 @@ var SFX={
     try{
       var stage=(typeof S!=='undefined'&&Number.isFinite(S.stage))?Math.max(0,Math.min(9,S.stage)):0;
       var n=Math.max(1,Math.floor(chain));
-      if(stage>=7){waCastleMidiChain(n,stage);}else{waMarioMidiChain(n,stage);}return; // Stages 1-7 Mario; 8-10 castle
+      var choice=waStageMusicChoice(stage);if(choice==='castle'){waCastleMidiChain(n,stage);}else if(choice==='title'){waPlayTitleTheme();}else{waMarioMidiChain(n,stage);}return; // Stage 1-7 randomized, 8-10 castle
       WA_MARIO_LAST_STAGE=stage;
       var hz=function(m){return 440*Math.pow(2,(m-69)/12)};
       // The supplied two-page score's opening melody, transcribed into MIDI notes.
@@ -2097,7 +2137,7 @@ function bindSnd(){
   var b=$('#snd'); if(!b) return;
   function lab(){b.textContent=SND?'音 ON':'音 OFF'}
   lab();
-  b.onclick=function(){SND=!SND;try{localStorage.setItem('wordarrow-snd',SND?'1':'0')}catch(e){}lab();if(SND)SFX.good()};
+  b.onclick=function(){SND=!SND;if(!SND)waStopTitleTheme();try{localStorage.setItem('wordarrow-snd',SND?'1':'0')}catch(e){}lab();if(SND)SFX.good()};
 }
 
 /* ---------- shapes ---------- */
