@@ -1924,49 +1924,79 @@ function noise(t0,d,vol){
   s.buffer=buf;g.gain.setValueAtTime(vol||.15,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);
   s.connect(g);g.connect(WA_MASTER||a.destination);s.start(t);
 }
+// Supplied MarioTheme.mid, embedded directly in HTML (238 note events).
+// The file is a single-track clarinet arrangement, not a full multi-instrument recording.
+var WA_MARIO_MIDI_NOTES=[[5,76,140],[145,76,243],[388,76,99],[641,72,93],[761,76,216],[1010,79,467],[1511,67,477],[2023,72,359],[2414,67,99],[2787,64,216],[3165,69,208],[3406,71,98],[3657,70,93],[3779,69,214],[4028,67,150],[4212,76,129],[4374,79,134],[4541,81,213],[4787,77,93],[4908,79,100],[5165,76,208],[5406,72,98],[5532,74,98],[5657,71,335],[6028,72,353],[6414,67,99],[6787,64,216],[7165,69,208],[7406,71,98],[7657,70,93],[7779,69,214],[8028,67,150],[8212,76,129],[8374,79,134],[8541,81,213],[8787,77,93],[8908,79,100],[9165,76,208],[9406,72,98],[9532,74,98],[9657,71,335],[10293,79,94],[10414,78,99],[10541,77,98],[10667,75,208],[10908,76,100],[11165,68,93],[11285,69,93],[11406,72,98],[11657,69,93],[11779,72,93],[11900,74,99],[12293,79,94],[12414,78,99],[12541,77,98],[12667,75,208],[12908,76,100],[13165,84,241],[13406,84,125],[13532,84,461],[14293,79,94],[14414,78,99],[14541,77,98],[14667,75,208],[14908,76,100],[15165,68,93],[15285,69,93],[15407,72,98],[15657,69,93],[15779,72,93],[15900,74,99],[16293,75,215],[16667,74,336],[17036,72,462],[18293,79,94],[18414,78,99],[18541,77,98],[18667,75,208],[18908,76,100],[19165,68,93],[19285,69,93],[19407,72,98],[19658,69,93],[19779,72,93],[19900,74,99],[20293,79,94],[20414,78,99],[20541,77,98],[20667,75,208],[20908,76,100],[21165,84,241],[21407,84,125],[21532,84,461],[22293,79,94],[22414,78,99],[22541,77,98],[22667,75,208],[22909,76,100],[23165,68,93],[23285,69,93],[23407,72,98],[23658,69,93],[23779,72,93],[23900,74,99],[24293,75,215],[24667,74,336],[25036,72,462],[26028,72,143],[26171,72,243],[26414,72,99],[26667,72,93],[26787,74,216],[27036,76,101],[27165,72,211],[27409,69,99],[27537,67,477],[28049,72,147],[28197,72,243],[28440,72,99],[28693,72,93],[28813,74,93],[28935,76,100],[30054,72,143],[30197,72,243],[30440,72,99],[30693,72,93],[30813,74,216],[31063,76,101],[31191,72,210],[31434,69,99],[31561,67,469],[32065,76,143],[32208,76,243],[32451,76,99],[32704,72,93],[32824,76,216],[33073,79,467],[33574,67,477],[34086,72,359],[34477,67,99],[34850,64,216],[35228,69,208],[35470,71,98],[35721,70,93],[35842,69,214],[36091,67,150],[36275,76,129],[36437,79,134],[36604,81,213],[36850,77,93],[36972,79,100],[37228,76,208],[37470,72,98],[37595,74,98],[37721,71,335],[38091,72,353],[38477,67,99],[38850,64,216],[39228,69,208],[39470,71,98],[39721,70,93],[39842,69,214],[40091,67,150],[40275,76,129],[40437,79,134],[40604,81,213],[40850,77,93],[40972,79,100],[41228,76,208],[41470,72,98],[41595,74,98],[41721,71,335],[42091,76,115],[42234,72,210],[42477,67,99],[42850,68,216],[43099,69,101],[43228,77,241],[43470,77,98],[43595,69,461],[44091,71,150],[44275,81,162],[44437,81,167],[44604,81,133],[44770,79,127],[44931,77,135],[45099,76,101],[45228,72,208],[45470,69,98],[45595,67,461],[46091,76,115],[46234,72,210],[46477,67,99],[46850,68,216],[47099,69,101],[47228,77,241],[47470,77,98],[47595,69,461],[48091,71,115],[48234,77,243],[48477,77,126],[48604,77,133],[48770,76,127],[48931,74,135],[49100,72,462],[50091,76,115],[50234,72,210],[50477,67,99],[50850,68,216],[51100,69,101],[51228,77,241],[51470,77,98],[51595,69,461],[52091,71,150],[52275,81,162],[52437,81,167],[52604,81,133],[52770,79,127],[52931,77,135],[53100,76,101],[53228,72,208],[53470,69,98],[53595,67,461],[54091,76,115],[54234,72,210],[54477,67,99],[54851,68,216],[55100,69,101],[55228,77,241],[55470,77,98],[55595,69,461],[56091,71,115],[56234,77,243],[56477,77,126],[56604,77,133],[56770,76,127],[56931,74,135],[57100,72,462]];
+var WA_MARIO_CURSOR=0,WA_MARIO_LAST_CHAIN=0,WA_MARIO_LAST_STAGE=-1;
+function waMarioMidiChain(chain,stage){
+  if(!SND)return;
+  var audio=ac();if(!audio)return;
+  if(stage!==WA_MARIO_LAST_STAGE){WA_MARIO_CURSOR=0;WA_MARIO_LAST_CHAIN=0;WA_MARIO_LAST_STAGE=stage;}
+  // On a new cascade, advance through the real MIDI notes, never restarting the intro.
+  if(chain<=WA_MARIO_LAST_CHAIN && chain===1){ /* A new move: continue the tune. */ }
+  WA_MARIO_LAST_CHAIN=chain;
+  var data=WA_MARIO_MIDI_NOTES;
+  if(!data.length)return;
+  var start=WA_MARIO_CURSOR;
+  var first=data[start][0],last=first;
+  // Play a short, coherent phrase per cascade. Preserve MIDI note spacing and rests.
+  var end=start;
+  while(end<data.length && (data[end][0]-first<550 || end===start) && end-start<14){last=data[end][0];end++;}
+  for(var i=start;i<end;i++){
+    var event=data[i],offset=(event[0]-first)/1000;
+    var duration=Math.max(.055,Math.min(.65,event[2]/1000));
+    var freq=440*Math.pow(2,(event[1]-69)/12);
+    tone(freq,offset,duration,'square',.020);
+  }
+  WA_MARIO_CURSOR=end>=data.length?0:end;
+}
 var SFX={
   match:function(chain){
-    // Original, continuously developing stage score. Every chain plays the next bar,
-    // including chain 1; 64+ bars are generated rather than looping a 16-note riff.
+    // Score-driven 8-bit chain music: starts at chain 1, with low-volume voices.
+    // Each cascade advances the phrase; avoid replaying the opening on every match.
     if(!SND)return;
     try{
-      var themes=[
-        {notes:[60,64,67,72,69,67,64,62,60,67,72,76,74,72,67,64],wave:'square',tempo:.086,bass:48},
-        {notes:[62,65,69,74,72,69,65,67,69,74,77,76,74,69,67,65],wave:'triangle',tempo:.108,bass:50},
-        {notes:[64,67,71,74,76,74,71,67,69,72,76,79,76,72,71,67],wave:'sine',tempo:.092,bass:52},
-        {notes:[55,62,67,69,71,74,76,79,76,74,71,69,67,71,74,79],wave:'sawtooth',tempo:.083,bass:43},
-        {notes:[69,72,76,79,77,76,72,69,67,72,76,81,79,76,72,69],wave:'sine',tempo:.118,bass:45},
-        {notes:[55,59,62,67,71,69,67,62,64,67,71,74,72,71,67,62],wave:'triangle',tempo:.100,bass:43},
-        {notes:[72,76,79,83,81,79,76,72,74,79,83,86,83,79,76,74],wave:'sine',tempo:.122,bass:48},
-        {notes:[57,60,64,68,67,64,60,57,59,63,66,71,68,66,63,59],wave:'triangle',tempo:.105,bass:45},
-        {notes:[50,53,57,60,62,60,57,53,55,58,62,65,64,62,58,55],wave:'sawtooth',tempo:.092,bass:38},
-        {notes:[48,55,60,63,67,72,70,67,68,72,75,79,80,79,75,72],wave:'sawtooth',tempo:.094,bass:36}
-      ];
       var stage=(typeof S!=='undefined'&&Number.isFinite(S.stage))?Math.max(0,Math.min(9,S.stage)):0;
-      var th=themes[stage],n=Math.max(1,Math.floor(chain)),midi=function(m){return 440*Math.pow(2,(m-69)/12)};
-      // Each four-chain phrase develops the original motif through changing chord tones,
-      // register, and melodic contour; the 64-bar progression lasts 256 chains.
-      var bar=n-1,section=Math.floor(bar/4),phrase=bar%4;
-      var chords=[0,5,7,0,9,5,2,7,0,4,5,7,9,5,7,0];
-      var shift=chords[section%chords.length];
-      var scale=[0,2,4,5,7,9,11];
-      var tempo=th.tempo*1.9;
-      var density=n>=40?6:n>=20?5:4;
-      for(var i=0;i<density;i++){
-        var idx=(bar*4+i)%th.notes.length;
-        var base=th.notes[idx];
-        var degree=scale[(i+section+stage)%7];
-        var note=base+(shift===9?-3:shift===5?-2:shift===2?2:shift===4?4:shift===7?2:0);
-        if(section%4===3&&i===density-1)note=th.notes[0]+12;
-        if(n>=20&&i===2)note+=12;
-        var onset=i*tempo*.77;
-        tone(midi(note),onset,tempo*.69,th.wave,th.wave==='sawtooth'?.025:.042);
-        if(n>=5&&i%2===0)tone(midi(note-12),onset,tempo*.85,'sine',.019);
+      var n=Math.max(1,Math.floor(chain));
+      if(stage===0){waMarioMidiChain(n,stage);return;}
+      WA_MARIO_LAST_STAGE=stage;
+      var hz=function(m){return 440*Math.pow(2,(m-69)/12)};
+      // The supplied two-page score's opening melody, transcribed into MIDI notes.
+      // null indicates a written rest. Later sections vary the melodic material.
+      var mario=[
+        76,76,null,76,null,72,76,null,79,null,null,null,67,null,null,null,
+        72,null,67,null,64,null,69,71,null,70,69,null,67,76,79,81,
+        77,79,null,76,null,72,74,71,null,null,72,null,67,null,64,null,
+        69,71,null,70,69,null,67,76,79,81,77,79,null,76,null,72,
+        74,71,null,null,79,78,77,75,null,76,null,68,69,72,null,69,72,
+        74,null,79,78,77,75,null,76,null,84,null,84,84,null,null,79,
+        78,77,75,null,76,null,68,69,72,null,69,72,74,null,75,74,72,
+        67,null,76,76,null,76,null,72,76,null,79,null,null,null,67,null
+      ];
+      var others=[
+        [62,65,69,74,72,69,65,67,69,74,77,76,74,69,67,65],
+        [64,67,71,74,76,74,71,67,69,72,76,79,76,72,71,67],
+        [55,62,67,69,71,74,76,79,76,74,71,69,67,71,74,79],
+        [69,72,76,79,77,76,72,69,67,72,76,81,79,76,72,69],
+        [55,59,62,67,71,69,67,62,64,67,71,74,72,71,67,62],
+        [72,76,79,83,81,79,76,72,74,79,83,86,83,79,76,74],
+        [57,60,64,68,67,64,60,57,59,63,66,71,68,66,63,59],
+        [50,53,57,60,62,60,57,53,55,58,62,65,64,62,58,55],
+        [48,55,60,63,67,72,70,67,68,72,75,79,80,79,75,72]
+      ];
+      var seq=stage===0?mario:others[stage-1];
+      var step=stage===0?.075:.082;
+      // Four eighth-note slots per chain, keeping audio shorter than cascade animation.
+      var start=((n-1)*4)%seq.length;
+      var wave=stage===0?'square':stage%3===0?'triangle':'square';
+      for(var i=0;i<4;i++){
+        var note=seq[(start+i)%seq.length];
+        if(note===null)continue;
+        tone(hz(note),i*step,step*.84,wave,stage===0?.025:.029);
+        if(n>=5&&i===0)tone(hz(note-12),i*step,step*1.5,'triangle',.013);
       }
-      if(n>=5)tone(midi(th.bass+(shift===7?7:shift===5?5:shift===9?9:0)),0,tempo*2.6,'sine',.035);
-      if(n>=10){noise(0,.035,.012);noise(tempo*1.55,.04,.009)}
-      if(n>=20){tone(midi(th.notes[(bar+3)%th.notes.length]-5),tempo*.9,tempo*1.9,'triangle',.022)}
-      if(n>=40){tone(midi(th.notes[(bar+5)%th.notes.length]+7),tempo*2.2,tempo*.9,'sine',.024)}
+      if(n>=5){var bass=stage===0?48:Math.max(36,seq.find(function(x){return x!==null})-12);tone(hz(bass),0,step*2.8,'triangle',.022)}
+      if(n>=10){noise(0,.022,.008);noise(step*2,.025,.007)}
     }catch(e){console.warn('Chain music unavailable',e)}
   },
   good:function(){tone(784,0,.12,'square',.06);tone(1175,.1,.28,'square',.06)},
