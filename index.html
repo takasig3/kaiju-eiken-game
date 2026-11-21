@@ -2044,7 +2044,16 @@ function waPlayTitleTheme(){
   }
   if(WA_TITLE_AUDIO.paused){
     var promise=WA_TITLE_AUDIO.play();
-    if(promise&&promise.catch)promise.catch(function(e){console.warn('Title theme playback:',e)});
+    if(promise&&promise.catch)promise.catch(function(e){
+      console.warn('Title theme playback:',e);
+      var bar=document.querySelector('.battle .bar');
+      if(bar&&!document.getElementById('wa-audio-retry')){
+        var b=document.createElement('button');b.id='wa-audio-retry';b.type='button';
+        b.textContent='♪ 曲を再生';b.className='snd';
+        b.onclick=function(){WA_TITLE_AUDIO.play().then(function(){b.remove()}).catch(function(){b.textContent='音楽を再生できません'});};
+        bar.appendChild(b);
+      }
+    });
   }
 }
 // Stop recorded music on leaving battle or muting; never play it over menus or quizzes.
@@ -2137,7 +2146,7 @@ function bindSnd(){
   var b=$('#snd'); if(!b) return;
   function lab(){b.textContent=SND?'音 ON':'音 OFF'}
   lab();
-  b.onclick=function(){SND=!SND;if(!SND)waStopTitleTheme();try{localStorage.setItem('wordarrow-snd',SND?'1':'0')}catch(e){}lab();if(SND)SFX.good()};
+  b.onclick=function(){SND=!SND;if(!SND)waStopTitleTheme();try{localStorage.setItem('wordarrow-snd',SND?'1':'0')}catch(e){}lab();if(SND){SFX.good();if(document.querySelector('.battle')&&waStageMusicChoice(S.stage)==='title')waPlayTitleTheme()}};
 }
 
 /* ---------- shapes ---------- */
@@ -2236,6 +2245,7 @@ function cardHTML(c,o){
 /* ---------- screens ---------- */
 function bestLine(m){var r=RK[m][0];return r?'<span class="best">ベスト <b>'+esc(r.name)+'</b>　'+r.score+' pt</span>':'<span class="best">まだ記録がありません</span>'}
 function showTitle(){
+  waStopTitleTheme();
   var m=S.mode,savedPlan=lsj('wordarrow-plan-'+m,null),saved=planOK(savedPlan)?progGet(m):0;
   app.innerHTML=
   '<section class="title">'+
@@ -2258,6 +2268,7 @@ function showTitle(){
    '</ol>'+
    '<div class="row" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button type="button" class="snd" id="snd"></button>'+bestLine(m)+'</div>'+
    '<div class="actions">'+
+    '<button type="button" class="btn" id="wa-shared-ranking" style="background:#eaf3ff;border:2px solid #5375a8;color:#18375e;font-weight:900">🏆 みんなのランキングを見る</button>'+
     '<button type="button" class="btn" id="wa-ten-start">📝 10問チャレンジ</button>'+
     '<button type="button" class="btn primary" id="go0">'+MODE_NAME[m]+'をはじめから</button>'+
     (saved>0?'<button type="button" class="btn" id="goc">つづきから（STAGE '+(saved+1)+'）</button>':'')+
@@ -2268,7 +2279,7 @@ function showTitle(){
   '</section>';
   bindSnd();
   app.querySelectorAll('.modebtn').forEach(function(b){b.onclick=function(){S.mode=b.dataset.m;lsw('wordarrow-mode',S.mode);showTitle()}});
-  function start(si){window.dispatchEvent(new Event('wa:companion-new-run'));S.tot={ok:0,ng:0};S.miss={};S.score=0;S.used={};S.usedCard={};if(si===0)waSetEnergy(0);showStudy(si)}
+  function start(si){WA_STAGE_MUSIC_KEY='';waStopTitleTheme();window.dispatchEvent(new Event('wa:companion-new-run'));S.tot={ok:0,ng:0};S.miss={};S.score=0;S.used={};S.usedCard={};if(si===0)waSetEnergy(0);showStudy(si)}
   $('#wa-ten-start').onclick=function(){if(window.WATenChallenge)window.WATenChallenge.open(S.mode);else alert('10問チャレンジを読み込めませんでした。')};
   $('#go0').onclick=function(){
     var plan=makePlan(m);lsw('wordarrow-plan-'+m,plan);progSet(m,0);applyPlan(m,plan);start(0);
@@ -2276,10 +2287,12 @@ function showTitle(){
   if(saved>0) $('#goc').onclick=function(){applyPlan(m,savedPlan);start(saved)};
   $('#nb').onclick=function(){showNotebook(S.mode)};
   $('#rk').onclick=showRanking;
+  $('#wa-shared-ranking').onclick=showRanking;
   var whRank=$('#wh-rank');if(whRank)whRank.onclick=showRanking;
 }
 
 function showStudy(i){
+  waStopTitleTheme();
   S.stage=i; var st=stages()[i]; window.scrollTo(0,0);
   app.innerHTML=
   '<section>'+
@@ -2320,13 +2333,22 @@ function rkHTML(m,hi){
   }).join('')+'</ol>';
 }
 function showRanking(){
+  waStopTitleTheme();
   window.scrollTo(0,0);
   app.innerHTML=
-  '<section><div class="head"><p class="eyebrow">ランキング</p><h2>ベスト5</h2></div>'+
+  '<section><div class="head"><p class="eyebrow">ランキング</p><h2>みんなのランキング</h2></div>'+
   '<div id="wa-world-online-ranking"><p>🌍 世界史・みんなのランキングを読み込み中…</p></div>'+
-  '<p class="sec">英検4級</p>'+rkHTML('e',-1)+'<p class="sec">漢検4級</p>'+rkHTML('k',-1)+
+  '<button type="button" class="btn" id="wa-open-online-ranking">🏆 オンラインランキングを開く</button>'+
+  '<p class="sec">この端末の記録：英検4級</p>'+rkHTML('e',-1)+'<p class="sec">この端末の記録：漢検4級</p>'+rkHTML('k',-1)+
   '<div class="actions" style="max-width:520px"><button type="button" class="btn ghost" id="back">もどる</button></div></section>';
   $('#back').onclick=showTitle;
+  $('#wa-open-online-ranking').onclick=function(){
+    var panel=document.getElementById('wa-online');
+    if(panel){panel.hidden=false;panel.scrollTop=0;
+      var refresh=Array.from(panel.querySelectorAll('button')).find(function(b){return /ランキング更新/.test(b.textContent||'')});
+      if(refresh){refresh.scrollIntoView({block:'center'});refresh.click();}
+    }else{this.textContent='オンラインランキングが見つかりません';}
+  };
   if(window.WAWorldOnline)window.WAWorldOnline.render('wa-world-online-ranking');
 }
 
@@ -2493,6 +2515,11 @@ function clearChainCount(){
 /* ---------- battle ---------- */
 function startBattle(){
   var st=stages()[S.stage],mon=MONS[S.stage]; window.scrollTo(0,0);
+  // iOS Safari: start the MP3 directly in the user's Battle Start click handler.
+  // A delayed cascade is not a reliable user gesture for HTMLMediaElement.play().
+  var waSelectedMusic=waStageMusicChoice(S.stage);
+  if(waSelectedMusic==='title' && SND)waPlayTitleTheme();
+  else waStopTitleTheme();
   S.feverCharge=0;S.feverMoves=0;S.dryMoves=0;S.relayChain=0;
   S.enemyCountdown=S.stage===0?0:(S.stage<4?4:S.stage<7?3:2); S.enemyTarget=Math.floor(Math.random()*5); S.enemyColorCount=0; S.enemyGuarded=false;
   S.maxHp=550+S.stage*75;S.hp=S.maxHp;S.allyPointMultiplier=1;S.allyPointHero=5;S.moves=0;S.streak=0;S.locked=true;S.sel=null;S.drag=null;S.lastKey=null;S.stat={};S.charge=[];
