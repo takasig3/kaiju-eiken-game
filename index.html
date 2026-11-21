@@ -624,6 +624,50 @@ body.wa-on-title{padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))}
   .battle .slot {margin-top:3px!important;}
 }
 </style>
+
+<style id="wa-hp-readable-20261121">
+/* Portrait HP: keep the vertical fill but show the numbers horizontally. */
+@media(max-width:699px) and (orientation:portrait){
+ .battle .arena.stage-scenery{grid-template-columns:57px minmax(0,1fr) 43px!important}
+ .battle .arena .hp{
+   overflow:visible!important;
+   margin-top:12px!important;
+   border-radius:14px!important;
+ }
+ .battle .arena .hp i{border-radius:11px!important}
+ .battle .arena .hp b{
+   writing-mode:horizontal-tb!important;
+   transform:none!important;
+   position:absolute!important;
+   inset:auto!important;
+   top:-26px!important;
+   left:50%!important;
+   width:max-content!important;
+   min-width:54px!important;
+   height:23px!important;
+   padding:2px 5px!important;
+   box-sizing:border-box!important;
+   border-radius:7px!important;
+   background:#fff!important;
+   color:#a72416!important;
+   font-size:11px!important;
+   font-weight:900!important;
+   line-height:1!important;
+   text-shadow:none!important;
+   border:1px solid #d8a49c!important;
+   transform:translateX(-50%)!important;
+   display:flex!important;
+   align-items:center!important;
+   justify-content:center!important;
+   z-index:4!important;
+ }
+ .battle .arena .hp::after{
+   content:"HP";position:absolute;left:50%;bottom:7px;
+   transform:translateX(-50%);font-size:11px;font-weight:900;
+   color:white;text-shadow:0 1px 3px #52170e;pointer-events:none;
+ }
+}
+</style>
 </head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
