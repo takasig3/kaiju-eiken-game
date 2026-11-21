@@ -2009,7 +2009,7 @@ var SFX={
     try{
       var stage=(typeof S!=='undefined'&&Number.isFinite(S.stage))?Math.max(0,Math.min(9,S.stage)):0;
       var n=Math.max(1,Math.floor(chain));
-      if(stage===0){waMarioMidiChain(n,stage);return;}
+      waMarioMidiChain(n,stage);return; // All stages use the same embedded Mario MIDI
       WA_MARIO_LAST_STAGE=stage;
       var hz=function(m){return 440*Math.pow(2,(m-69)/12)};
       // The supplied two-page score's opening melody, transcribed into MIDI notes.
