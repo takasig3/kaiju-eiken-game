@@ -3262,10 +3262,10 @@ async function waJuniorPrank(){
   if(free.length<14)return;
   waJuniorPrankCooldown=3+Math.floor(Math.random()*3);
   var flyer=document.createElement('div');flyer.className='wa-prank-flyer';
-  var portrait=document.createElement('img');portrait.src='assets/new-companion.webp';portrait.alt='';
-  var text=document.createElement('b');text.textContent='へへっ！おじゃま！';
+  var portrait=document.createElement('img');portrait.src='assets/wa-prank-bat.webp';portrait.alt='';
+  var text=document.createElement('b');text.textContent='イタズラ・バットJr.参上！';
   flyer.append(portrait,text);battle.appendChild(flyer);
-  await sleep(680);
+  await sleep(1450);
   if(!battle.isConnected){flyer.remove();return;}
   var picks=shuffle(free).slice(0,Math.min(2,5-jamaCount()));
   var old=picks.map(function(p){return S.b[p[0]][p[1]]});
@@ -3276,7 +3276,7 @@ async function waJuniorPrank(){
     if(picks.length>1){S.b[picks[0][0]][picks[0][1]]={t:-1,f:0};
       if(!hasMoves())S.b[picks[0][0]][picks[0][1]]=old[0];}
   }
-  render();flash('🌀 ジュニアライダーがじゃまブロックを置いた！');
+  render();flash('🌀 イタズラ・バットJr.がじゃまブロックを置いた！');
   await sleep(1100);flyer.remove();
 }
 async function finishPuzzleTurn(res){
