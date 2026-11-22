@@ -3594,7 +3594,7 @@ function showFinal(cleared){
   bindSay(app);
   if(m==='wh' && window.WAWorldOnline)window.WAWorldOnline.render('wa-world-ranking-result');
   if(m!=='wh' && window.WAOnline && window.WAOnline.submitNormalScore){
-    window.WAOnline.submitNormalScore({subject:({e:'eiken4',k:'kanken4',e5:'eiken5',k5:'kanken5'})[m],score:S.score,stages:cleared,correct:S.tot.ok,total:tot}).catch(function(e){console.warn('Online score sync failed:',e)});
+    window.WAOnline.submitNormalScore({subject:({e:'eiken4',k:'kanken4',e5:'eiken5',k5:'kanken5',ep1:'eikenpre1'})[m],score:S.score,stages:cleared,correct:S.tot.ok,total:tot}).catch(function(e){console.warn('Online score sync failed:',e)});
   }
   var sv=$('#save');
   if(sv) sv.onclick=function(){
@@ -3663,8 +3663,8 @@ document.addEventListener('click',function(e){if(e.target && e.target.id==='kanj
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="./supabase-config.js"></script>
-<script src="./online.js?v=20261119-allrank1"></script>
-<script src="./world-online.js?v=20261119-allrank1"></script>
+<script src="./online.js?v=20261122-pre1rank2"></script>
+<script src="./world-online.js?v=20261122-pre1rank2"></script>
 <script src="./wa-rank-patch.js"></script>
 <script src="./wa-companion-restored.js?v=20261119-namefix"></script>
 <script src="./wa-ten-challenge.js?v=20261119c"></script>
