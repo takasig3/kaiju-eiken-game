@@ -2713,12 +2713,17 @@ function startBattle(){
   setHp();
   newBoard();render();updateInfo();
   battle.addEventListener('click',function(e){if(e.target.closest('#finish-btn')){e.preventDefault();finishEarly();}});
-  board.addEventListener('pointerdown',onDown);
-  board.addEventListener('pointermove',onMove);
+  board.addEventListener('pointerdown',onDown,{passive:false});
+  // Listen at document level: iOS Safari may retarget pointermove after renderSel()
+  // replaces the touched cell DOM node.
+  if(!window.__waDragDelegate){window.__waDragDelegate=function(e){onMove(e)};document.addEventListener('pointermove',window.__waDragDelegate,{passive:false});}
+  if(!window.__waDragCancel){window.__waDragCancel=function(){if(S)S.drag=null};document.addEventListener('pointercancel',window.__waDragCancel);}
   S.locked=false;
 }
 function onDown(e){
   var el=e.target.closest('.cell'); if(!el||S.locked) return;
+  if(e.cancelable)e.preventDefault();
+  try{board.setPointerCapture(e.pointerId)}catch(_e){}
   var r=+el.dataset.r,c=+el.dataset.c;
   if(S.b[r][c].item&&!S.sel){S.sel={r:r,c:c};S.drag={x:e.clientX,y:e.clientY,r:r,c:c};renderSel();return}
   if(S.sel){
@@ -2728,12 +2733,14 @@ function onDown(e){
   S.sel={r:r,c:c};S.drag={x:e.clientX,y:e.clientY,r:r,c:c};renderSel();
 }
 function onMove(e){
-  if(!S.drag||S.locked) return;
+  if(!S.drag||S.locked||!board||!board.isConnected) return;
+  if(e.cancelable)e.preventDefault();
   var dx=e.clientX-S.drag.x,dy=e.clientY-S.drag.y;
   if(Math.max(Math.abs(dx),Math.abs(dy))<18) return;
   var r=S.drag.r,c=S.drag.c,r2=r,c2=c;
   if(Math.abs(dx)>Math.abs(dy)) c2+=dx>0?1:-1; else r2+=dy>0?1:-1;
   S.drag=null;S.sel=null;
+  try{if(board.hasPointerCapture(e.pointerId))board.releasePointerCapture(e.pointerId)}catch(_e){}
   if(r2>=0&&r2<N&&c2>=0&&c2<N) swapTry(r,c,r2,c2); else renderSel();
 }
 window.addEventListener('pointerup',function(){S.drag=null});
