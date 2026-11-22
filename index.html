@@ -813,7 +813,7 @@ body.wa-on-title{padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))}
  #app .battle>.slot {width:min(100%,53dvh,490px)!important;}
 }
 </style>
-<style id='wa-ios-touch-fix'>.battle .board,.battle .board .cell,.battle .board .cell *{touch-action:none!important;-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;}</style></head><body>
+<style id='wa-ios-touch-fix'>.battle .board,.battle .board .cell,.battle .board .cell *{touch-action:none!important;-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;}</style><style id='wa-board-pointer-fix'>#board,#board .cell,#board .cell *{touch-action:none!important;-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}</style></head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2694,7 +2694,7 @@ function clearChainCount(){
 function startBattle(){
   var st=stages()[S.stage],mon=MONS[S.stage]; window.scrollTo(0,0);
   // Choose the stage music, but never autoplay the title track at battle start.
-  waStageMusicChoice(S.stage);
+  try{waStageMusicChoice(S.stage)}catch(err){console.warn('WA music setup skipped',err)}
   
   S.feverCharge=0;S.feverMoves=0;S.dryMoves=0;S.relayChain=0;
   S.enemyCountdown=S.stage===0?0:(S.stage<4?4:S.stage<7?3:2); S.enemyTarget=Math.floor(Math.random()*5); S.enemyColorCount=0; S.enemyGuarded=false;
@@ -2711,82 +2711,80 @@ function startBattle(){
   '</section>';
   board=$('#board');slot=$('#slot');battle=$('#battle');bindSnd();waDrawEnergy();
   setHp();
-  newBoard();render();updateInfo();
-  battle.addEventListener('click',function(e){if(e.target.closest('#finish-btn')){e.preventDefault();finishEarly();}});
-  board.addEventListener('pointerdown',function(e){
-    if(e.pointerType==='touch')return; // iPad uses the dedicated touch path below.
-    onDown(e);
-  },{passive:false});
-  board.addEventListener('touchstart',function(e){
-    if(!e.touches.length||S.locked)return;
-    var touch=e.changedTouches[0];
-    var el=e.target.closest('.cell');
-    if(!el)return;
-    e.preventDefault();
-    var r=Number(el.dataset.r),c=Number(el.dataset.c);
-    // Store start coordinates even if the cell is re-rendered.
-    S.waTouch={r:r,c:c,x:touch.clientX,y:touch.clientY,id:touch.identifier,moved:false};
-  },{passive:false});
-  board.addEventListener('touchmove',function(e){
-    if(!S.waTouch||S.locked)return;
-    e.preventDefault(); // prevent Safari from interpreting swipe as page scroll
-    var t=Array.from(e.changedTouches).find(function(x){return x.identifier===S.waTouch.id});
-    if(t&&Math.hypot(t.clientX-S.waTouch.x,t.clientY-S.waTouch.y)>12)S.waTouch.moved=true;
-  },{passive:false});
-  board.addEventListener('touchend',function(e){
-    if(!S.waTouch||S.locked)return;
-    e.preventDefault();
-    var p=S.waTouch;S.waTouch=null;
-    var t=Array.from(e.changedTouches).find(function(x){return x.identifier===p.id});
-    if(!t)return;
-    var dx=t.clientX-p.x,dy=t.clientY-p.y;
-    if(Math.max(Math.abs(dx),Math.abs(dy))>=18){
-      var rr=p.r+(Math.abs(dy)>Math.abs(dx)?(dy>0?1:-1):0);
-      var cc=p.c+(Math.abs(dx)>=Math.abs(dy)?(dx>0?1:-1):0);
-      S.sel=null;S.drag=null;
-      if(rr>=0&&rr<N&&cc>=0&&cc<N)swapTry(p.r,p.c,rr,cc);
-      else renderSel();
-      return;
-    }
-    // Two-tap mode: first selects a cell, second swaps with adjacent cell.
-    if(S.sel&&S.sel.r===p.r&&S.sel.c===p.c){S.sel=null;renderSel();return;}
-    if(S.sel&&Math.abs(S.sel.r-p.r)+Math.abs(S.sel.c-p.c)===1){
-      var a=S.sel;S.sel=null;swapTry(a.r,a.c,p.r,p.c);return;
-    }
-    S.sel={r:p.r,c:p.c};renderSel();
-  },{passive:false});
-  board.addEventListener('touchcancel',function(){S.waTouch=null;},{passive:true});
-  // Listen at document level: iOS Safari may retarget pointermove after renderSel()
-  // replaces the touched cell DOM node.
-  if(!window.__waDragDelegate){window.__waDragDelegate=function(e){onMove(e)};document.addEventListener('pointermove',window.__waDragDelegate,{passive:false});}
-  if(!window.__waDragCancel){window.__waDragCancel=function(){if(S)S.drag=null};document.addEventListener('pointercancel',window.__waDragCancel);}
+  newBoard();render();
+  // Bind interactions before optional UI/status code: a failure there must not disable the board.
   S.locked=false;
-}
-function onDown(e){
-  var el=e.target.closest('.cell'); if(!el||S.locked) return;
-  if(e.cancelable)e.preventDefault();
-  // Pointer events for mouse/pen; touch gestures use touchend.
-  var r=+el.dataset.r,c=+el.dataset.c;
-  if(S.b[r][c].item&&!S.sel){S.sel={r:r,c:c};S.drag={x:e.clientX,y:e.clientY,r:r,c:c};renderSel();return}
-  if(S.sel){
-    if(S.sel.r===r&&S.sel.c===c){S.sel=null;S.drag=null;renderSel();return}
-    if(Math.abs(S.sel.r-r)+Math.abs(S.sel.c-c)===1){var a=S.sel;S.sel=null;S.drag=null;swapTry(a.r,a.c,r,c);return}
+  try{updateInfo()}catch(err){console.error('WA status update failed',err)}
+  battle.addEventListener('click',function(e){if(e.target.closest('#finish-btn')){e.preventDefault();finishEarly();}});
+  // One unified pointer controller. Pointerdown selects; pointerup commits a swipe.
+  // Never register both touch and synthesized click for the same gesture.
+  if(window.__waInputCleanup)window.__waInputCleanup();
+  var press=null, suppressClickUntil=0;
+  function inputStatus(message){
+    console.warn('[WA input]',message);
+    var target=document.getElementById('wa-input-status');
+    if(!target){target=document.createElement('div');target.id='wa-input-status';target.style.cssText='position:fixed;left:8px;bottom:8px;z-index:99999;padding:6px 9px;background:#192b43;color:white;border-radius:8px;font:12px sans-serif;max-width:70vw;pointer-events:none';document.body.appendChild(target);}
+    target.textContent=message;
+    clearTimeout(window.__waInputStatusTimer);
+    window.__waInputStatusTimer=setTimeout(function(){target.remove()},4500);
   }
-  S.sel={r:r,c:c};S.drag={x:e.clientX,y:e.clientY,r:r,c:c};renderSel();
+  function attemptSwap(a,b){
+    if(!S||!S.b||!S.b[a.r]||!S.b[b.r])return;
+    if(S.locked){inputStatus('交換不可：処理中です');return;}
+    S.sel=null;renderSel();
+    try{
+      Promise.resolve(swapTry(a.r,a.c,b.r,b.c)).catch(function(err){
+        console.error('WA swap rejected',err);S.locked=false;
+        inputStatus('交換エラー：'+String(err&&err.message||err).slice(0,110));
+      });
+    }catch(err){console.error('WA swap threw',err);S.locked=false;inputStatus('交換エラー：'+String(err&&err.message||err).slice(0,110));}
+  }
+  function choose(r,c){
+    if(!S||!S.b||!S.b[r]||!S.b[r][c])return;
+    if(S.locked){inputStatus('操作待機中（locked）');return;}
+    var previous=S.sel;
+    if(previous&&previous.r===r&&previous.c===c){S.sel=null;renderSel();return;}
+    if(previous&&Math.abs(previous.r-r)+Math.abs(previous.c-c)===1){attemptSwap(previous,{r:r,c:c});return;}
+    S.sel={r:r,c:c};renderSel();
+  }
+  function down(e){
+    var cell=e.target.closest&&e.target.closest('.cell');
+    if(!cell||!board.contains(cell))return;
+    if(e.cancelable)e.preventDefault();
+    press={id:e.pointerId,r:+cell.dataset.r,c:+cell.dataset.c,x:e.clientX,y:e.clientY};
+    suppressClickUntil=Date.now()+900;
+    // Selection happens on release so a swipe cannot also trigger a tap.
+  }
+  function up(e){
+    if(!press||press.id!==e.pointerId)return;
+    var p=press;press=null;
+    if(e.cancelable)e.preventDefault();
+    var dx=e.clientX-p.x,dy=e.clientY-p.y;
+    if(Math.max(Math.abs(dx),Math.abs(dy))>=16){
+      var r=p.r+(Math.abs(dy)>Math.abs(dx)?Math.sign(dy):0);
+      var c=p.c+(Math.abs(dx)>=Math.abs(dy)?Math.sign(dx):0);
+      if(r>=0&&r<N&&c>=0&&c<N)attemptSwap({r:p.r,c:p.c},{r:r,c:c});
+      else{S.sel=null;renderSel();}
+    }else choose(p.r,p.c);
+  }
+  function fallbackClick(e){
+    if(Date.now()<suppressClickUntil)return;
+    var cell=e.target.closest&&e.target.closest('.cell');
+    if(cell&&board.contains(cell))choose(+cell.dataset.r,+cell.dataset.c);
+  }
+  board.addEventListener('pointerdown',down,{passive:false});
+  document.addEventListener('pointerup',up,{passive:false});
+  document.addEventListener('pointercancel',function(){press=null;});
+  board.addEventListener('click',fallbackClick);
+  window.__waInputCleanup=function(){
+    board.removeEventListener('pointerdown',down);
+    document.removeEventListener('pointerup',up);
+    board.removeEventListener('click',fallbackClick);
+    press=null;
+  };
+  S.locked=false;
+  setTimeout(function(){if(S&&S.locked&&S.moves===0){console.warn('WA board locked unexpectedly at start');}},2500);
 }
-function onMove(e){
-  if(!S.drag||S.locked||!board||!board.isConnected) return;
-  if(e.cancelable)e.preventDefault();
-  var dx=e.clientX-S.drag.x,dy=e.clientY-S.drag.y;
-  if(Math.max(Math.abs(dx),Math.abs(dy))<18) return;
-  var r=S.drag.r,c=S.drag.c,r2=r,c2=c;
-  if(Math.abs(dx)>Math.abs(dy)) c2+=dx>0?1:-1; else r2+=dy>0?1:-1;
-  S.drag=null;S.sel=null;
-  try{if(board.hasPointerCapture(e.pointerId))board.releasePointerCapture(e.pointerId)}catch(_e){}
-  if(r2>=0&&r2<N&&c2>=0&&c2<N) swapTry(r,c,r2,c2); else renderSel();
-}
-window.addEventListener('pointerup',function(){S.drag=null});
-
 function monsterPose(pose){
  var m=$('#mon'),img=m&&m.querySelector('.monster-portrait');if(!img)return;
  /* 1体につきGIFは1つ。HP半減と撃破はCSSで演出 */
