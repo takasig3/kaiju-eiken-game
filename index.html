@@ -813,7 +813,7 @@ body.wa-on-title{padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))}
  #app .battle>.slot {width:min(100%,53dvh,490px)!important;}
 }
 </style>
-</head><body>
+<style id='wa-ios-touch-fix'>.battle .board,.battle .board .cell,.battle .board .cell *{touch-action:none!important;-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;}</style></head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2713,7 +2713,49 @@ function startBattle(){
   setHp();
   newBoard();render();updateInfo();
   battle.addEventListener('click',function(e){if(e.target.closest('#finish-btn')){e.preventDefault();finishEarly();}});
-  board.addEventListener('pointerdown',onDown,{passive:false});
+  board.addEventListener('pointerdown',function(e){
+    if(e.pointerType==='touch')return; // iPad uses the dedicated touch path below.
+    onDown(e);
+  },{passive:false});
+  board.addEventListener('touchstart',function(e){
+    if(!e.touches.length||S.locked)return;
+    var touch=e.changedTouches[0];
+    var el=e.target.closest('.cell');
+    if(!el)return;
+    e.preventDefault();
+    var r=Number(el.dataset.r),c=Number(el.dataset.c);
+    // Store start coordinates even if the cell is re-rendered.
+    S.waTouch={r:r,c:c,x:touch.clientX,y:touch.clientY,id:touch.identifier,moved:false};
+  },{passive:false});
+  board.addEventListener('touchmove',function(e){
+    if(!S.waTouch||S.locked)return;
+    e.preventDefault(); // prevent Safari from interpreting swipe as page scroll
+    var t=Array.from(e.changedTouches).find(function(x){return x.identifier===S.waTouch.id});
+    if(t&&Math.hypot(t.clientX-S.waTouch.x,t.clientY-S.waTouch.y)>12)S.waTouch.moved=true;
+  },{passive:false});
+  board.addEventListener('touchend',function(e){
+    if(!S.waTouch||S.locked)return;
+    e.preventDefault();
+    var p=S.waTouch;S.waTouch=null;
+    var t=Array.from(e.changedTouches).find(function(x){return x.identifier===p.id});
+    if(!t)return;
+    var dx=t.clientX-p.x,dy=t.clientY-p.y;
+    if(Math.max(Math.abs(dx),Math.abs(dy))>=18){
+      var rr=p.r+(Math.abs(dy)>Math.abs(dx)?(dy>0?1:-1):0);
+      var cc=p.c+(Math.abs(dx)>=Math.abs(dy)?(dx>0?1:-1):0);
+      S.sel=null;S.drag=null;
+      if(rr>=0&&rr<N&&cc>=0&&cc<N)swapTry(p.r,p.c,rr,cc);
+      else renderSel();
+      return;
+    }
+    // Two-tap mode: first selects a cell, second swaps with adjacent cell.
+    if(S.sel&&S.sel.r===p.r&&S.sel.c===p.c){S.sel=null;renderSel();return;}
+    if(S.sel&&Math.abs(S.sel.r-p.r)+Math.abs(S.sel.c-p.c)===1){
+      var a=S.sel;S.sel=null;swapTry(a.r,a.c,p.r,p.c);return;
+    }
+    S.sel={r:p.r,c:p.c};renderSel();
+  },{passive:false});
+  board.addEventListener('touchcancel',function(){S.waTouch=null;},{passive:true});
   // Listen at document level: iOS Safari may retarget pointermove after renderSel()
   // replaces the touched cell DOM node.
   if(!window.__waDragDelegate){window.__waDragDelegate=function(e){onMove(e)};document.addEventListener('pointermove',window.__waDragDelegate,{passive:false});}
@@ -2723,7 +2765,7 @@ function startBattle(){
 function onDown(e){
   var el=e.target.closest('.cell'); if(!el||S.locked) return;
   if(e.cancelable)e.preventDefault();
-  try{board.setPointerCapture(e.pointerId)}catch(_e){}
+  // Pointer events for mouse/pen; touch gestures use touchend.
   var r=+el.dataset.r,c=+el.dataset.c;
   if(S.b[r][c].item&&!S.sel){S.sel={r:r,c:c};S.drag={x:e.clientX,y:e.clientY,r:r,c:c};renderSel();return}
   if(S.sel){
