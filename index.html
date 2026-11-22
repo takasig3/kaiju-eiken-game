@@ -2948,7 +2948,6 @@ function learningTileChallenge(){
 
 async function swapTry(r1,c1,r2,c2){
   if(S.locked) return;
-  WA_TITLE_USER_MOVE=true;
   var A=S.b[r1][c1],B=S.b[r2][c2];
   if(A.t<0||B.t<0){flash('じゃまブロックは動かせません');S.sel=null;renderSel();return}
   if(A.item||B.item){S.sel=null;S.drag=null;await activateItemSwap(r1,c1,r2,c2);return;}
@@ -3424,7 +3423,6 @@ async function resolve(){
 // All special tiles trigger by swapping with an adjacent ordinary color tile.
 async function activateItemSwap(r1,c1,r2,c2){
  if(S.locked)return;
- WA_TITLE_USER_MOVE=true;
  var a=S.b[r1][c1],b=S.b[r2][c2];
  if(!a||!b||a.t<0||b.t<0)return;
  var specials=[];
