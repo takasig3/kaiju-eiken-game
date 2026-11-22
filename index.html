@@ -1657,9 +1657,10 @@ function writeUI(q,host,o){
 function allCards(kind){return Object.keys(BYID).map(function(id){return BYID[id]}).filter(function(x){return x.kind===kind})}
 function edistract(c,field){
   var seen={};seen[c[field]]=1;var out=[];
-  shuffle(allCards(c.mode).filter(function(x){return x!==c&&x.pos===c.pos&&x.mode===c.mode})).forEach(function(x){
+  shuffle(allCards(c.kind).filter(function(x){return x!==c&&x.pos===c.pos&&x.mode===c.mode})).forEach(function(x){
     if(out.length<3&&!seen[x[field]]){seen[x[field]]=1;out.push(x)}
   });
+  if(out.length<3){shuffle(allCards(c.kind).filter(function(x){return x!==c&&x.mode===c.mode&&x[field]!==c[field]&&out.indexOf(x)<0})).forEach(function(x){if(out.length<3&&!seen[x[field]]){seen[x[field]]=1;out.push(x)}});}
   return out;
 }
 function misspell(w){
@@ -3020,6 +3021,23 @@ function waMiniDraw(deckName,pool){
  if(deckName!=='be'){waMiniRecent.push(index);if(waMiniRecent.length>8)waMiniRecent.shift();}
  return pool[index];
 }
+/* Eiken Pre-1: dedicated four-choice context/meaning mini-game. */
+var WA_EP1_MINI_LAST=[];
+function waPre1MiniGame(){
+ var pool=allCards('e').filter(function(c){return c.mode==='ep1'});
+ if(pool.length<4)return Promise.resolve();
+ var fresh=pool.filter(function(c){return WA_EP1_MINI_LAST.indexOf(c.id)<0});
+ if(!fresh.length)fresh=pool;
+ var c=fresh[Math.floor(Math.random()*fresh.length)];
+ WA_EP1_MINI_LAST.push(c.id);if(WA_EP1_MINI_LAST.length>12)WA_EP1_MINI_LAST.shift();
+ var q=makeQ(c,Math.random()<.65?'A':'B');
+ if(!q||!q.opts||q.opts.length<4)return Promise.resolve();
+ board.hidden=true;$('#pv').hidden=true;
+ var host=document.createElement('section');host.className='wa-pre1-mini';slot.appendChild(host);
+ return quizUI(q,host,{head:'英検準1級・語彙チャレンジ',next:'バトルにもどる'}).then(function(ok){
+   if(ok){S.score+=250;updateInfo();flash('+250 Point!');}
+ }).finally(function(){host.remove();board.hidden=false;$('#pv').hidden=false;render();updateInfo()});
+}
 function waBattleEnglishMini(){
  var grade4=S.mode==='e',turn=waBattleMiniIndex++;
  // Roughly 1 in 3 mini-games practices be-verbs; other turns rotate five activities.
@@ -3153,6 +3171,9 @@ async function finishPuzzleTurn(res){
     if(!hasMoves()){reshuffle();render();flash('シャッフル');}
     S.locked=false;updateInfo();
     return;
+  }
+  if(S.mode==='ep1'){
+    if(Math.random()<(res.chain>=2?0.9:0.55))await waPre1MiniGame();
   }
   if(S.mode==='e'||S.mode==='e5'){
     // Every third completed move offers a word-spelling rearrangement challenge.
