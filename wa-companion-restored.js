@@ -1,7 +1,7 @@
 /* Companion restored as an independent feature; no guild required. */
 (function(){'use strict';
 const key='wa-companion-standalone-v1';
-const names=['ライボルトン','アクアフィン','アースゴーレム','モンスター4','モンスター5','モンスター6','モンスター7','モンスター8','モンスター9','モンスター10','5連鎖のお助けキャラ','10連鎖のお助けキャラ','イタズラ・バットJr.'];
+const names=['ライボルトン','アクアフィン','フレアキトン','アースゴーレム','アイスフェン','ルナミスト','ウィンドルー','ナイトヴェイル','ダークロード','ミコフェリス','ミラクル','ライジン','トリックスJr.'];
 const unlock=[0,0,0,40000,80000,120000,160000,200000,250000,300000,400000,500000,700000];
 const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(key+':'+k))??d}catch(e){return d}};
 const set=(k,v)=>{try{localStorage.setItem(key+':'+k,JSON.stringify(v))}catch(e){}};
@@ -30,7 +30,8 @@ const root=document.createElement('div');root.id='wa-companion';root.innerHTML='
 const modal=document.createElement('div');modal.id='wa-comp-modal';modal.hidden=true;document.body.append(modal);
 const path=i=>i===10?'special-ally.webp':i===11?'special-ally-10.webp':i===12?'assets/wa-prank-bat.webp':'assets/monster-'+String(i+1).padStart(2,'0')+'.webp';
 function refresh(){selected=Math.min(12,Math.max(0,selected));if(points<unlock[selected])selected=0;root.querySelector('img').src=path(selected);root.querySelector('img').alt=names[selected];}
-function open(){modal.hidden=false;modal.innerHTML='<div class="dialog" role="dialog" aria-modal="true"><h2>🐾 マイ相棒</h2><p>相棒を選ぼう！ 最初の3体は自由に選べます。</p><p>累計ポイント：'+Math.floor(points).toLocaleString()+' pt</p><div class="picker">'+names.map((n,i)=>'<button data-i="'+i+'" '+(points<unlock[i]?'disabled':'')+' class="'+(selected===i?'active':'')+'"><img src="'+path(i)+'" alt="'+n+'" onerror="this.style.display=\'none\'"><small>'+(points<unlock[i]?'🔒 '+unlock[i].toLocaleString()+'pt':n)+'</small></button>').join('')+'</div><button id="wa-comp-close">閉じる</button></div>';modal.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{selected=Number(b.dataset.i);set('selected',selected);refresh();open()});modal.querySelector('#wa-comp-close').onclick=()=>modal.hidden=true;}
+function open(){modal.hidden=false;modal.innerHTML='<div class="dialog" role="dialog" aria-modal="true"><h2>🐾 マイ相棒</h2><p>相棒を選ぼう！ 最初の3体は自由に選べます。</p><p>累計ポイント：'+Math.floor(points).toLocaleString()+' pt</p><div class="picker">'+names.map((n,i)=>{const locked=points<unlock[i];return '<button data-i="'+i+'" '+(locked?'disabled':'')+' class="'+(selected===i?'active':'')+'" aria-label="'+(locked?'未解放の相棒 '+unlock[i].toLocaleString()+'ptで解放':n)+'">'+(locked?'<span class="wa-secret" aria-hidden="true">？</span>':'<img src="'+path(i)+'" alt="'+n+'" onerror="this.style.display=\'none\'">')+'<small>'+(locked?'🔒 '+unlock[i].toLocaleString()+'pt':n)+'</small></button>'}).join('')+'</div><button id="wa-comp-close">閉じる</button></div>';modal.querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>{selected=Number(b.dataset.i);set('selected',selected);refresh();open()});modal.querySelector('#wa-comp-close').onclick=()=>modal.hidden=true;}
+
 let runScore=0;
 window.addEventListener('wa:companion-new-run',()=>{runScore=0});
 window.addEventListener('wa:companion-score',e=>{const n=Number(e.detail&&e.detail.score);if(!Number.isFinite(n)||n<0)return;if(n<runScore){runScore=n;return}const delta=n-runScore;runScore=n;if(delta>0){points+=delta;set('points',points);if(!modal.hidden)open()}});
