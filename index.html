@@ -2259,13 +2259,13 @@ function waScoreNote(a,when,n,d,kind,v){
   }
 }
 // Stage 1-7: bright theme; Stage 8-10: dramatic theme. Start only on a chain.
-var WA_USER_MUSIC=null, WA_USER_MUSIC_TRACKS={}, WA_USER_MUSIC_TIMER=null;
+var WA_USER_MUSIC=null, WA_USER_MUSIC_TRACKS={}, WA_USER_MUSIC_TIMER=null, WA_USER_MUSIC_FADE=null, WA_USER_MUSIC_CHAIN_START=0;
 function waMusicFile(){
   return (typeof S!=='undefined' && Number(S.stage)>=7)
     ? './throne_of_bone_and_iron.mp3' : './high_score_victory.mp3';
 }
 function waStopUserMusic(){
-  clearTimeout(WA_USER_MUSIC_TIMER);WA_USER_MUSIC_TIMER=null;
+  clearTimeout(WA_USER_MUSIC_TIMER);WA_USER_MUSIC_TIMER=null;clearInterval(WA_USER_MUSIC_FADE);WA_USER_MUSIC_FADE=null;WA_USER_MUSIC_CHAIN_START=0;
   Object.keys(WA_USER_MUSIC_TRACKS).forEach(function(key){
     var a=WA_USER_MUSIC_TRACKS[key];a.pause();try{a.currentTime=0;}catch(e){}
   });
@@ -2289,17 +2289,26 @@ function waScoreChain(choice){
   });
   clearTimeout(WA_USER_MUSIC_TIMER);
   if(current.paused){
+    clearInterval(WA_USER_MUSIC_FADE);WA_USER_MUSIC_FADE=null;
+    WA_USER_MUSIC_CHAIN_START=Date.now();current.volume=.09;
     try{current.currentTime=0;}catch(e){}
     var p=current.play();
     if(p&&p.catch)p.catch(function(err){console.warn('Stage music playback:',err);});
+    WA_USER_MUSIC_FADE=setInterval(function(){
+      if(current.paused){clearInterval(WA_USER_MUSIC_FADE);WA_USER_MUSIC_FADE=null;return;}
+      var progress=Math.min(1,(Date.now()-WA_USER_MUSIC_CHAIN_START)/2100);
+      current.volume=Math.min(.42,.09+(.42-.09)*progress);
+      if(progress>=1){clearInterval(WA_USER_MUSIC_FADE);WA_USER_MUSIC_FADE=null;}
+    },90);
   }
   // Stop shortly after the last chain sound; subsequent cascades extend this window.
   WA_USER_MUSIC_TIMER=setTimeout(function(){
+    clearInterval(WA_USER_MUSIC_FADE);WA_USER_MUSIC_FADE=null;
     if(current&&!current.paused){current.pause();try{current.currentTime=0;}catch(e){}}
     WA_USER_MUSIC_TIMER=null;
   },2600);
 }
-document.addEventListener('visibilitychange',function(){if(document.hidden){clearTimeout(WA_USER_MUSIC_TIMER);WA_USER_MUSIC_TIMER=null;WA_SCORE_STATE.cursor=0;Object.keys(WA_USER_MUSIC_TRACKS).forEach(function(k){WA_USER_MUSIC_TRACKS[k].pause();});}});
+document.addEventListener('visibilitychange',function(){if(document.hidden){clearInterval(WA_USER_MUSIC_FADE);WA_USER_MUSIC_FADE=null;clearTimeout(WA_USER_MUSIC_TIMER);WA_USER_MUSIC_TIMER=null;WA_SCORE_STATE.cursor=0;Object.keys(WA_USER_MUSIC_TRACKS).forEach(function(k){WA_USER_MUSIC_TRACKS[k].pause();});}});
 // Final-boss-only victory fanfare. Loaded ahead of time; never loops.
 var WA_FINAL_FANFARE=null;
 function waPrepareFinalFanfare(){
@@ -3846,10 +3855,22 @@ async function unified(){
  }catch(e){dest.textContent='ランキングを読み込めませんでした';console.warn(e)}
  busy=false;
 }
+function hideLegacyWorldRank(panel){
+ if(!panel)return;
+ panel.querySelectorAll('h1,h2,h3,h4').forEach(function(h){
+   if(!/世界史\s*TOP\s*30/i.test(h.textContent||''))return;
+   let node=h;while(node.parentElement&&node.parentElement!==panel&&node.parentElement.id!=='wa-lobby-ranking'){
+     if(node.tagName==='SECTION'||/rank|world/i.test(node.id||''))break;
+     node=node.parentElement;
+   }
+   if(node!==panel&&node.id!=='wa-lobby-ranking')node.style.display='none';
+ });
+}
 function setup(){
  const panel=document.getElementById('wa-online');
  if(panel){
   const title=panel.querySelector('#wa-lobby-ranking h2');if(title)title.textContent='🏆 総合ランキング TOP 10';
+  hideLegacyWorldRank(panel);
   const rank=panel.querySelector('#wa-lobby-ranking');
   if(rank&&!rank.dataset.waUnified){rank.dataset.waUnified='1';const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent='ランキング更新';b.onclick=unified;rank.append(b)}
   unified();
@@ -3863,7 +3884,8 @@ function setup(){
    let menu=document.getElementById('wa-comp-food-menu');
    if(menu){menu.remove();return}
    menu=document.createElement('div');menu.id='wa-comp-food-menu';menu.style.cssText='position:fixed;z-index:100005;right:12px;bottom:125px;max-width:min(90vw,320px);background:#192e4e;color:white;border:2px solid #f0bf62;border-radius:16px;padding:14px;box-shadow:0 8px 25px #0007;font:700 15px system-ui';
-   menu.innerHTML='<p style="margin:0 0 9px">🐾 相棒と何をする？</p><button type="button" id="wa-food-challenge" style="display:block;width:100%;padding:12px;margin-bottom:7px;border-radius:9px">🍚 ご飯をあげる（10問チャレンジ）</button><button type="button" id="wa-food-choose" style="display:block;width:100%;padding:12px;margin-bottom:7px;border-radius:9px">🐾 相棒を選ぶ</button><button type="button" id="wa-food-close" style="padding:8px">閉じる</button>';
+   menu.innerHTML='<div id="wa-food-avatar" style="display:flex;justify-content:center;align-items:center;height:112px;margin-bottom:5px"></div><p style="margin:0 0 9px;text-align:center;color:#fff">🐾 相棒と何をする？</p><button type="button" id="wa-food-challenge" style="display:block;width:100%;padding:12px;margin-bottom:7px;border-radius:9px;background:#fff;color:#172d4b;font-weight:800;opacity:1">🍚 ご飯をあげる（10問チャレンジ）</button><button type="button" id="wa-food-choose" style="display:block;width:100%;padding:12px;margin-bottom:7px;border-radius:9px;background:#fff;color:#172d4b;font-weight:800;opacity:1">🐾 相棒を選ぶ</button><button type="button" id="wa-food-close" style="padding:8px 16px;background:#fff;color:#172d4b;font-weight:800;opacity:1;border-radius:9px">閉じる</button>';
+   const avatar=comp.querySelector('img');if(avatar){const big=avatar.cloneNode(true);big.removeAttribute('id');big.style.cssText='width:108px;height:108px;max-width:100%;object-fit:contain;filter:drop-shadow(0 5px 9px #0007)';menu.querySelector('#wa-food-avatar').append(big)}
    document.body.append(menu);
    menu.querySelector('#wa-food-challenge').onclick=()=>{menu.remove();if(window.WATenChallenge?.open){const selected=document.querySelector('.modebtn[aria-pressed="true"]');window.WATenChallenge.open(selected?.dataset.m||'e')}else alert('10問チャレンジを読み込めませんでした')};
    menu.querySelector('#wa-food-choose').onclick=()=>{menu.remove();if(typeof old==='function')old.call(comp)};
@@ -3874,6 +3896,8 @@ function setup(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
 const obs=new MutationObserver(()=>{if(document.getElementById('wa-online')&&!document.querySelector('#wa-companion > button[data-wa-food-menu]'))setup()});
 obs.observe(document.documentElement,{childList:true,subtree:true});
+const rankObserver=new MutationObserver(()=>{const panel=document.getElementById('wa-online');if(panel)hideLegacyWorldRank(panel)});
+const onlinePanel=document.getElementById('wa-online');if(onlinePanel)rankObserver.observe(onlinePanel,{childList:true,subtree:true});
 window.addEventListener('focus',()=>{if(document.getElementById('wa-online')&&!document.getElementById('wa-online').hidden)unified()});
 })();
 </script>
