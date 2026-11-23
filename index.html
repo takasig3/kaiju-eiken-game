@@ -2300,6 +2300,24 @@ function waScoreChain(choice){
   },2600);
 }
 document.addEventListener('visibilitychange',function(){if(document.hidden){clearTimeout(WA_USER_MUSIC_TIMER);WA_USER_MUSIC_TIMER=null;WA_SCORE_STATE.cursor=0;Object.keys(WA_USER_MUSIC_TRACKS).forEach(function(k){WA_USER_MUSIC_TRACKS[k].pause();});}});
+// Final-boss-only victory fanfare. Loaded ahead of time; never loops.
+var WA_FINAL_FANFARE=null;
+function waPrepareFinalFanfare(){
+  if(!WA_FINAL_FANFARE){
+    WA_FINAL_FANFARE=new Audio('./word_arrow_victory_fanfare_original.mp3');
+    WA_FINAL_FANFARE.preload='auto'; WA_FINAL_FANFARE.loop=false; WA_FINAL_FANFARE.volume=.78;
+  }
+  return WA_FINAL_FANFARE;
+}
+function waPlayFinalFanfare(){
+  waStopUserMusic();
+  if(!SND)return;
+  try{
+    var a=waPrepareFinalFanfare();a.pause();a.currentTime=0;
+    var p=a.play();if(p&&p.catch)p.catch(function(e){console.warn('Final fanfare blocked',e)});
+  }catch(e){console.warn('Final fanfare unavailable',e)}
+}
+function waStopFinalFanfare(){if(WA_FINAL_FANFARE){WA_FINAL_FANFARE.pause();try{WA_FINAL_FANFARE.currentTime=0}catch(e){}}}
 var SFX={
   match:function(chain){
     // Score-driven 8-bit chain music: starts at chain 1, with low-volume voices.
@@ -2380,7 +2398,7 @@ function bindSnd(){
   lab();
   b.onclick=function(){
     SND=!SND;
-    if(!SND)waStopTitleTheme();
+    if(!SND){waStopTitleTheme();waStopUserMusic();waStopFinalFanfare();}
     try{localStorage.setItem('wordarrow-snd',SND?'1':'0')}catch(e){}
     lab();
     if(SND){
@@ -2523,7 +2541,7 @@ function showTitle(){
   '</section>';
   bindSnd();
   app.querySelectorAll('.modebtn').forEach(function(b){b.onclick=function(){S.mode=b.dataset.m;lsw('wordarrow-mode',S.mode);showTitle()}});
-  function start(si){WA_STAGE_MUSIC_KEY='';waStopTitleTheme();window.dispatchEvent(new Event('wa:companion-new-run'));S.tot={ok:0,ng:0};S.miss={};S.score=0;S.used={};S.usedCard={};if(si===0)waSetEnergy(0);showStudy(si)}
+  function start(si){waStopFinalFanfare();WA_STAGE_MUSIC_KEY='';waStopTitleTheme();window.dispatchEvent(new Event('wa:companion-new-run'));S.tot={ok:0,ng:0};S.miss={};S.score=0;S.used={};S.usedCard={};if(si===0)waSetEnergy(0);showStudy(si)}
   $('#wa-ten-start').onclick=function(){if(window.WATenChallenge)window.WATenChallenge.open(S.mode);else alert('10問チャレンジを読み込めませんでした。')};
   $('#go0').onclick=function(){
     var plan=makePlan(m);lsw('wordarrow-plan-'+m,plan);progSet(m,0);applyPlan(m,plan);start(0);
@@ -2761,7 +2779,7 @@ function startBattle(){
   var st=stages()[S.stage],mon=MONS[S.stage]; window.scrollTo(0,0);
   // Choose the stage music, but never autoplay the title track at battle start.
   try{waStageMusicChoice(S.stage)}catch(err){console.warn('WA music setup skipped',err)}
-  try{waPrepareUserMusic();}catch(err){console.warn('Music preload skipped',err)}
+  try{waPrepareUserMusic();waPrepareFinalFanfare();}catch(err){console.warn('Music preload skipped',err)}
   
   S.feverCharge=0;S.feverMoves=0;S.dryMoves=0;S.relayChain=0;
   S.enemyCountdown=S.stage===0?0:(S.stage<4?4:S.stage<7?3:2); S.enemyTarget=Math.floor(Math.random()*5); S.enemyColorCount=0; S.enemyGuarded=false;
@@ -3634,7 +3652,7 @@ async function victory(){
   var fx=$('#fx'),mon=$('#mon'),br=battle.getBoundingClientRect(),mr=mon.getBoundingClientRect();
   var cx=mr.left-br.left+mr.width/2,cy=mr.top-br.top+mr.height/2,i;
   progSet(S.mode,S.stage+1);
-  try{SFX.defeat();if(S.stage===9)SFX.finalVictory()}catch(e){console.warn('Victory sound',e)}
+  try{if(S.stage===9){waPlayFinalFanfare()}else{waStopUserMusic();SFX.defeat()}}catch(e){console.warn('Victory sound',e)}
   mon.classList.add('boom');monsterPose('defeat');
   await sleep(520);
   var fl=document.createElement('div');fl.className='flash';fx.appendChild(fl);
