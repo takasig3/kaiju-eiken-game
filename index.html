@@ -2208,6 +2208,7 @@ function waStopTitleTheme(){WA_SCORE_STATE.cursor=0;}
 function waStageMusicChoice(stage){
   var key=String(S.mode)+':'+stage;
   if(key!==WA_STAGE_MUSIC_KEY){
+    waStopUserMusic();
     WA_STAGE_MUSIC_KEY=key;
     WA_STAGE_MUSIC_CHOICE=stage>=8?'castle':'dynamic';
     WA_SCORE_STATE={key:key,cursor:0,startedAt:0};
@@ -2244,39 +2245,25 @@ function waScoreNote(a,when,n,d,kind,v){
     harmonic.start(start);harmonic.stop(start+Math.min(len,.33)+.02);
   }
 }
+// Stage 1-7: user-supplied MP3, loaded once on the first chain.
+var WA_USER_MUSIC=null;
+function waStopUserMusic(){
+  if(WA_USER_MUSIC){WA_USER_MUSIC.pause();WA_USER_MUSIC.currentTime=0;}
+}
 function waScoreChain(choice){
   if(!SND||!document.querySelector('.battle .board'))return;
-  var a=ac();if(!a)return;
-  var data=WA_SCORE_TRACKS.dynamic,state=WA_SCORE_STATE;
-  if(!data||!data.length)return;
-  // Use a single tempo clock per stage. Start gently and accelerate over
-  // three minutes of active play, without resetting at every chain.
-  if(!state.startedAt)state.startedAt=performance.now();
-  var elapsed=Math.max(0,(performance.now()-state.startedAt)/1000);
-  var progress=Math.min(1,elapsed/180);
-  var tempo=1.48-(1.48-0.84)*(progress*progress*(3-2*progress));
-  var i=(state.cursor>=0&&state.cursor<data.length)?state.cursor:0,base=data[i][0],j=i;
-  // Stages 1-7 only: melody + occasional soft bass/chord.
-  // Remove the busy percussion and decorative counter-lines entirely.
-  // Preserve the musical cursor and start only when a chain occurs.
-  var bassCount=0, chordCount=0, melodyCount=0;
-  while(j<data.length&&data[j][0]-base<1400){
-    var e=data[j],kind=e[3],play=false,volume=e[4]/1000;
-    if(kind==='m'||kind==='p'){
-      // The score uses p/m for different melodic voices; retain the lead
-      // but avoid doubling several notes at the same instant.
-      if(melodyCount<9){play=true;melodyCount++;volume*=.58;}
-    }else if(kind==='b'){
-      if(bassCount<2){play=true;bassCount++;volume*=.42;}
-    }else if(kind==='l'){
-      if(chordCount<1){play=true;chordCount++;volume*=.38;}
-    }
-    if(play)waScoreNote(a,(e[0]-base)/1000*tempo,e[1],Math.max(.16,e[2]/1000*tempo),kind,volume);
-    j++;
+  if(!WA_USER_MUSIC){
+    WA_USER_MUSIC=new Audio('./high_score_victory.mp3');
+    WA_USER_MUSIC.loop=true;
+    WA_USER_MUSIC.preload='none';
+    WA_USER_MUSIC.volume=.42;
   }
-  state.cursor=j>=data.length?0:j;
+  if(WA_USER_MUSIC.paused){
+    var playPromise=WA_USER_MUSIC.play();
+    if(playPromise&&playPromise.catch)playPromise.catch(function(err){console.warn('Stage music playback:',err);});
+  }
 }
-document.addEventListener('visibilitychange',function(){if(document.hidden)WA_SCORE_STATE.cursor=0;});
+document.addEventListener('visibilitychange',function(){if(document.hidden){WA_SCORE_STATE.cursor=0;if(WA_USER_MUSIC)WA_USER_MUSIC.pause();}});
 var SFX={
   match:function(chain){
     // Score-driven 8-bit chain music: starts at chain 1, with low-volume voices.
