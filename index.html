@@ -2683,7 +2683,7 @@ function updateInfo(){
   var fin=$('#finish-action');
   if(fin){
     var potential=Math.max(1,Math.round(cs.P*cs.M*(1+Math.min(S.streak,5)*.05)));
-    var show=S.charge.length>0&&S.charge.length<3&&S.hp>0&&potential>=S.hp;
+    var show=false; // Always require three charges, even for a finishing blow.
     fin.hidden=!show;
     if(show){var b=fin.querySelector('button');b.textContent='🚀 今すぐ発射！ （予想 '+potential+' ダメージ）';b.disabled=!!S.locked;}
   }
@@ -3363,19 +3363,10 @@ async function finishPuzzleTurn(res){
   }else S.relayChain=res.chain>=2?res.chain:0;
   waFeverAfterMove(res);
   if(res.chain>=5){
-    // Special ally mini-game -> immediate satisfying attack, without waiting for 3 charges.
+    // The ally's special quiz awards a bonus to the next normal shot.
+    // It must NOT bypass the standard three-charge attack cycle.
     await summonChainAlly(res.chain,false);
-    // Bank this cascade as a successful attack charge. Existing accumulated charges
-    // are included in the shot; do not award their points twice.
-    S.charge.push({n:res.cleared,chain:res.chain,ok:true,bonus:0,special4:res.four,special5:res.five});
-    flash(res.chain>=10?'🌟 10連鎖！ SUPER ATTACK!':'🔥 5連鎖！ BONUS ATTACK!');
-    await fire();
-    S.charge=[];
-    if(S.hp<=0){await victory();return;}
-    await waEnemyAfterTurn(res,true);
-    if(!hasMoves()){reshuffle();render();flash('シャッフル');}
-    S.locked=false;updateInfo();
-    return;
+    flash(res.chain>=10?'🌟 ゼクシオン登場！ 3チャージで攻撃':'✨ セレス登場！ 3チャージで攻撃');
   }
   if(S.mode==='ep1'){
     if(Math.random()<(res.chain>=2?0.9:0.55))await waPre1MiniGame();
