@@ -373,6 +373,12 @@
 /* Occasional junior rider prank: visual entrance, then temporary puzzle obstacles. */
 .wa-prank-flyer{position:absolute;z-index:85;left:50%;top:42%;width:clamp(145px,36vw,235px);pointer-events:none;filter:drop-shadow(0 6px 12px #162c6688);animation:wa-prank-flight 2.5s ease-in-out both}
 .wa-prank-flyer img{width:100%;height:auto;display:block}
+/* Bigger entrance on phones; visual overlay does not capture touches. */
+@media (max-width:699px){
+  .wa-prank-flyer{width:clamp(210px,64vw,310px);top:46%;left:50%;}
+  .wa-prank-flyer b{font-size:clamp(14px,3.8vw,18px);}
+}
+
 .wa-prank-flyer b{display:block;text-align:center;color:#fff;background:#b22d67;border:2px solid #fff;border-radius:12px;padding:5px;font-size:clamp(13px,3.5vw,19px);white-space:nowrap;text-shadow:0 1px #512047}
 @keyframes wa-prank-flight{0%{opacity:0;transform:translate(85%,-80%) rotate(12deg) scale(.6)}25%{opacity:1;transform:translate(-35%,-55%) rotate(-8deg) scale(1.1)}75%{opacity:1;transform:translate(-50%,-60%) rotate(5deg) scale(1)}100%{opacity:0;transform:translate(-150%,-100%) rotate(-14deg) scale(.7)}}
 @media(prefers-reduced-motion:reduce){.wa-prank-flyer{animation:wa-prank-fade 1s ease-in-out both}@keyframes wa-prank-fade{0%,100%{opacity:0}25%,75%{opacity:1}}}
@@ -2240,9 +2246,9 @@ function waScoreNote(a,when,n,d,kind,v){
 function waScoreChain(choice){
   if(!SND||!document.querySelector('.battle .board'))return;
   var a=ac();if(!a)return;
-  var data=WA_SCORE_TRACKS[choice==='wii'?1:0],state=WA_SCORE_STATE;
+  var data=WA_SCORE_TRACKS[choice==='wii'?'wii':'dynamic'],state=WA_SCORE_STATE;
   if(!data||!data.length)return;
-  var i=state.cursor,base=data[i][0],j=i;
+  var i=(state.cursor>=0&&state.cursor<data.length)?state.cursor:0,base=data[i][0],j=i;
   // Advance one 1.65-second phrase per cascade; never play at stage start.
   while(j<data.length&&data[j][0]-base<1650){
     var e=data[j];waScoreNote(a,(e[0]-base)/1000,e[1],e[2]/1000,e[3],e[4]/1000);j++;
