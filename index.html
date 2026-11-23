@@ -2274,7 +2274,7 @@ function waStopUserMusic(){
 function waPrepareUserMusic(){
   ['./high_score_victory.mp3','./throne_of_bone_and_iron.mp3'].forEach(function(file){
     if(!WA_USER_MUSIC_TRACKS[file]){
-      var a=new Audio(file);a.loop=false;a.preload='auto';a.volume=.42;
+      var a=new Audio(file);a.loop=false;a.preload='auto';a.volume=.025;
       WA_USER_MUSIC_TRACKS[file]=a;
     }
   });
@@ -2290,14 +2290,14 @@ function waScoreChain(choice){
   clearTimeout(WA_USER_MUSIC_TIMER);
   if(current.paused){
     clearInterval(WA_USER_MUSIC_FADE);WA_USER_MUSIC_FADE=null;
-    WA_USER_MUSIC_CHAIN_START=Date.now();current.volume=.09;
+    WA_USER_MUSIC_CHAIN_START=Date.now();current.volume=.025;
     try{current.currentTime=0;}catch(e){}
     var p=current.play();
     if(p&&p.catch)p.catch(function(err){console.warn('Stage music playback:',err);});
     WA_USER_MUSIC_FADE=setInterval(function(){
       if(current.paused){clearInterval(WA_USER_MUSIC_FADE);WA_USER_MUSIC_FADE=null;return;}
-      var progress=Math.min(1,(Date.now()-WA_USER_MUSIC_CHAIN_START)/2100);
-      current.volume=Math.min(.42,.09+(.42-.09)*progress);
+      var progress=Math.min(1,(Date.now()-WA_USER_MUSIC_CHAIN_START)/2300);
+      current.volume=Math.min(.42,.025+(.42-.025)*progress*progress);
       if(progress>=1){clearInterval(WA_USER_MUSIC_FADE);WA_USER_MUSIC_FADE=null;}
     },90);
   }
@@ -2608,21 +2608,11 @@ function rkHTML(m,hi){
 function showRanking(){
   waStopTitleTheme();
   window.scrollTo(0,0);
-  app.innerHTML=
-  '<section><div class="head"><p class="eyebrow">ランキング</p><h2>みんなのランキング</h2></div>'+
-  '<div id="wa-world-online-ranking"><p>🌍 世界史・みんなのランキングを読み込み中…</p></div>'+
-  '<button type="button" class="btn" id="wa-open-online-ranking">🏆 オンラインランキングを開く</button>'+
-  '<p class="sec">この端末の記録：英検4級</p>'+rkHTML('e',-1)+'<p class="sec">この端末の記録：漢検4級</p>'+rkHTML('k',-1)+
-  '<div class="actions" style="max-width:520px"><button type="button" class="btn ghost" id="back">もどる</button></div></section>';
+  app.innerHTML='<section><div class="head"><p class="eyebrow">ランキング</p><h2>みんなのランキング</h2></div>'+
+    '<div id="wa-page-unified-rank" class="wa-unified-page-rank"><p>🏆 総合ランキング TOP 10 を読み込み中…</p></div>'+
+    '<div class="actions" style="max-width:520px"><button type="button" class="btn ghost" id="back">もどる</button></div></section>';
   $('#back').onclick=showTitle;
-  $('#wa-open-online-ranking').onclick=function(){
-    var panel=document.getElementById('wa-online');
-    if(panel){panel.hidden=false;panel.scrollTop=0;
-      var refresh=Array.from(panel.querySelectorAll('button')).find(function(b){return /ランキング更新/.test(b.textContent||'')});
-      if(refresh){refresh.scrollIntoView({block:'center'});refresh.click();}
-    }else{this.textContent='オンラインランキングが見つかりません';}
-  };
-  if(window.WAWorldOnline)window.WAWorldOnline.render('wa-world-online-ranking');
+  if(typeof window.WAUnifiedRankingRender==='function')window.WAUnifiedRankingRender('wa-page-unified-rank');
 }
 
 /* ---------- board logic ---------- */
@@ -3815,6 +3805,15 @@ document.addEventListener('click',function(e){if(e.target && e.target.id==='kanj
 <script src="./wa-rank-patch.js"></script>
 <script src="./wa-companion-restored.js?v=20261123-secret4"></script>
 <script src="./wa-ten-challenge.js?v=20261119c"></script>
+<style id="wa-companion-menu-size-fix">
+body.wa-companion-menu-open #wa-companion{z-index:100006!important;transform:scale(2)!important;transform-origin:bottom right!important;}
+body.wa-companion-menu-open #wa-companion img{max-width:100%!important;}
+#wa-comp-food-menu{bottom:clamp(210px,33vh,310px)!important;}
+.wa-unified-page-rank .wa-rank-list{padding-left:0;list-style:none}
+.wa-unified-page-rank .wa-rank-list li{display:flex;align-items:center;gap:8px;padding:13px 6px;border-bottom:1px solid #cbd5df;flex-wrap:wrap}
+.wa-unified-page-rank .wa-rank-list strong{color:#172d4b}
+.wa-unified-page-rank .wa-rank-list small{color:#64748b!important}
+</style>
 <script id="wa-unified-ranking-companion-v1">
 (function(){
 'use strict';
@@ -3822,7 +3821,7 @@ const courses=[['英検4級','eiken4'],['英検5級','eiken5'],['漢検4級','ka
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let busy=false;
 async function unified(){
- const dest=document.getElementById('wa-lobby-world-rank'),tabs=document.getElementById('wa-rank-tabs');
+ const dest=document.getElementById(window.WA_UNIFIED_RANK_TARGET||'wa-lobby-world-rank'),tabs=document.getElementById('wa-rank-tabs');
  if(!dest||busy)return;
  busy=true;
  if(tabs)tabs.style.display='none';
@@ -3855,6 +3854,7 @@ async function unified(){
  }catch(e){dest.textContent='ランキングを読み込めませんでした';console.warn(e)}
  busy=false;
 }
+window.WAUnifiedRankingRender=function(target){window.WA_UNIFIED_RANK_TARGET=target;unified().finally(()=>{window.WA_UNIFIED_RANK_TARGET=null});};
 function hideLegacyWorldRank(panel){
  if(!panel)return;
  panel.querySelectorAll('h1,h2,h3,h4').forEach(function(h){
@@ -3882,14 +3882,13 @@ function setup(){
   comp.addEventListener('click',e=>{
    e.preventDefault();e.stopPropagation();
    let menu=document.getElementById('wa-comp-food-menu');
-   if(menu){menu.remove();return}
+   if(menu){menu.remove();document.body.classList.remove('wa-companion-menu-open');return}
    menu=document.createElement('div');menu.id='wa-comp-food-menu';menu.style.cssText='position:fixed;z-index:100005;right:12px;bottom:125px;max-width:min(90vw,320px);background:#192e4e;color:white;border:2px solid #f0bf62;border-radius:16px;padding:14px;box-shadow:0 8px 25px #0007;font:700 15px system-ui';
-   menu.innerHTML='<div id="wa-food-avatar" style="display:flex;justify-content:center;align-items:center;height:112px;margin-bottom:5px"></div><p style="margin:0 0 9px;text-align:center;color:#fff">🐾 相棒と何をする？</p><button type="button" id="wa-food-challenge" style="display:block;width:100%;padding:12px;margin-bottom:7px;border-radius:9px;background:#fff;color:#172d4b;font-weight:800;opacity:1">🍚 ご飯をあげる（10問チャレンジ）</button><button type="button" id="wa-food-choose" style="display:block;width:100%;padding:12px;margin-bottom:7px;border-radius:9px;background:#fff;color:#172d4b;font-weight:800;opacity:1">🐾 相棒を選ぶ</button><button type="button" id="wa-food-close" style="padding:8px 16px;background:#fff;color:#172d4b;font-weight:800;opacity:1;border-radius:9px">閉じる</button>';
-   const avatar=comp.querySelector('img');if(avatar){const big=avatar.cloneNode(true);big.removeAttribute('id');big.style.cssText='width:108px;height:108px;max-width:100%;object-fit:contain;filter:drop-shadow(0 5px 9px #0007)';menu.querySelector('#wa-food-avatar').append(big)}
-   document.body.append(menu);
-   menu.querySelector('#wa-food-challenge').onclick=()=>{menu.remove();if(window.WATenChallenge?.open){const selected=document.querySelector('.modebtn[aria-pressed="true"]');window.WATenChallenge.open(selected?.dataset.m||'e')}else alert('10問チャレンジを読み込めませんでした')};
-   menu.querySelector('#wa-food-choose').onclick=()=>{menu.remove();if(typeof old==='function')old.call(comp)};
-   menu.querySelector('#wa-food-close').onclick=()=>menu.remove();
+   menu.innerHTML='<p style="margin:0 0 9px;text-align:center;color:#fff">🐾 相棒と何をする？</p><button type="button" id="wa-food-challenge" style="display:block;width:100%;padding:12px;margin-bottom:7px;border-radius:9px;background:#fff;color:#172d4b;font-weight:800;opacity:1">🍚 ご飯をあげる（10問チャレンジ）</button><button type="button" id="wa-food-choose" style="display:block;width:100%;padding:12px;margin-bottom:7px;border-radius:9px;background:#fff;color:#172d4b;font-weight:800;opacity:1">🐾 相棒を選ぶ</button><button type="button" id="wa-food-close" style="padding:8px 16px;background:#fff;color:#172d4b;font-weight:800;opacity:1;border-radius:9px">閉じる</button>';
+   document.body.append(menu);document.body.classList.add('wa-companion-menu-open');
+   menu.querySelector('#wa-food-challenge').onclick=()=>{menu.remove();document.body.classList.remove('wa-companion-menu-open');if(window.WATenChallenge?.open){const selected=document.querySelector('.modebtn[aria-pressed="true"]');window.WATenChallenge.open(selected?.dataset.m||'e')}else alert('10問チャレンジを読み込めませんでした')};
+   menu.querySelector('#wa-food-choose').onclick=()=>{menu.remove();document.body.classList.remove('wa-companion-menu-open');if(typeof old==='function')old.call(comp)};
+   menu.querySelector('#wa-food-close').onclick=()=>{menu.remove();document.body.classList.remove('wa-companion-menu-open')};
   });
  }
 }
