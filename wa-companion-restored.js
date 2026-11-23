@@ -1,7 +1,7 @@
 /* Companion restored as an independent feature; no guild required. */
 (function(){'use strict';
 const key='wa-companion-standalone-v1';
-const names=['ライボルトン','アクアフィン','フレアキトン','アースゴーレム','アイスフェン','ルナミスト','ウィンドルー','ナイトヴェイル','ダークロード','ミコフェリス','ミラクル','ライジン','トリックスJr.'];
+const names=['ライボルトン','アクアフィン','フレアキトン','アースゴーレム','アイスフェン','ルナミスト','ウィンドルー','ナイトヴェイル','ダークロード','ミコフェリス','セレス','ゼクシオン','トリックスJr.'];
 const unlock=[0,0,0,40000,80000,120000,160000,200000,250000,300000,400000,500000,700000];
 const get=(k,d)=>{try{return JSON.parse(localStorage.getItem(key+':'+k))??d}catch(e){return d}};
 const set=(k,v)=>{try{localStorage.setItem(key+':'+k,JSON.stringify(v))}catch(e){}};
