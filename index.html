@@ -2210,7 +2210,7 @@ function waStageMusicChoice(stage){
   if(key!==WA_STAGE_MUSIC_KEY){
     waStopUserMusic();
     WA_STAGE_MUSIC_KEY=key;
-    WA_STAGE_MUSIC_CHOICE=stage>=8?'castle':'dynamic';
+    WA_STAGE_MUSIC_CHOICE='user-mp3';
     WA_SCORE_STATE={key:key,cursor:0,startedAt:0};
   }
   return WA_STAGE_MUSIC_CHOICE;
@@ -2245,25 +2245,40 @@ function waScoreNote(a,when,n,d,kind,v){
     harmonic.start(start);harmonic.stop(start+Math.min(len,.33)+.02);
   }
 }
-// Stage 1-7: user-supplied MP3, loaded once on the first chain.
-var WA_USER_MUSIC=null;
+// Stage 1-7: bright theme; Stage 8-10: dramatic theme. Start only on a chain.
+var WA_USER_MUSIC=null, WA_USER_MUSIC_TRACKS={};
+function waMusicFile(){
+  return (typeof S!=='undefined' && Number(S.stage)>=7)
+    ? './throne_of_bone_and_iron.mp3' : './high_score_victory.mp3';
+}
 function waStopUserMusic(){
-  if(WA_USER_MUSIC){WA_USER_MUSIC.pause();WA_USER_MUSIC.currentTime=0;}
+  Object.keys(WA_USER_MUSIC_TRACKS).forEach(function(key){
+    var a=WA_USER_MUSIC_TRACKS[key];a.pause();try{a.currentTime=0;}catch(e){}
+  });
+  WA_USER_MUSIC=null;
+}
+function waPrepareUserMusic(){
+  ['./high_score_victory.mp3','./throne_of_bone_and_iron.mp3'].forEach(function(file){
+    if(!WA_USER_MUSIC_TRACKS[file]){
+      var a=new Audio(file);a.loop=true;a.preload='auto';a.volume=.42;
+      WA_USER_MUSIC_TRACKS[file]=a;
+    }
+  });
+  WA_USER_MUSIC=WA_USER_MUSIC_TRACKS[waMusicFile()];
 }
 function waScoreChain(choice){
   if(!SND||!document.querySelector('.battle .board'))return;
-  if(!WA_USER_MUSIC){
-    WA_USER_MUSIC=new Audio('./high_score_victory.mp3');
-    WA_USER_MUSIC.loop=true;
-    WA_USER_MUSIC.preload='none';
-    WA_USER_MUSIC.volume=.42;
-  }
-  if(WA_USER_MUSIC.paused){
-    var playPromise=WA_USER_MUSIC.play();
-    if(playPromise&&playPromise.catch)playPromise.catch(function(err){console.warn('Stage music playback:',err);});
+  waPrepareUserMusic();
+  var current=WA_USER_MUSIC;
+  Object.keys(WA_USER_MUSIC_TRACKS).forEach(function(key){
+    var a=WA_USER_MUSIC_TRACKS[key];if(a!==current&&!a.paused){a.pause();a.currentTime=0;}
+  });
+  if(current.paused){
+    var p=current.play();
+    if(p&&p.catch)p.catch(function(err){console.warn('Stage music playback:',err);});
   }
 }
-document.addEventListener('visibilitychange',function(){if(document.hidden){WA_SCORE_STATE.cursor=0;if(WA_USER_MUSIC)WA_USER_MUSIC.pause();}});
+document.addEventListener('visibilitychange',function(){if(document.hidden){WA_SCORE_STATE.cursor=0;Object.keys(WA_USER_MUSIC_TRACKS).forEach(function(k){WA_USER_MUSIC_TRACKS[k].pause();});}});
 var SFX={
   match:function(chain){
     // Score-driven 8-bit chain music: starts at chain 1, with low-volume voices.
@@ -2272,7 +2287,7 @@ var SFX={
     try{
       var stage=(typeof S!=='undefined'&&Number.isFinite(S.stage))?Math.max(0,Math.min(9,S.stage)):0;
       var n=Math.max(1,Math.floor(chain));
-      var choice=waStageMusicChoice(stage);try{if(choice==='castle'){waCastleMidiChain(n,stage);}else{waScoreChain(choice);}}catch(musicError){console.warn('Chain score error',musicError);tone(523.25,0,.14,'triangle',.08);tone(659.25,.15,.14,'triangle',.08);}return; // Stage 1-7 randomized, 8-10 castle
+      var choice=waStageMusicChoice(stage);try{waScoreChain(choice);}catch(musicError){console.warn('Chain score error',musicError);tone(523.25,0,.14,'triangle',.08);tone(659.25,.15,.14,'triangle',.08);}return; // Stage 1-7 randomized, 8-10 castle
       WA_MARIO_LAST_STAGE=stage;
       var hz=function(m){return 440*Math.pow(2,(m-69)/12)};
       // The supplied two-page score's opening melody, transcribed into MIDI notes.
@@ -2725,6 +2740,7 @@ function startBattle(){
   var st=stages()[S.stage],mon=MONS[S.stage]; window.scrollTo(0,0);
   // Choose the stage music, but never autoplay the title track at battle start.
   try{waStageMusicChoice(S.stage)}catch(err){console.warn('WA music setup skipped',err)}
+  try{waPrepareUserMusic();}catch(err){console.warn('Music preload skipped',err)}
   
   S.feverCharge=0;S.feverMoves=0;S.dryMoves=0;S.relayChain=0;
   S.enemyCountdown=S.stage===0?0:(S.stage<4?4:S.stage<7?3:2); S.enemyTarget=Math.floor(Math.random()*5); S.enemyColorCount=0; S.enemyGuarded=false;
