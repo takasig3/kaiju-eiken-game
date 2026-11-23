@@ -2246,12 +2246,13 @@ function waScoreNote(a,when,n,d,kind,v){
   }
 }
 // Stage 1-7: bright theme; Stage 8-10: dramatic theme. Start only on a chain.
-var WA_USER_MUSIC=null, WA_USER_MUSIC_TRACKS={};
+var WA_USER_MUSIC=null, WA_USER_MUSIC_TRACKS={}, WA_USER_MUSIC_TIMER=null;
 function waMusicFile(){
   return (typeof S!=='undefined' && Number(S.stage)>=7)
     ? './throne_of_bone_and_iron.mp3' : './high_score_victory.mp3';
 }
 function waStopUserMusic(){
+  clearTimeout(WA_USER_MUSIC_TIMER);WA_USER_MUSIC_TIMER=null;
   Object.keys(WA_USER_MUSIC_TRACKS).forEach(function(key){
     var a=WA_USER_MUSIC_TRACKS[key];a.pause();try{a.currentTime=0;}catch(e){}
   });
@@ -2260,7 +2261,7 @@ function waStopUserMusic(){
 function waPrepareUserMusic(){
   ['./high_score_victory.mp3','./throne_of_bone_and_iron.mp3'].forEach(function(file){
     if(!WA_USER_MUSIC_TRACKS[file]){
-      var a=new Audio(file);a.loop=true;a.preload='auto';a.volume=.42;
+      var a=new Audio(file);a.loop=false;a.preload='auto';a.volume=.42;
       WA_USER_MUSIC_TRACKS[file]=a;
     }
   });
@@ -2273,12 +2274,19 @@ function waScoreChain(choice){
   Object.keys(WA_USER_MUSIC_TRACKS).forEach(function(key){
     var a=WA_USER_MUSIC_TRACKS[key];if(a!==current&&!a.paused){a.pause();a.currentTime=0;}
   });
+  clearTimeout(WA_USER_MUSIC_TIMER);
   if(current.paused){
+    try{current.currentTime=0;}catch(e){}
     var p=current.play();
     if(p&&p.catch)p.catch(function(err){console.warn('Stage music playback:',err);});
   }
+  // Stop shortly after the last chain sound; subsequent cascades extend this window.
+  WA_USER_MUSIC_TIMER=setTimeout(function(){
+    if(current&&!current.paused){current.pause();try{current.currentTime=0;}catch(e){}}
+    WA_USER_MUSIC_TIMER=null;
+  },2600);
 }
-document.addEventListener('visibilitychange',function(){if(document.hidden){WA_SCORE_STATE.cursor=0;Object.keys(WA_USER_MUSIC_TRACKS).forEach(function(k){WA_USER_MUSIC_TRACKS[k].pause();});}});
+document.addEventListener('visibilitychange',function(){if(document.hidden){clearTimeout(WA_USER_MUSIC_TIMER);WA_USER_MUSIC_TIMER=null;WA_SCORE_STATE.cursor=0;Object.keys(WA_USER_MUSIC_TRACKS).forEach(function(k){WA_USER_MUSIC_TRACKS[k].pause();});}});
 var SFX={
   match:function(chain){
     // Score-driven 8-bit chain music: starts at chain 1, with low-volume voices.
