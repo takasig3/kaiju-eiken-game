@@ -819,7 +819,20 @@ body.wa-on-title{padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))}
  #app .battle>.slot {width:min(100%,53dvh,490px)!important;}
 }
 </style>
-<style id='wa-ios-touch-fix'>.battle .board,.battle .board .cell,.battle .board .cell *{touch-action:none!important;-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;}</style><style id='wa-board-pointer-fix'>#board,#board .cell,#board .cell *{touch-action:none!important;-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}</style></head><body>
+<style id='wa-ios-touch-fix'>.battle .board,.battle .board .cell,.battle .board .cell *{touch-action:none!important;-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;}</style><style id='wa-board-pointer-fix'>#board,#board .cell,#board .cell *{touch-action:none!important;-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}</style><style id="wa-final-boss-layout-fix">
+/* Stage 10: FINAL BOSS is a background overlay, never a grid/flex child. */
+.battle.final-boss .arena.stage-scenery{position:relative!important;}
+.battle.final-boss .arena.stage-scenery::after{
+ content:"FINAL\a BOSS";white-space:pre;position:absolute;left:12px;bottom:12px;
+ z-index:2;pointer-events:none;display:block;width:auto;height:auto;
+ font:900 clamp(11px,1.8vw,18px)/1.1 system-ui,sans-serif;letter-spacing:.08em;
+ color:#f6d5ff;text-shadow:0 2px 5px #36114b,0 0 7px #6821a8;
+ background:rgba(45,14,75,.5);border:1px solid rgba(245,207,255,.5);
+ border-radius:7px;padding:4px 7px;box-sizing:border-box;
+}
+@media(max-width:699px){.battle.final-boss .arena.stage-scenery::after{left:7px;bottom:7px;font-size:11px;padding:3px 5px}}
+</style>
+</head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2757,7 +2770,7 @@ function startBattle(){
   app.innerHTML=
   '<section class="battle'+(S.stage===9?' final-boss':'')+'" id="battle">'+
    '<div class="bar"><span class="stg">STAGE '+(S.stage+1)+'</span><span class="stn">'+MODE_NAME[S.mode]+'　'+st.name+'</span><button type="button" class="snd" id="snd"></button><span class="sc" id="score"></span></div>'+
-   '<div class="arena stage-scenery" style="--stage-bg:url(assets/stage-bg-'+String(STAGE_BG_ORDER[S.stage]).padStart(2,'0')+'.webp)">'+(S.stage===9?'<div class="boss-banner">✦ FINAL BOSS ✦</div>':'')+'<div class="mon'+' illustrated-mon'+'" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+'<img class="monster-portrait" src="assets/monster-'+String(STAGE_MONSTER_ORDER[S.stage]).padStart(2,'0')+'.webp" alt="'+esc(mon.name)+'"><span class="monster-sweat" aria-hidden="true">💦</span><span class="monster-pain" aria-hidden="true">うぅ…</span>'+'</div><div class="mname">'+mon.name+'</div>'+
+   '<div class="arena stage-scenery" style="--stage-bg:url(assets/stage-bg-'+String(STAGE_BG_ORDER[S.stage]).padStart(2,'0')+'.webp)">'+'<div class="mon'+' illustrated-mon'+'" id="mon" style="--ms:'+(100+S.stage*10)+'px">'+'<img class="monster-portrait" src="assets/monster-'+String(STAGE_MONSTER_ORDER[S.stage]).padStart(2,'0')+'.webp" alt="'+esc(mon.name)+'"><span class="monster-sweat" aria-hidden="true">💦</span><span class="monster-pain" aria-hidden="true">うぅ…</span>'+'</div><div class="mname">'+mon.name+'</div>'+
    '<div class="hp" role="progressbar" aria-label="モンスターの体力"><i id="hpfill"></i><b id="hptxt"></b></div><div class="wa-energy" id="wa-energy" role="status" aria-live="polite"><span class="wa-energy-label">✨ 連鎖フィーバー</span><span class="wa-energy-track"></span><span class="wa-energy-count">0/5</span></div><div class="wa-enemy-warning" id="wa-enemy-warning" hidden></div></div>'+
    '<div class="slot" id="slot"><div class="pv" id="pv" aria-hidden="true"></div><div class="board" id="board"></div></div>'+
    '<div class="foot" id="info"></div>'+
