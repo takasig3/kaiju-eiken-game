@@ -832,7 +832,7 @@ body.wa-on-title{padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))}
 }
 @media(max-width:699px){.battle.final-boss .arena.stage-scenery::after{left:7px;bottom:7px;font-size:11px;padding:3px 5px}}
 </style>
-</head><body>
+<style>.wa-chain-score{display:block;text-align:center;font-size:.52em;color:#ffe27a;text-shadow:0 2px 3px #18213a,0 0 8px #18213a;letter-spacing:.02em}</style></head><body>
 <title>ワードアロー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2261,11 +2261,14 @@ function waScoreNote(a,when,n,d,kind,v){
     harmonic.start(start);harmonic.stop(start+Math.min(len,.33)+.02);
   }
 }
-// Stage 1-7: bright theme; Stage 8-10: dramatic theme. Start only on a chain.
+// Stage-specific themes. Start only on a chain.
 var WA_USER_MUSIC=null, WA_USER_MUSIC_TRACKS={}, WA_USER_MUSIC_TIMER=null, WA_USER_MUSIC_FADE=null, WA_USER_MUSIC_CHAIN_START=0;
 function waMusicFile(){
-  return (typeof S!=='undefined' && Number(S.stage)>=7)
-    ? './throne_of_bone_and_iron.mp3' : './high_score_victory.mp3';
+  var stage=(typeof S!=='undefined')?Number(S.stage):0;
+  if(stage>=7)return './stage8_10_final_battle.mp3';
+  if(stage>=4)return './stage5_7_v4.mp3';
+  if(stage>=1)return './stage2_4_adventure.mp3';
+  return './high_score_victory.mp3';
 }
 function waStopUserMusic(){
   clearTimeout(WA_USER_MUSIC_TIMER);WA_USER_MUSIC_TIMER=null;clearInterval(WA_USER_MUSIC_FADE);WA_USER_MUSIC_FADE=null;WA_USER_MUSIC_CHAIN_START=0;
@@ -2275,7 +2278,7 @@ function waStopUserMusic(){
   WA_USER_MUSIC=null;
 }
 function waPrepareUserMusic(){
-  ['./high_score_victory.mp3','./throne_of_bone_and_iron.mp3'].forEach(function(file){
+  ['./high_score_victory.mp3','./stage2_4_adventure.mp3','./stage5_7_v4.mp3','./stage8_10_final_battle.mp3'].forEach(function(file){
     if(!WA_USER_MUSIC_TRACKS[file]){
       var a=new Audio(file);a.loop=false;a.preload='auto';a.volume=.003;
       try{var ctx=ac();if(ctx){var source=ctx.createMediaElementSource(a),gain=ctx.createGain();gain.gain.value=.003;source.connect(gain);gain.connect(ctx.destination);a.waGain=gain;a.volume=1;}}catch(e){}
@@ -2759,6 +2762,7 @@ function flash(msg){
   $('#fx').appendChild(t);setTimeout(function(){t.remove()},1300);
 }
 
+function waChainBonus(n){var p=[0,0,50,120,250,500,750,1000,1500,2000,3000];return n<=10?(p[n]||0):3000+(n-10)*500;}
 function showChainCount(chain){
   if(!slot)return;
   // Let successive numbers briefly coexist, like an arcade score cascade.
@@ -2767,7 +2771,7 @@ function showChainCount(chain){
   el.style.setProperty('--chain-x',((chain%3)-1)*23+'px');
   el.style.top=(40+(chain%3)*5)+'%';
   el.setAttribute('aria-label',chain+'連鎖');
-  el.innerHTML='<span class="wa-chain-number">'+chain+'</span>CHAIN!';
+  el.innerHTML='<span class="wa-chain-number">'+chain+'</span>CHAIN!'+(chain>=2?'<span class="wa-chain-score">BONUS +'+waChainBonus(chain).toLocaleString()+' pt</span>':'');
   slot.appendChild(el);
   setTimeout(function(){el.remove();},1150);
 }
@@ -3418,7 +3422,7 @@ async function waJuniorPrank(){
 async function finishPuzzleTurn(res){
   await waJuniorPrank();
   // A cascade earns visible points once per completed move, not per animation frame.
-  if(res.chain>=2){var chainPts=(res.chain-1)*50;S.score+=chainPts;updateInfo();waShowPoints(chainPts,res.chain+'連鎖ボーナス','combo');}
+  if(res.chain>=2){var chainPts=waChainBonus(res.chain);S.score+=chainPts;updateInfo();waShowPoints(chainPts,res.chain+'連鎖ボーナス','combo');var scoreEl=$('#score');if(scoreEl&&scoreEl.animate)scoreEl.animate([{transform:'scale(1)',color:'#b87900'},{transform:'scale(1.35)',color:'#e79b00'},{transform:'scale(1)'}],{duration:650});}
 
   // Relay: a new matching move can continue the previous cascade's streak.
   // The relay expires after one move; special ally rewards still require a real 5+ chain.
