@@ -1587,6 +1587,7 @@ function preferredSpeechVoice(lang){
   if(!candidates.length)return null;
   function rank(v){
     var code=v.lang.toLowerCase(),name=v.name||'',score=0;
+    if(v.localService)score+=300;
     if(code===target)score+=100;
     else if(code.split('-')[0]===primary)score+=25;
     if(/premium|enhanced|neural|natural/i.test(name))score+=45;
@@ -1621,6 +1622,7 @@ function speechFallback(t,locale){
   u.volume=1;
   var voice=preferredSpeechVoice(locale);
   if(voice)u.voice=voice;
+  window.waActiveUtterance=u;
   window.speechSynthesis.speak(u);
 }
 async function getDictionaryAudio(word){
@@ -1669,6 +1671,7 @@ async function speak(t,lang){
   if(locale==='en-US'){
     var clean=String(t).trim();
     if(/^[a-z]+(?:[-'][a-z]+)*$/i.test(clean)){
+      if('speechSynthesis' in window){fallback();return;}
       var recording=await getDictionaryAudio(clean);
       if(serial!==playbackSerial)return;
       if(recording){playAudioUrl(recording,serial,fallback);return}
@@ -2274,7 +2277,8 @@ function waStopUserMusic(){
 function waPrepareUserMusic(){
   ['./high_score_victory.mp3','./throne_of_bone_and_iron.mp3'].forEach(function(file){
     if(!WA_USER_MUSIC_TRACKS[file]){
-      var a=new Audio(file);a.loop=false;a.preload='auto';a.volume=.025;
+      var a=new Audio(file);a.loop=false;a.preload='auto';a.volume=.003;
+      try{var ctx=ac();if(ctx){var source=ctx.createMediaElementSource(a),gain=ctx.createGain();gain.gain.value=.003;source.connect(gain);gain.connect(ctx.destination);a.waGain=gain;a.volume=1;}}catch(e){}
       WA_USER_MUSIC_TRACKS[file]=a;
     }
   });
@@ -2290,14 +2294,14 @@ function waScoreChain(choice){
   clearTimeout(WA_USER_MUSIC_TIMER);
   if(current.paused){
     clearInterval(WA_USER_MUSIC_FADE);WA_USER_MUSIC_FADE=null;
-    WA_USER_MUSIC_CHAIN_START=Date.now();current.volume=.025;
+    WA_USER_MUSIC_CHAIN_START=Date.now();if(current.waGain)current.waGain.gain.value=.003;else current.volume=.003;
     try{current.currentTime=0;}catch(e){}
     var p=current.play();
     if(p&&p.catch)p.catch(function(err){console.warn('Stage music playback:',err);});
     WA_USER_MUSIC_FADE=setInterval(function(){
       if(current.paused){clearInterval(WA_USER_MUSIC_FADE);WA_USER_MUSIC_FADE=null;return;}
-      var progress=Math.min(1,(Date.now()-WA_USER_MUSIC_CHAIN_START)/2300);
-      current.volume=Math.min(.42,.025+(.42-.025)*progress*progress);
+      var progress=Math.min(1,(Date.now()-WA_USER_MUSIC_CHAIN_START)/4000);
+      var level=.003+(.25-.003)*progress*progress; if(current.waGain)current.waGain.gain.value=level;else current.volume=level;
       if(progress>=1){clearInterval(WA_USER_MUSIC_FADE);WA_USER_MUSIC_FADE=null;}
     },90);
   }
@@ -2335,7 +2339,7 @@ var SFX={
     try{
       var stage=(typeof S!=='undefined'&&Number.isFinite(S.stage))?Math.max(0,Math.min(9,S.stage)):0;
       var n=Math.max(1,Math.floor(chain));
-      var choice=waStageMusicChoice(stage);try{waScoreChain(choice);}catch(musicError){console.warn('Chain score error',musicError);tone(523.25,0,.14,'triangle',.08);tone(659.25,.15,.14,'triangle',.08);}return; // Stage 1-7 randomized, 8-10 castle
+      var choice=waStageMusicChoice(stage);try{waScoreChain(choice);}catch(musicError){console.warn('Chain score error',musicError);tone(523.25,0,.14,'triangle',.025);tone(659.25,.15,.14,'triangle',.025);}return; // Stage 1-7 randomized, 8-10 castle
       WA_MARIO_LAST_STAGE=stage;
       var hz=function(m){return 440*Math.pow(2,(m-69)/12)};
       // The supplied two-page score's opening melody, transcribed into MIDI notes.
@@ -3841,11 +3845,64 @@ function open(){modal.hidden=false;modal.innerHTML='<div class="dialog" role="di
 let runScore=0;
 window.addEventListener('wa:companion-new-run',()=>{runScore=0});
 window.addEventListener('wa:companion-score',e=>{const n=Number(e.detail&&e.detail.score);if(!Number.isFinite(n)||n<0)return;if(n<runScore){runScore=n;return}const delta=n-runScore;runScore=n;if(delta>0){points+=delta;set('points',points);if(!modal.hidden)open()}});
-window.WACompanion={addFood:(n=1)=>{const count=Math.max(0,Math.floor(Number(n)||0));const k=key+':food-count';const total=Math.max(0,Number(localStorage.getItem(k)||0)||0)+count;localStorage.setItem(k,JSON.stringify(total));const bubble=root.querySelector('.bubble');bubble.textContent='ごちそうさま！';clearTimeout(root.waFoodTimer);root.waFoodTimer=setTimeout(()=>{bubble.textContent='がんばれ！'},3500);},getFood:()=>Math.max(0,Number(get('food-count',0))||0),getPoints:()=>points,addPoints:(delta)=>{delta=Number(delta);if(Number.isFinite(delta)&&delta>0){points+=delta;set('points',points);if(!modal.hidden)open()}},open};
+window.WACompanion={addFood:(n=1)=>{const count=Math.max(0,Math.floor(Number(n)||0));const k=key+':food-count';const total=Math.max(0,Number(localStorage.getItem(k)||0)||0)+count;localStorage.setItem(k,JSON.stringify(total));const bubble=root.querySelector('.bubble');bubble.textContent='ごちそうさま！';clearTimeout(root.waFoodTimer);root.waFoodTimer=setTimeout(()=>{bubble.textContent='おなかいっぱい！'},3500);},getFood:()=>Math.max(0,Number(get('food-count',0))||0),getPoints:()=>points,addPoints:(delta)=>{delta=Number(delta);if(Number.isFinite(delta)&&delta>0){points+=delta;set('points',points);if(!modal.hidden)open()}},open};
 root.querySelector('button').onclick=open;modal.onclick=e=>{if(e.target===modal)modal.hidden=true};refresh();
 })();
 </script>
-<script src="./wa-ten-challenge.js?v=20261119c"></script>
+<script>
+/* Standalone ten-question practice. Does not modify the main battle or daily Supabase records. */
+(function(){'use strict';
+const modal=document.createElement('div');modal.id='wa-ten-modal';modal.hidden=true;document.body.append(modal);
+const style=document.createElement('style');style.textContent=`#wa-ten-modal{position:fixed;inset:0;z-index:100030;background:#07182cdd;display:grid;place-items:center;padding:14px}#wa-ten-modal[hidden]{display:none}#wa-ten-modal .panel{background:#203b5c;color:white;border:2px solid #769ac3;border-radius:18px;padding:18px;width:min(100%,550px);max-height:90dvh;overflow:auto;font:16px system-ui}#wa-ten-modal button{padding:12px;margin:5px 0;border-radius:10px;border:1px solid #8aabd0;background:#345b86;color:white;font-size:16px;cursor:pointer}#wa-ten-modal .option{display:block;width:100%;text-align:left}#wa-ten-modal .top{display:flex;align-items:center;justify-content:space-between;gap:10px}#wa-ten-modal .correct{background:#207657}#wa-ten-modal .incorrect{background:#91434c}#wa-ten-modal .prompt{font-size:21px;font-weight:800;white-space:pre-wrap;overflow-wrap:anywhere;margin:18px 0}#wa-ten-modal .feedback{padding:12px;background:#152b44;border-radius:8px}`;document.head.append(style);
+let mode='e',items=[],idx=0,correct=0,answered=false;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function makeItems(m){
+ const data=window.WA_TEN_DATA||{};
+ const standard=(Array.isArray(data.WA_EXAM_ITEMS)?data.WA_EXAM_ITEMS:[]).filter(x=>x.mode===m&&Array.isArray(x.options)&&x.options.length>=2&&x.answer!=null&&x.stem);
+ const exam=standard.map(x=>({prompt:x.stem,answer:String(x.answer),choices:x.options.map(String),explanation:x.explanation||''}));
+ if(m==='wh'){
+  const pool=(Array.isArray(data.WA_WORLD_QUESTIONS)?data.WA_WORLD_QUESTIONS:[]).filter(x=>x.q&&Array.isArray(x.options)&&x.options[x.answer]!=null);
+  const eras=['古代','中世','近世','近代','現代'];let chosen=[];
+  let accuracy=[];try{accuracy=JSON.parse(localStorage.getItem('wordarrow-world-accuracy')||'[]')}catch(e){}
+  const recent=accuracy.slice(-20),rate=recent.length?recent.filter(Boolean).length/recent.length:0.65;
+  const level=recent.length<10?2:rate>=.8?3:rate<.5?1:2;
+  eras.forEach(era=>{const subset=pool.filter(x=>x.era===era);chosen.push(...shuffle(subset.filter(x=>x.level===level).concat(shuffle(subset.filter(x=>x.level!==level)))).slice(0,2))});
+  if(chosen.length<10){const used=new Set(chosen.map(x=>x.id));chosen.push(...shuffle(pool.filter(x=>!used.has(x.id))).slice(0,10-chosen.length))}
+  return shuffle(chosen).slice(0,10).map(x=>({prompt:x.q,answer:String(x.options[x.answer]),choices:shuffle(x.options.map(String)),explanation:(x.era||'')+'：'+(x.explain||'')}));
+ }
+ if(m==='e'||m==='e5'){
+  const raw=m==='e5'?(Array.isArray(data.E5_POOL)?data.E5_POOL:[]):(typeof EPOOL!=='undefined'?EPOOL.map(x=>({en:x[0],ja:x[1],s:x[3]})):[]);
+  const pool=raw.filter(x=>x.en&&x.ja);const words=shuffle(pool).slice(0,35).map(x=>({prompt:'「'+x.ja+'」を英語で答えよう',answer:x.en,choices:shuffle([x.en,...shuffle([...new Set(pool.filter(y=>y.en!==x.en).map(y=>y.en))]).slice(0,3)]),explanation:x.s||''}));
+  return shuffle([...exam,...words]).slice(0,10);
+ }
+ const raw=m==='k5'?(Array.isArray(data.K5_POOL)?data.K5_POOL:[]):(typeof KJ!=='undefined'?KJ.map(x=>({k:x[0],r:x[3],w:x[2]})):[]);
+ const pool=raw.filter(x=>x.k&&x.r);
+ const kanji=shuffle(pool).slice(0,35).map(x=>({prompt:'「'+x.k+'」の読みは？',answer:x.r,choices:shuffle([x.r,...shuffle([...new Set(pool.filter(y=>y.r!==x.r).map(y=>y.r))]).slice(0,3)]),explanation:x.w||''}));
+ return shuffle([...exam,...kanji]).slice(0,10);
+}
+function shell(inner){modal.innerHTML='<div class="panel" role="dialog" aria-modal="true" aria-label="10問チャレンジ"><div class="top"><b>📝 10問チャレンジ</b><button type="button" id="wa-ten-close">✕ 閉じる</button></div>'+inner+'</div>';modal.querySelector('#wa-ten-close').onclick=close}
+function close(){modal.hidden=true}
+// One reward per Japan calendar day, shared by all five courses.
+const rewardKey='wa-ten-food-reward-jst-v1';
+function japanDay(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());}
+function grantDailyFood(){
+ const today=japanDay();
+ try{
+  if(localStorage.getItem(rewardKey)===today)return '今日は受け取り済みです。明日また挑戦しよう！';
+  if(!window.WACompanion||typeof window.WACompanion.addFood!=='function')return '相棒のご飯機能を読み込めませんでした。再読み込みしてください。';
+  window.WACompanion.addFood(1);
+  localStorage.setItem(rewardKey,today);
+  return '🍚 相棒にご飯をあげたよ！ 累計 '+window.WACompanion.getFood()+' 回。';
+ }catch(err){return 'ご飯の保存に失敗しました。ブラウザの保存設定を確認してください。';}
+}
+function render(){answered=false;if(idx>=items.length){const reward=items.length===10?grantDailyFood():'10問完了時にご飯をあげられます。';shell('<h2>結果発表！</h2><p style="font-size:26px">'+correct+' / '+items.length+' 問正解 🎉</p><p role="status" style="font-weight:800;color:#ffe09a">'+esc(reward)+'</p><p>通常のゲームポイントには加算されません。</p><button id="wa-ten-again">もう一度挑戦</button>');modal.querySelector('#wa-ten-again').onclick=()=>open(mode);return}
+ const q=items[idx];shell('<p>第'+(idx+1)+'問 / '+items.length+'　正解 '+correct+'問</p><div class="prompt">'+esc(q.prompt)+'</div><div id="wa-ten-options">'+q.choices.map((o,i)=>'<button type="button" class="option" data-option="'+i+'">'+esc(o)+'</button>').join('')+'</div><div id="wa-ten-feedback" aria-live="polite"></div>');modal.querySelectorAll('[data-option]').forEach(b=>b.onclick=()=>{if(answered)return;answered=true;const picked=q.choices[Number(b.dataset.option)];const ok=picked===q.answer;if(ok)correct++;modal.querySelectorAll('[data-option]').forEach(el=>{el.disabled=true;if(q.choices[Number(el.dataset.option)]===q.answer)el.classList.add('correct');else if(el===b)el.classList.add('incorrect')});const fb=modal.querySelector('#wa-ten-feedback');fb.innerHTML='<div class="feedback">'+(ok?'⭕ 正解！':'❌ 不正解')+'<p>正解：'+esc(q.answer)+'</p><p>'+esc(q.explanation)+'</p></div><button id="wa-ten-next">'+(idx===items.length-1?'結果を見る':'次の問題へ')+'</button>';modal.querySelector('#wa-ten-next').onclick=()=>{idx++;render()}})}
+function open(m){mode=m;items=makeItems(m);idx=0;correct=0;modal.hidden=false;if(!items.length){shell('<p>問題データを取得できませんでした。科目：'+esc(m)+'。index.htmlとwa-ten-challenge.jsのバージョンを確認してください。</p>');return}render()}
+modal.addEventListener('click',e=>{if(e.target===modal)close()});window.WATenChallenge={open};
+})();
+
+</script>
 <style id="wa-companion-menu-size-fix">
 body.wa-companion-menu-open #wa-companion{z-index:100006!important;transform:scale(2)!important;transform-origin:bottom right!important;}
 body.wa-companion-menu-open #wa-companion img{max-width:100%!important;}
@@ -3928,6 +3985,19 @@ function setup(){
    menu=document.createElement('div');menu.id='wa-comp-food-menu';menu.style.cssText='position:fixed;z-index:100005;right:12px;bottom:125px;max-width:min(90vw,320px);background:#192e4e;color:white;border:2px solid #f0bf62;border-radius:16px;padding:14px;box-shadow:0 8px 25px #0007;font:700 15px system-ui';
    menu.innerHTML='<p style="margin:0 0 9px;text-align:center;color:#fff">🐾 相棒と何をする？</p><button type="button" id="wa-food-challenge" style="display:block;width:100%;padding:12px;margin-bottom:7px;border-radius:9px;background:#fff;color:#172d4b;font-weight:800;opacity:1">🍚 ご飯をあげる（10問チャレンジ）</button><button type="button" id="wa-food-choose" style="display:block;width:100%;padding:12px;margin-bottom:7px;border-radius:9px;background:#fff;color:#172d4b;font-weight:800;opacity:1">🐾 相棒を選ぶ</button><button type="button" id="wa-food-close" style="padding:8px 16px;background:#fff;color:#172d4b;font-weight:800;opacity:1;border-radius:9px">閉じる</button>';
    document.body.append(menu);document.body.classList.add('wa-companion-menu-open');
+   const foodButton=menu.querySelector('#wa-food-challenge');
+   function updateFoodStatus(){
+    const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    let fed=false,available=true;try{fed=localStorage.getItem('wa-ten-food-reward-jst-v1')===today}catch(e){available=false}
+    let status=menu.querySelector('#wa-food-status');if(!status){status=document.createElement('p');status.id='wa-food-status';status.style.cssText='margin:0 0 12px;text-align:center;line-height:1.5';status.setAttribute('role','status');foodButton.before(status)}
+    status.textContent=!available?'食事状況を確認できません':fed?'✓ 今日のご飯は食べたよ！ 明日またあげよう！':'🍚 今日はまだご飯を食べていないよ！';
+    status.textContent+='　累計 '+(window.WACompanion?.getFood?.()||0)+' 回';
+    status.style.color=fed?'#a5e5bb':'#ffd479';
+    foodButton.disabled=fed;foodButton.textContent=fed?'🍚 本日のご飯は完了':'🍚 ご飯をあげる（10問チャレンジ）';foodButton.style.background=fed?'#385c50':'#fff';foodButton.style.color=fed?'#fff':'#172d4b';
+   }
+   updateFoodStatus();
+   const foodStatusTimer=setInterval(()=>{if(!menu.isConnected){clearInterval(foodStatusTimer);return}updateFoodStatus()},1000);
+
    menu.querySelector('#wa-food-challenge').onclick=()=>{menu.remove();document.body.classList.remove('wa-companion-menu-open');if(window.WATenChallenge?.open){const selected=document.querySelector('.modebtn[aria-pressed="true"]');window.WATenChallenge.open(selected?.dataset.m||'e')}else alert('10問チャレンジを読み込めませんでした')};
    menu.querySelector('#wa-food-choose').onclick=()=>{menu.remove();document.body.classList.remove('wa-companion-menu-open');if(typeof old==='function')old.call(comp)};
    menu.querySelector('#wa-food-close').onclick=()=>{menu.remove();document.body.classList.remove('wa-companion-menu-open')};
