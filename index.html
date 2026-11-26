@@ -1608,22 +1608,36 @@ if(typeof window!=='undefined'&&'speechSynthesis' in window){
 var wordAudioCache=Object.create(null);
 var currentAudio=null;
 var playbackSerial=0;
+var waSpeechTimer=0,waSpeechText='',waSpeechStarted=false,waSpeechButton=null;
+function waSpeechStatus(msg){if(waSpeechButton&&waSpeechButton.isConnected){waSpeechButton.textContent=msg;}}
 function stopAudio(){
-  playbackSerial++;
-  if(currentAudio){currentAudio.pause();currentAudio.currentTime=0;currentAudio=null}
-  if('speechSynthesis' in window)window.speechSynthesis.cancel();
+  playbackSerial++;clearTimeout(waSpeechTimer);waSpeechText='';waSpeechStarted=false;
+  if(currentAudio){currentAudio.pause();currentAudio=null;}
+  if('speechSynthesis' in window){var ss=window.speechSynthesis;if(ss.speaking||ss.pending||ss.paused)ss.cancel();}
 }
 function speechFallback(t,locale){
   if(!('speechSynthesis' in window))return;
-  var u=new SpeechSynthesisUtterance(String(t));
-  u.lang=locale;
-  u.rate=locale==='ja-JP'?0.9:0.94;
-  u.pitch=1;
-  u.volume=1;
-  var voice=preferredSpeechVoice(locale);
-  if(voice)u.voice=voice;
-  window.waActiveUtterance=u;
-  window.speechSynthesis.speak(u);
+  var serial=playbackSerial,ss=window.speechSynthesis;waSpeechText=String(t);
+  var word=String(t).trim(),simple=locale==='en-US'&&/^[a-z]+(?:[-'][a-z]+)*$/i.test(word)&&word!=='I';
+  var recording=simple?getDictionaryAudio(word):Promise.resolve(null);
+  var retried=false,finished=false;
+  function fail(){
+    if(serial!==playbackSerial||finished)return;clearTimeout(waSpeechTimer);
+    if(!retried){retried=true;window.waActiveUtterance=null;ss.cancel();setTimeout(function(){if(serial===playbackSerial)attempt(true)},120);return;}
+    finished=true;ss.cancel();recording.then(function(url){if(serial!==playbackSerial)return;if(url){waSpeechStatus('🔊 再生中…');playAudioUrl(url,serial,function(){waSpeechText='';waSpeechStatus('🔊 再生できません・再タップ');});if(currentAudio)currentAudio.addEventListener('ended',function(){if(serial===playbackSerial){waSpeechText='';waSpeechStatus('🔊 もう一度聞く');}},{once:true});}else{waSpeechText='';waSpeechStatus('🔊 再生できません・再タップ');}});
+  }
+  function attempt(useDefault){
+    if(serial!==playbackSerial)return;
+    var u=new SpeechSynthesisUtterance(word);u.lang=locale;u.rate=locale==='ja-JP'?0.9:0.94;u.pitch=1;u.volume=1;
+    if(!useDefault){var voice=preferredSpeechVoice(locale);if(voice)u.voice=voice;}
+    window.waActiveUtterance=u;waSpeechStarted=false;
+    u.onstart=function(){if(serial!==playbackSerial||window.waActiveUtterance!==u||finished)return;waSpeechStarted=true;clearTimeout(waSpeechTimer);waSpeechStatus('🔊 再生中…');waSpeechTimer=setTimeout(fail,Math.max(4500,word.length*180));};
+    u.onend=function(){if(serial!==playbackSerial||window.waActiveUtterance!==u||finished)return;finished=true;clearTimeout(waSpeechTimer);waSpeechText='';waSpeechStatus('🔊 もう一度聞く');};
+    u.onerror=function(e){if(serial!==playbackSerial||window.waActiveUtterance!==u||finished||e.error==='canceled'||e.error==='interrupted')return;fail();};
+    waSpeechStatus('🔊 音声準備中…');waSpeechTimer=setTimeout(fail,1500);
+    try{ss.resume();ss.speak(u);}catch(e){fail();}
+  }
+  attempt(false);
 }
 async function getDictionaryAudio(word){
   var key=word.toLowerCase();
@@ -1663,6 +1677,7 @@ function playAudioUrl(url,serial,fallback){
 }
 async function speak(t,lang){
   if(!t)return;
+  if(waSpeechText===String(t)&&!waSpeechStarted)return;
   stopAudio();
   var serial=playbackSerial,locale=lang||'en-US';
   // The pronoun I is pronounced /aɪ/. Avoid ambiguous single-letter dictionary recordings.
@@ -1689,7 +1704,7 @@ async function speak(t,lang){
 }
 var CAN_SPEAK=typeof window!=='undefined'&&('speechSynthesis' in window||'Audio' in window);
 function sayBtn(t,lang,label,cls){return CAN_SPEAK?'<button type="button" class="say'+(cls?' '+cls:'')+'" data-say="'+esc(t)+'"'+(lang?' data-lang="'+lang+'"':'')+'>'+(label||'発音')+'</button>':''}
-function bindSay(root){root.querySelectorAll('[data-say]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();speak(b.getAttribute('data-say'),b.getAttribute('data-lang'))})})}
+function bindSay(root){root.querySelectorAll('[data-say]').forEach(function(b){b.addEventListener('click',function(e){e.stopPropagation();waSpeechButton=b;speak(b.getAttribute('data-say'),b.getAttribute('data-lang'))})})}
 function sentHL(w){return esc(w.s).replace('___','<mark>'+w.en+'</mark>')}
 function sentSay(w){return sayBtn(w.s.replace('___',w.en),'en-US','例文を聞く','sent-say')}
 
@@ -2087,7 +2102,7 @@ function quizUI(q,host,o){
       if(replay)replay.addEventListener('click',function(e){
         e.stopPropagation();
         // Direct user gesture: start speech immediately, avoiding network delay / autoplay restrictions.
-        stopAudio();speechFallback(q.auto,'en-US');
+        waSpeechButton=replay;speak(q.auto,'en-US');
       });
       // iOS Safari may block playback without a user gesture. Do not cancel
       // a manually started replay with a delayed automatic speech request.
@@ -3020,6 +3035,7 @@ function learningTileChallenge(){
    bindSay(pane);
    // The learning tile is opened after a puzzle interaction. Try playback
    // automatically, while retaining a replay button for restricted browsers.
+   waSpeechButton=pane.querySelector('.wa-learn-sound');
    speak(d[0],'en-US');
   }
   var done=false,answered=false,awarded=0;
