@@ -2090,6 +2090,7 @@ function waShowPoints(value,label,kind){
 var waHelpUsed=0,waHelpActive=false;
 function waHelpLimit(){try{return localStorage.getItem('wa-ten-food-reward-jst-v1')===new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())?5:3}catch(e){return 3}}
 function waHelpLeft(){return Math.max(0,waHelpLimit()-waHelpUsed)}
+window.WAHelp={active:()=>waHelpActive,left:waHelpLeft,limit:waHelpLimit};
 window.addEventListener('wa:companion-new-run',function(){waHelpUsed=0;waHelpActive=true});
 function waAddHelp(host,buttons,isCorrect,isDone){
  if(!waHelpActive||buttons.length<3)return;
@@ -3962,7 +3963,7 @@ modal.addEventListener('click',e=>{if(e.target===modal)close()});window.WATenCha
 
 </script>
 <style id="wa-companion-menu-size-fix">
-body.wa-companion-menu-open #wa-companion{z-index:100006!important;transform:scale(2)!important;transform-origin:bottom right!important;}
+body.wa-companion-menu-open #wa-companion{z-index:100004!important;transform:scale(2)!important;transform-origin:bottom right!important;}
 body.wa-companion-menu-open #wa-companion img{max-width:100%!important;}
 #wa-comp-food-menu{bottom:clamp(210px,33vh,310px)!important;}
 .wa-unified-page-rank .wa-rank-list{padding-left:0;list-style:none}
@@ -4040,7 +4041,7 @@ function setup(){
    e.preventDefault();e.stopPropagation();
    let menu=document.getElementById('wa-comp-food-menu');
    if(menu){menu.remove();document.body.classList.remove('wa-companion-menu-open');return}
-   menu=document.createElement('div');menu.id='wa-comp-food-menu';menu.style.cssText='position:fixed;z-index:100005;right:12px;bottom:125px;max-width:min(90vw,320px);background:#192e4e;color:white;border:2px solid #f0bf62;border-radius:16px;padding:14px;box-shadow:0 8px 25px #0007;font:700 15px system-ui';
+   menu=document.createElement('div');menu.id='wa-comp-food-menu';menu.style.cssText='position:fixed;z-index:100005;right:12px;bottom:125px;max-width:min(90vw,320px);max-height:65vh;overflow-y:auto;box-sizing:border-box;background:#192e4e;color:white;border:2px solid #f0bf62;border-radius:16px;padding:14px;box-shadow:0 8px 25px #0007;font:700 15px system-ui';
    menu.innerHTML='<p style="margin:0 0 9px;text-align:center;color:#fff">🐾 相棒と何をする？</p><button type="button" id="wa-food-challenge" style="display:block;width:100%;padding:12px;margin-bottom:7px;border-radius:9px;background:#fff;color:#172d4b;font-weight:800;opacity:1">🍚 ご飯をあげる（10問チャレンジ）</button><button type="button" id="wa-food-choose" style="display:block;width:100%;padding:12px;margin-bottom:7px;border-radius:9px;background:#fff;color:#172d4b;font-weight:800;opacity:1">🐾 相棒を選ぶ</button><button type="button" id="wa-food-close" style="padding:8px 16px;background:#fff;color:#172d4b;font-weight:800;opacity:1;border-radius:9px">閉じる</button>';
    document.body.append(menu);document.body.classList.add('wa-companion-menu-open');
    const foodButton=menu.querySelector('#wa-food-challenge');
@@ -4050,16 +4051,16 @@ function setup(){
     let status=menu.querySelector('#wa-food-status');if(!status){status=document.createElement('p');status.id='wa-food-status';status.style.cssText='margin:0 0 12px;text-align:center;line-height:1.5';status.setAttribute('role','status');foodButton.before(status)}
     status.textContent=!available?'食事状況を確認できません':fed?'✓ 今日のご飯は食べたよ！ 明日またあげよう！':'🍚 今日はまだご飯を食べていないよ！';
     status.textContent+='　累計 '+(window.WACompanion?.getFood?.()||0)+' 回';
-    let help=menu.querySelector('#wa-help-info');if(!help){help=document.createElement('p');help.id='wa-help-info';help.style.cssText='font-size:13px;line-height:1.5;background:#ffffff15;padding:8px;border-radius:8px';status.after(help)}help.textContent='🐾 お助けスキル：選択肢の約半分を除外！ 1ゲーム3回、ご飯をあげた日は5回。1問1回まで。'+(waHelpActive?' 残り '+waHelpLeft()+' / '+waHelpLimit()+' 回。':'');
+    let help=menu.querySelector('#wa-help-info');if(!help){help=document.createElement('p');help.id='wa-help-info';help.style.cssText='font-size:13px;line-height:1.5;background:#ffffff15;padding:8px;border-radius:8px';status.after(help)}help.textContent='🐾 お助けスキル：選択肢の約半分を除外！ 1ゲーム3回、ご飯をあげた日は5回。1問1回まで。'+(window.WAHelp?.active()?' 残り '+window.WAHelp.left()+' / '+window.WAHelp.limit()+' 回。':'');
     status.style.color=fed?'#a5e5bb':'#ffd479';
     foodButton.disabled=fed;foodButton.textContent=fed?'🍚 本日のご飯は完了':'🍚 ご飯をあげる（10問チャレンジ）';foodButton.style.background=fed?'#385c50':'#fff';foodButton.style.color=fed?'#fff':'#172d4b';
    }
-   updateFoodStatus();
    const foodStatusTimer=setInterval(()=>{if(!menu.isConnected){clearInterval(foodStatusTimer);return}updateFoodStatus()},1000);
 
    menu.querySelector('#wa-food-challenge').onclick=()=>{menu.remove();document.body.classList.remove('wa-companion-menu-open');if(window.WATenChallenge?.open){const selected=document.querySelector('.modebtn[aria-pressed="true"]');window.WATenChallenge.open(selected?.dataset.m||'e')}else alert('10問チャレンジを読み込めませんでした')};
-   menu.querySelector('#wa-food-choose').onclick=()=>{menu.remove();document.body.classList.remove('wa-companion-menu-open');if(typeof old==='function')old.call(comp)};
+   menu.querySelector('#wa-food-choose').onclick=()=>{menu.remove();document.body.classList.remove('wa-companion-menu-open');if(window.WACompanion?.open)window.WACompanion.open();else if(typeof old==='function')old.call(comp)};
    menu.querySelector('#wa-food-close').onclick=()=>{menu.remove();document.body.classList.remove('wa-companion-menu-open')};
+   updateFoodStatus();
   });
  }
 }
